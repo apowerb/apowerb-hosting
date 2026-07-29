@@ -1,0 +1,89 @@
+# ---------------------------------------------------------------------------
+# apowerb — pile open source complete, en une commande.
+#
+#   git clone https://github.com/apowerb/th2agent.git
+#   git clone https://github.com/apowerb/th2agent-front.git
+#   git clone https://github.com/apowerb/apowerb-hosting.git
+#   cd apowerb-hosting && cp .env.example .env && ./scripts/generate-secrets.sh
+#   docker compose up -d --build
+#
+# Les trois depots sont clones cote a cote ; TH2AGENT_SRC et
+# TH2AGENT_FRONT_SRC pointent dessus et se surchargent si votre arborescence
+# differe. Le jour ou les images seront publiees sur un registre, ces blocs
+# `build:` deviendront des `image: apowerb/...` et les depots sources ne seront
+# plus necessaires.
+# ---------------------------------------------------------------------------
+
+name: apowerb
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${DB_NAME:?renseignez DB_NAME dans .env}
+      POSTGRES_USER: ${DB_USER:?renseignez DB_USER dans .env}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?renseignez DB_PASSWORD dans .env}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      # `pg_isready` seul repond OK avant que la base soit reellement
+      # ouverte aux connexions ; on cible la base et l'utilisateur attendus.
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  th2agent:
+    build:
+      context: ${TH2AGENT_SRC:-../th2agent}
+      dockerfile: ${PWD}/docker/th2agent.Dockerfile
+    environment:
+      # Ces six variables sont exigees au demarrage : le serveur refuse de
+      # boot sans elles (Settings.assert_runtime_ready).
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      # Le Postgres de cette pile ne fait pas de TLS : le trafic ne quitte
+      # jamais le reseau interne de Docker. Contre une base geree, laissez
+      # `require` — c'est le defaut du noyau.
+      DB_SSLMODE: ${DB_SSLMODE:-disable}
+      TEST_TOKEN: ${TEST_TOKEN}
+      ENCRYPT_KEY: ${ENCRYPT_KEY}
+      # Vide = aucune brique commerciale. C'est l'edition open source, et
+      # l'absence de briques n'est pas un mode degrade.
+      TH2_EXTENSIONS: ${TH2_EXTENSIONS:-}
+      WORKING_MODE: ${WORKING_MODE:-development}
+    volumes:
+      # Les fichiers deposes par les agents, leurs modules generes et les
+      # artefacts ADK. Sans ce volume, ils disparaissent a chaque recreation
+      # du conteneur.
+      - th2agent-data:/app/data
+    ports:
+      - "${TH2AGENT_PORT:-8000}:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  th2agent-front:
+    build:
+      context: ${TH2AGENT_FRONT_SRC:-../th2agent-front}
+      dockerfile: ${PWD}/docker/th2agent-front.Dockerfile
+      args:
+        # Cote serveur, le front joint l'API par le reseau interne ; cote
+        # navigateur, par l'adresse publiee. Les deux different et c'est
+        # normal.
+        API_URL: http://th2agent:8000
+        NEXT_PUBLIC_API_URL: ${PUBLIC_API_URL:-http://localhost:8000}
+    ports:
+      - "${FRONT_PORT:-3000}:3000"
+    depends_on:
+      - th2agent
+    restart: unless-stopped
+
+volumes:
+  postgres-data:
+  th2agent-data:
