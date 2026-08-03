@@ -17,6 +17,10 @@ Use this option to run the stack from the published container images.
 
 ## Quick start
 
+1. Copy the environment template.
+2. Optional but recommended: run the bootstrap helper to populate missing secret values in `.env`.
+3. Start the stack.
+
 ```bash
 cp .env.example .env
 ./scripts/generate-secrets.sh
@@ -63,7 +67,7 @@ The Compose stack depends on these values from `.env`:
 ## Secrets
 
 `ENCRYPT_KEY` and `TEST_TOKEN` must be present before startup.
-The helper script populates missing values in `.env` and does not overwrite existing ones.
+The helper script in [../scripts/generate-secrets.sh](../scripts/generate-secrets.sh) is a bootstrap convenience that fills missing values in `.env` without overwriting existing ones.
 
 ## Useful commands
 
