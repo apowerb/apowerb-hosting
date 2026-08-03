@@ -61,6 +61,21 @@ docker compose -f docker-compose.yml -f docker-compose.traefik.yml up -d
 L'interface est ensuite servie via `https://$APP_HOST` et le reverse proxy
 Traefik prend en charge le routage TLS et le challenge Let's Encrypt.
 
+### Publication GitHub Actions vers Docker Hub
+
+Le chart Helm peut être publié comme artefact OCI vers Docker Hub avec le
+workflow GitHub Actions suivant :
+
+- `.github/workflows/publish-dockerhub-helm.yml`
+
+Prérequis de secrets GitHub Actions :
+
+- `DOCKERHUB_USERNAME`
+- `DOCKERHUB_TOKEN`
+
+Le workflow exécute `helm lint`, `helm package`, puis `helm push` sur le
+registre OCI de Docker Hub.
+
 ## Ce que la pile contient
 
 | Service | Rôle | Port par défaut |
