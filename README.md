@@ -76,6 +76,20 @@ Prérequis de secrets GitHub Actions :
 Le workflow exécute `helm lint`, `helm package`, puis `helm push` sur le
 registre OCI de Docker Hub.
 
+Exemple d'installation depuis la release publiée :
+
+```bash
+helm install apowerb oci://registry-1.docker.io/apowerb/apowerb \
+  --version 0.1.0
+```
+
+Pour GitHub Container Registry :
+
+```bash
+helm install apowerb oci://ghcr.io/apowerb/apowerb \
+  --version 0.1.0
+```
+
 ## Ce que la pile contient
 
 | Service | Rôle | Port par défaut |

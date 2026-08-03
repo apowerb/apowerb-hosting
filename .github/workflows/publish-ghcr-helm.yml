@@ -1,4 +1,4 @@
-name: Publish Helm chart to OCI registries
+name: Publish Helm chart to GitHub Container Registry
 
 on:
   release:
@@ -37,30 +37,10 @@ jobs:
         run: |
           helm package ./helm/apowerb --version "$VERSION"
 
-      - name: Login to Docker Hub OCI registry
-        env:
-          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-        run: |
-          if [ -z "$DOCKERHUB_USERNAME" ] || [ -z "$DOCKERHUB_TOKEN" ]; then
-            echo "Missing Docker Hub credentials. Set DOCKERHUB_USERNAME and DOCKERHUB_TOKEN as GitHub Actions secrets."
-            exit 1
-          fi
-          echo "$DOCKERHUB_TOKEN" | helm registry login registry-1.docker.io \
-            --username "$DOCKERHUB_USERNAME" \
-            --password-stdin
-
-      - name: Push chart to Docker Hub
-        env:
-          VERSION: ${{ steps.release.outputs.version }}
-        run: |
-          CHART_TGZ="apowerb-${VERSION}.tgz"
-          helm push "$CHART_TGZ" "oci://registry-1.docker.io/apowerb"
-
       - name: Login to GitHub Container Registry
         env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GHCR_USERNAME: ${{ github.actor }}
-          GHCR_TOKEN: ${{ github.token }}
         run: |
           echo "$GHCR_TOKEN" | helm registry login ghcr.io \
             --username "$GHCR_USERNAME" \
