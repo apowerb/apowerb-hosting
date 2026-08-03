@@ -47,7 +47,6 @@ jobs:
 
       - name: Push chart to Docker Hub
         env:
-          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           VERSION: ${{ steps.release.outputs.version }}
         run: |
           CHART_TGZ="apowerb-${VERSION}.tgz"
