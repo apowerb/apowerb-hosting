@@ -41,6 +41,10 @@ jobs:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
         run: |
+          if [ -z "$DOCKERHUB_USERNAME" ] || [ -z "$DOCKERHUB_TOKEN" ]; then
+            echo "Missing Docker Hub credentials. Set DOCKERHUB_USERNAME and DOCKERHUB_TOKEN as GitHub Actions secrets."
+            exit 1
+          fi
           echo "$DOCKERHUB_TOKEN" | helm registry login registry-1.docker.io \
             --username "$DOCKERHUB_USERNAME" \
             --password-stdin
