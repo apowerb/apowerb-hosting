@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: apowerb-backend
+  namespace: apowerb
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: apowerb-backend
+  template:
+    metadata:
+      labels:
+        app: apowerb-backend
+    spec:
+      containers:
+        - name: apowerb
+          image: apowerb/apowerb:latest
+          ports:
+            - containerPort: 8000
+          env:
+            - name: DB_HOST
+              value: apowerb-postgres
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: apowerb-secrets
+                  key: DB_NAME
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: apowerb-secrets
+                  key: DB_USER
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: apowerb-secrets
+                  key: DB_PASSWORD
+            - name: DB_SSLMODE
+              value: disable
+            - name: ENCRYPT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: apowerb-secrets
+                  key: ENCRYPT_KEY
+            - name: TEST_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: apowerb-secrets
+                  key: TEST_TOKEN
+            - name: TH2_EXTENSIONS
+              value: ""
+            - name: WORKING_MODE
+              value: development
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: apowerb-backend
+  namespace: apowerb
+spec:
+  selector:
+    app: apowerb-backend
+  ports:
+    - name: http
+      port: 8000
+      targetPort: 8000

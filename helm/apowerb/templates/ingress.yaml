@@ -1,0 +1,24 @@
+{{- if .Values.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "apowerb.name" . }}
+  namespace: {{ include "apowerb.namespace" . }}
+  annotations:
+{{- with .Values.ingress.annotations }}
+{{ toYaml . | indent 4 }}
+{{- end }}
+spec:
+  ingressClassName: {{ .Values.ingress.className | default "" }}
+  rules:
+    - host: {{ .Values.ingress.host }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "apowerb.frontend.fullname" . }}
+                port:
+                  number: {{ .Values.service.frontend.port }}
+{{- end }}

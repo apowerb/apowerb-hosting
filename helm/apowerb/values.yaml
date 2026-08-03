@@ -1,0 +1,81 @@
+replicaCount: 1
+namespaceOverride: ""
+
+image:
+  backend:
+    repository: apowerb/apowerb
+    tag: latest
+    pullPolicy: IfNotPresent
+  frontend:
+    repository: apowerb/apowerb-ui
+    tag: latest
+    pullPolicy: IfNotPresent
+  postgres:
+    repository: postgres
+    tag: 16-alpine
+    pullPolicy: IfNotPresent
+
+service:
+  backend:
+    type: ClusterIP
+    port: 8000
+  frontend:
+    type: LoadBalancer
+    port: 3000
+  postgres:
+    type: ClusterIP
+    port: 5432
+
+postgres:
+  database: th2agent
+  user: th2agent
+  password: change-me
+  storage: 8Gi
+  storageClass: ""
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+backend:
+  env:
+    dbSslmode: disable
+    publicApiUrl: http://localhost:8000
+    th2Extensions: ""
+    workingMode: development
+    encryptKey: ""
+    testToken: ""
+  resources:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+frontend:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 300m
+      memory: 256Mi
+
+secret:
+  create: true
+
+ingress:
+  enabled: false
+  className: ""
+  host: apowerb.local
+  annotations: {}
+  tlsEnabled: false
+  tlsSecretName: ""
+
+serviceAccount:
+  create: true
+  name: ""

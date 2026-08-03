@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: apowerb-ui
+  namespace: apowerb
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: apowerb-ui
+  template:
+    metadata:
+      labels:
+        app: apowerb-ui
+    spec:
+      containers:
+        - name: apowerb-ui
+          image: apowerb/apowerb-ui:latest
+          ports:
+            - containerPort: 3000
+          env:
+            - name: API_URL
+              value: http://apowerb-backend:8000
+            - name: NEXT_PUBLIC_API_URL
+              value: http://localhost:8000
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 300m
+              memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: apowerb-ui
+  namespace: apowerb
+spec:
+  type: LoadBalancer
+  selector:
+    app: apowerb-ui
+  ports:
+    - name: http
+      port: 3000
+      targetPort: 3000

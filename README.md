@@ -10,29 +10,64 @@ Ce dépôt ne contient aucun code applicatif : il assemble
 
 ## Démarrer
 
-Les trois dépôts se clonent côte à côte :
+Le dépôt peut être déployé avec des images publiées ou via une pile Kubernetes/Helm.
+
+### Docker Compose
 
 ```bash
-git clone https://github.com/apowerb/th2agent.git
-git clone https://github.com/apowerb/th2agent-front.git
-git clone https://github.com/apowerb/apowerb-hosting.git
-
 cd apowerb-hosting
 cp .env.example .env
 ./scripts/generate-secrets.sh    # remplit ENCRYPT_KEY et TEST_TOKEN
-docker compose up -d --build
+docker compose up -d
 ```
 
 L'interface répond sur <http://localhost:3000>, l'API sur
 <http://localhost:8000>. Les ports se changent dans `.env`.
+
+### Kubernetes
+
+Des manifests prêts à appliquer sont présents dans `k8s/`.
+
+```bash
+kubectl apply -f k8s/
+```
+
+### Helm
+
+Un chart Helm est présent dans `helm/apowerb/`.
+
+```bash
+helm upgrade --install apowerb ./helm/apowerb \
+  --namespace apowerb \
+  --create-namespace \
+  --values ./helm/apowerb/values.yaml
+```
+
+Pour un ingress, activez `ingress.enabled: true` dans le `values.yaml` ou
+appliquez l'exemple statique de [k8s/05-ingress.yaml](k8s/05-ingress.yaml).
+
+### SSH / single VM + HTTPS (Traefik)
+
+Pour un hôte unique, vous pouvez superposer l'overlay de proxy HTTPS sur le
+compose existant :
+
+```bash
+cp .env.example .env
+# renseignez APP_HOST et ACME_EMAIL dans .env
+
+docker compose -f docker-compose.yml -f docker-compose.traefik.yml up -d
+```
+
+L'interface est ensuite servie via `https://$APP_HOST` et le reverse proxy
+Traefik prend en charge le routage TLS et le challenge Let's Encrypt.
 
 ## Ce que la pile contient
 
 | Service | Rôle | Port par défaut |
 |---|---|---|
 | `postgres` | base de données | interne |
-| `th2agent` | API FastAPI | 8000 |
-| `th2agent-front` | interface Next.js | 3000 |
+| `apowerb` | API FastAPI | 8000 |
+| `apowerb-ui` | interface Next.js | 3000 |
 
 ## L'édition open source est complète
 
@@ -73,14 +108,14 @@ ne quitte pas le réseau interne de Docker, d'où `DB_SSLMODE=disable`.
 Contre une base gérée (Neon, RDS, OVH), pointez `DB_HOST` dessus et remettez
 `DB_SSLMODE=require`, qui est le défaut du noyau.
 
-## Ce qui n'est pas encore là
+## Déploiements fournis
 
-- **Helm chart et manifestes Kubernetes.** Le `docker compose` ci-dessus est
-  testé de bout en bout ; l'équivalent k8s ne l'est pas encore et n'est donc
-  pas publié. Mieux vaut rien qu'un chart non vérifié.
-- **Images publiées sur un registre.** Le compose construit depuis les sources.
-  Quand les images `apowerb/*` seront publiées, les blocs `build:` deviendront
-  des `image:` et les dépôts sources ne seront plus nécessaires.
+- **Docker Compose** : démarre la pile à partir des images publiées
+  `apowerb/apowerb` et `apowerb/apowerb-ui`.
+- **Kubernetes** : manifests statiques dans `k8s/` pour lancer les mêmes
+  services dans un cluster.
+- **Helm chart** : chart `helm/apowerb/` pour déployer la pile avec des valeurs
+  standardisées, des ressources, un secret généré et un ingress optionnel.
 
 ## Vérifié
 

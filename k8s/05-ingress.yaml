@@ -1,0 +1,18 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: apowerb-ui
+  namespace: apowerb
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: apowerb.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: apowerb-ui
+                port:
+                  number: 3000

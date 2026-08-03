@@ -1,0 +1,16 @@
+entryPoints:
+  web:
+    address: ":80"
+  websecure:
+    address: ":443"
+
+providers:
+  docker:
+    exposedByDefault: false
+
+certificatesResolvers:
+  leresolver:
+    acme:
+      email: ${ACME_EMAIL}
+      storage: /letsencrypt/acme.json
+      tlsChallenge: {}

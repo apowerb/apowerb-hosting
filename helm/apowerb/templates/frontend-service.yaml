@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "apowerb.frontend.fullname" . }}
+  namespace: {{ include "apowerb.namespace" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "apowerb.name" . }}
+    app.kubernetes.io/component: frontend
+spec:
+  type: {{ .Values.service.frontend.type }}
+  selector:
+    app.kubernetes.io/name: {{ include "apowerb.name" . }}
+    app.kubernetes.io/component: frontend
+  ports:
+    - name: http
+      port: {{ .Values.service.frontend.port }}
+      targetPort: 3000
+      protocol: TCP

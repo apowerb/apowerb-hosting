@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "apowerb.postgres.fullname" . }}
+  namespace: {{ include "apowerb.namespace" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "apowerb.name" . }}
+    app.kubernetes.io/component: postgres
+spec:
+  serviceName: {{ include "apowerb.postgres.fullname" . }}
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "apowerb.name" . }}
+      app.kubernetes.io/component: postgres
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "apowerb.name" . }}
+        app.kubernetes.io/component: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: "{{ .Values.image.postgres.repository }}:{{ .Values.image.postgres.tag }}"
+          imagePullPolicy: {{ .Values.image.postgres.pullPolicy }}
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: apowerb-secrets
+                  key: DB_NAME
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: apowerb-secrets
+                  key: DB_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: apowerb-secrets
+                  key: DB_PASSWORD
+          resources:
+            requests:
+              cpu: {{ .Values.postgres.resources.requests.cpu }}
+              memory: {{ .Values.postgres.resources.requests.memory }}
+            limits:
+              cpu: {{ .Values.postgres.resources.limits.cpu }}
+              memory: {{ .Values.postgres.resources.limits.memory }}
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"
+            initialDelaySeconds: 10
+            periodSeconds: 10
+  volumeClaimTemplates:
+    - metadata:
+        name: postgres-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        {{- if .Values.postgres.storageClass }}
+        storageClassName: {{ .Values.postgres.storageClass | quote }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.postgres.storage }}

@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "apowerb.postgres.fullname" . }}
+  namespace: {{ include "apowerb.namespace" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "apowerb.name" . }}
+    app.kubernetes.io/component: postgres
+spec:
+  type: {{ .Values.service.postgres.type }}
+  selector:
+    app.kubernetes.io/name: {{ include "apowerb.name" . }}
+    app.kubernetes.io/component: postgres
+  ports:
+    - name: postgres
+      port: {{ .Values.service.postgres.port }}
+      targetPort: 5432
+      protocol: TCP

@@ -1,0 +1,30 @@
+services:
+  traefik:
+    image: traefik:v3.1
+    command:
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      - --certificatesresolvers.leresolver.acme.email=${ACME_EMAIL:?set ACME_EMAIL in .env}
+      - --certificatesresolvers.leresolver.acme.storage=/letsencrypt/acme.json
+      - --certificatesresolvers.leresolver.acme.tlschallenge=true
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik-letsencrypt:/letsencrypt
+    restart: unless-stopped
+
+  apowerb-ui:
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.apowerb-ui.rule=Host(`${APP_HOST:?set APP_HOST in .env}`)
+      - traefik.http.routers.apowerb-ui.entrypoints=websecure
+      - traefik.http.routers.apowerb-ui.tls.certresolver=leresolver
+      - traefik.http.services.apowerb-ui.loadbalancer.server.port=3000
+    ports: []
+
+volumes:
+  traefik-letsencrypt:
