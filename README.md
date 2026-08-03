@@ -20,7 +20,7 @@ and it is designed to run from published images or from a Kubernetes/Helm chart.
 
 ## Deployment options
 
-- [Docker Compose](docker/README.md)
+- [Docker Compose](docker-compose/README.md)
 - [Kubernetes](k8s/README.md)
 - [Helm](helm/apowerb/README.md)
 - [Single VM / HTTPS with Traefik](traefik/README.md)
@@ -35,6 +35,8 @@ cp .env.example .env
 
 docker compose up -d
 ```
+
+For the full Compose-specific details, including image overrides, port mapping, and secret handling, see [docker-compose/README.md](docker-compose/README.md).
 
 - Frontend: http://localhost:3000
 - API: http://localhost:8000
