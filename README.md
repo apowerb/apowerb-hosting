@@ -24,7 +24,6 @@ and it is designed to run from published images or from a Kubernetes/Helm chart.
 - [Kubernetes](k8s/README.md)
 - [Helm](helm/apowerb/README.md)
 - [Single VM / HTTPS with Traefik](traefik/README.md)
-- [Release publishing workflow](.github/workflows/README.md)
 
 ### 1. Docker Compose
 
@@ -73,27 +72,6 @@ docker compose -f docker-compose.yml -f docker-compose.traefik.yml up -d
 ```
 
 The app is served through `https://$APP_HOST`.
-
-### 5. Helm release publishing
-
-Release-only publishing is handled by [.github/workflows/publish-dockerhub-helm.yml](.github/workflows/publish-dockerhub-helm.yml).
-
-Required repository secrets:
-
-- `DOCKERHUB_USERNAME`
-- `DOCKERHUB_TOKEN`
-
-The workflow packages the chart and pushes the same OCI artifact to both registries.
-
-Install from the published release:
-
-```bash
-helm install apowerb oci://registry-1.docker.io/apowerb/apowerb --version 0.1.0
-```
-
-```bash
-helm install apowerb oci://ghcr.io/apowerb/apowerb --version 0.1.0
-```
 
 ## Notes
 
