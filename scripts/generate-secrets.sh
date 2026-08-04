@@ -1,40 +1,41 @@
 #!/usr/bin/env bash
-# Remplit ENCRYPT_KEY et TEST_TOKEN dans `.env` s'ils sont vides.
+# Fills ENCRYPT_KEY and TEST_TOKEN in `.env` when they are empty.
 #
-# Ne remplace JAMAIS une valeur deja posee : regenerer ENCRYPT_KEY rendrait
-# illisibles tous les jetons d'integration deja chiffres en base.
+# NEVER replaces a value that is already set: regenerating ENCRYPT_KEY would
+# make every integration token already encrypted in the database unreadable.
 
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
 if [ ! -f .env ]; then
-    echo "Aucun .env — copiez .env.example d'abord :  cp .env.example .env" >&2
+    echo "No .env — copy the template first:  cp .env.example .env" >&2
     exit 1
 fi
 
-# Cle Fernet = 32 octets aleatoires en base64 url-safe. `openssl` suffit, pas
-# besoin d'un interpreteur Python sur la machine hote.
-generer_cle_fernet() {
+# A Fernet key is 32 random bytes in url-safe base64. `openssl` is enough, no
+# Python interpreter needed on the host.
+generate_fernet_key() {
     openssl rand -base64 32 | tr '+/' '-_'
 }
 
-remplir_si_vide() {
-    local cle="$1" valeur="$2"
-    if grep -qE "^${cle}=.+$" .env; then
-        echo "  ${cle} : deja renseignee, laissee telle quelle"
+fill_if_empty() {
+    local key="$1" value="$2"
+    if grep -qE "^${key}=.+$" .env; then
+        echo "  ${key}: already set, left as is"
         return
     fi
-    # Portable macOS/Linux : `sed -i` n'a pas la meme signature sur les deux.
+    # Portable across macOS and Linux: `sed -i` does not take the same
+    # arguments on both.
     local tmp
     tmp="$(mktemp)"
-    sed "s|^${cle}=.*|${cle}=${valeur}|" .env > "$tmp" && mv "$tmp" .env
-    echo "  ${cle} : generee"
+    sed "s|^${key}=.*|${key}=${value}|" .env > "$tmp" && mv "$tmp" .env
+    echo "  ${key}: generated"
 }
 
-echo "Generation des secrets manquants dans .env"
-remplir_si_vide ENCRYPT_KEY "$(generer_cle_fernet)"
-remplir_si_vide TEST_TOKEN "$(openssl rand -hex 24)"
+echo "Generating the missing secrets in .env"
+fill_if_empty ENCRYPT_KEY "$(generate_fernet_key)"
+fill_if_empty TEST_TOKEN "$(openssl rand -hex 24)"
 
 echo
-echo "Pret. Lancez :  docker compose up -d --build"
+echo "Ready. Start with:  docker compose -f docker-compose/docker-compose.yml --env-file .env up -d"

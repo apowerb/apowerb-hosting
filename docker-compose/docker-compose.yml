@@ -4,9 +4,9 @@ services:
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_DB: ${DB_NAME:?renseignez DB_NAME dans .env}
-      POSTGRES_USER: ${DB_USER:?renseignez DB_USER dans .env}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:?renseignez DB_PASSWORD dans .env}
+      POSTGRES_DB: ${DB_NAME:?set DB_NAME in .env}
+      POSTGRES_USER: ${DB_USER:?set DB_USER in .env}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env}
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
@@ -30,6 +30,15 @@ services:
       ENCRYPT_KEY: ${ENCRYPT_KEY}
       TH2_EXTENSIONS: ${TH2_EXTENSIONS:-}
       WORKING_MODE: ${WORKING_MODE:-development}
+      # Shared model. Without both of these the provider is simply not offered,
+      # and every agent has to carry its own API key.
+      DEFAULT_LLM_MODEL: ${DEFAULT_LLM_MODEL:-}
+      DEFAULT_LLM_API_KEY: ${DEFAULT_LLM_API_KEY:-}
+      DEFAULT_LLM_API_BASE: ${DEFAULT_LLM_API_BASE:-}
+      # System mailer. Empty means no system email is sent at all.
+      NOTIFICATION_EMAIL: ${NOTIFICATION_EMAIL:-}
+      NOTIFICATION_INTEGRATION_OWNER: ${NOTIFICATION_INTEGRATION_OWNER:-}
+      SUPER_ADMIN_EMAIL: ${SUPER_ADMIN_EMAIL:-}
     volumes:
       - apowerb-data:/app/data
     ports:
