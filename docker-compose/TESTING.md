@@ -101,27 +101,15 @@ This is the only check that proves the whole chain. It needs a model.
 
 **Either** give each agent its own key from the UI — nothing to change here.
 
-**Or** enable the shared model, which the Compose file does not pass through.
-Confirm it is off, `"default_llm_available": false`:
+**Or** enable the shared model. Check whether it is on:
 
 ```bash
 curl -s http://127.0.0.1:8000/api/config
 ```
 
-Add an override file next to the Compose one:
-
-```yaml
-services:
-  apowerb:
-    environment:
-      DEFAULT_LLM_MODEL: ${DEFAULT_LLM_MODEL}
-      DEFAULT_LLM_API_KEY: ${DEFAULT_LLM_API_KEY}
-      DEFAULT_LLM_API_BASE: ${DEFAULT_LLM_API_BASE:-}
-```
-
-Put the three values in `.env`, restart with both files, and check `/api/config`
-again: `default_llm_available` must now be `true`. Both the model and the key
-have to be non-empty — a missing one is silent, nothing is logged.
+`"default_llm_available": false` means `DEFAULT_LLM_MODEL` and
+`DEFAULT_LLM_API_KEY` are not both set in `.env`. Fill them, restart, and the
+same call must answer `true`. A missing one is silent — nothing is logged.
 
 Create an agent on that model:
 
