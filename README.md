@@ -33,10 +33,11 @@ Use the published images from Docker Hub.
 cp .env.example .env
 ./scripts/generate-secrets.sh
 
-docker compose up -d
+docker compose -f docker-compose/docker-compose.yml --env-file .env up -d
 ```
 
 For the full Compose-specific details, including image overrides, port mapping, and secret handling, see [docker-compose/README.md](docker-compose/README.md).
+To verify the result end to end, follow [docker-compose/TESTING.md](docker-compose/TESTING.md).
 
 - Frontend: http://localhost:3000
 - API: http://localhost:8000

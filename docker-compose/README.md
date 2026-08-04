@@ -4,8 +4,8 @@ Use this option to run the stack from the published container images.
 
 ## Files
 
-- Compose entrypoint: [../docker-compose.yml](../docker-compose.yml)
-- Traefik overlay: [../docker-compose.traefik.yml](../docker-compose.traefik.yml)
+- Compose entrypoint: [docker-compose.yml](docker-compose.yml)
+- Traefik overlay: [docker-compose.traefik.yml](docker-compose.traefik.yml)
 - Environment template: [../.env.example](../.env.example)
 - Secret bootstrap script: [../scripts/generate-secrets.sh](../scripts/generate-secrets.sh)
 
@@ -21,12 +21,18 @@ Use this option to run the stack from the published container images.
 2. Optional but recommended: run the bootstrap helper to populate missing secret values in `.env`.
 3. Start the stack.
 
+Run these from the repository root. The Compose file lives in this folder, so
+it has to be named explicitly — there is none at the root.
+
 ```bash
 cp .env.example .env
 ./scripts/generate-secrets.sh
 
-docker compose up -d
+docker compose -f docker-compose/docker-compose.yml --env-file .env up -d
 ```
+
+To check that the result actually works — schema, sign-up, sign-in, and an agent
+answering — follow [TESTING.md](TESTING.md).
 
 ## What this starts
 
@@ -72,10 +78,10 @@ The helper script in [../scripts/generate-secrets.sh](../scripts/generate-secret
 ## Useful commands
 
 ```bash
-docker compose ps
-docker compose logs -f apowerb
-docker compose logs -f apowerb-ui
-docker compose down
+docker compose -f docker-compose/docker-compose.yml --env-file .env ps
+docker compose -f docker-compose/docker-compose.yml --env-file .env logs -f apowerb
+docker compose -f docker-compose/docker-compose.yml --env-file .env logs -f apowerb-ui
+docker compose -f docker-compose/docker-compose.yml --env-file .env down
 ```
 
 ## Single-host HTTPS overlay
@@ -83,7 +89,7 @@ docker compose down
 For a public VM or a self-hosted host, run the overlay that adds Traefik:
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.traefik.yml up -d
+docker compose -f docker-compose/docker-compose.yml -f docker-compose/docker-compose.traefik.yml --env-file .env up -d
 ```
 
 This requires `APP_HOST` and `ACME_EMAIL` in `.env`.
