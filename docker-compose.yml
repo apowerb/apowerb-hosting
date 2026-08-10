@@ -1,0 +1,56 @@
+name: apowerb
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${DB_NAME:?renseignez DB_NAME dans .env}
+      POSTGRES_USER: ${DB_USER:?renseignez DB_USER dans .env}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?renseignez DB_PASSWORD dans .env}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  apowerb:
+    image: ${APOWERB_BACKEND_IMAGE:-apowerb/apowerb}:${APOWERB_BACKEND_TAG:-latest}
+    pull_policy: always
+    environment:
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_SSLMODE: ${DB_SSLMODE:-disable}
+      TEST_TOKEN: ${TEST_TOKEN}
+      ENCRYPT_KEY: ${ENCRYPT_KEY}
+      TH2_EXTENSIONS: ${TH2_EXTENSIONS:-}
+      WORKING_MODE: ${WORKING_MODE:-development}
+    volumes:
+      - apowerb-data:/app/data
+    ports:
+      - "${TH2AGENT_PORT:-8000}:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  apowerb-ui:
+    image: ${APOWERB_FRONTEND_IMAGE:-apowerb/apowerb-ui}:${APOWERB_FRONTEND_TAG:-latest}
+    pull_policy: always
+    environment:
+      API_URL: http://apowerb:8000
+      NEXT_PUBLIC_API_URL: ${PUBLIC_API_URL:-http://localhost:8000}
+    ports:
+      - "${FRONT_PORT:-3000}:3000"
+    depends_on:
+      - apowerb
+    restart: unless-stopped
+
+volumes:
+  postgres-data:
+  apowerb-data:
