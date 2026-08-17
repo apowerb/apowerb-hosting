@@ -65,14 +65,13 @@ The Compose stack depends on these values from `.env`:
 - `DB_PASSWORD`
 - `DB_SSLMODE`
 - `ENCRYPT_KEY`
-- `TEST_TOKEN`
 - `TH2AGENT_PORT`
 - `FRONT_PORT`
 - `PUBLIC_API_URL`
 
 ## Secrets
 
-`ENCRYPT_KEY` and `TEST_TOKEN` must be present before startup.
+`ENCRYPT_KEY` must be present before startup.
 The helper script in [../scripts/generate-secrets.sh](../scripts/generate-secrets.sh) is a bootstrap convenience that fills missing values in `.env` without overwriting existing ones.
 
 ## Useful commands
