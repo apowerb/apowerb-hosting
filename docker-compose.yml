@@ -1,55 +1,104 @@
+# Compose file for Hostman App Platform.
+#
+# App Platform reads `docker-compose.yml` from the repository ROOT, so this file
+# lives at the root of the `hostman` branch. The root file on `main` targets a
+# plain VM or a laptop and keeps its own Postgres; the two cannot be one file.
+#
+# Every difference below is imposed by the platform, and each was checked
+# against its documentation and against a real stack:
+#
+#   1. `volumes` and `volumes_from` are PROHIBITED. There is therefore no
+#      Postgres service here -- the database is a managed Hostman cluster.
+#      Nothing else needs a volume: `/app/data` stays empty, and
+#      `/app/agents_pool` is REGENERATED from the database at every start
+#      (verified with `--force-recreate`: the agent files came back), so a
+#      redeployment loses no agent.
+#
+#   2. Proxying to the public domain is wired to the FIRST service listed, so
+#      `apowerb-ui` comes first. With the usual ordering the platform would
+#      publish Postgres, or the backend, instead of the interface.
+#
+#   3. Ports 80 and 443 are reserved for the platform's own Nginx and must not
+#      be used as host ports.
+#
+# The backend deliberately publishes NO host port: the browser never talks to it
+# directly, the interface proxies every `/api` call over the internal network.
+# Publishing it would expose the authentication API in the clear, next to the
+# platform's TLS. If the interface cannot reach the backend, that internal
+# network is the first thing to look at -- not a missing port.
+
 name: apowerb
 
 services:
-  postgres:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_DB: ${DB_NAME:?renseignez DB_NAME dans .env}
-      POSTGRES_USER: ${DB_USER:?renseignez DB_USER dans .env}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:?renseignez DB_PASSWORD dans .env}
-    volumes:
-      - postgres-data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
-      interval: 5s
-      timeout: 5s
-      retries: 20
-    restart: unless-stopped
-
-  apowerb:
-    image: ${APOWERB_BACKEND_IMAGE:-apowerb/apowerb}:${APOWERB_BACKEND_TAG:-latest}
-    pull_policy: always
-    environment:
-      DB_HOST: postgres
-      DB_PORT: "5432"
-      DB_NAME: ${DB_NAME}
-      DB_USER: ${DB_USER}
-      DB_PASSWORD: ${DB_PASSWORD}
-      DB_SSLMODE: ${DB_SSLMODE:-disable}
-      ENCRYPT_KEY: ${ENCRYPT_KEY}
-      TH2_EXTENSIONS: ${TH2_EXTENSIONS:-}
-      WORKING_MODE: ${WORKING_MODE:-development}
-    volumes:
-      - apowerb-data:/app/data
-    ports:
-      - "${TH2AGENT_PORT:-8000}:8000"
-    depends_on:
-      postgres:
-        condition: service_healthy
-    restart: unless-stopped
-
+  # ─────────────────────────────────────────────────────────────────────────────
+  # FIRST on purpose: this is the service the platform proxies to the domain.
+  # ─────────────────────────────────────────────────────────────────────────────
   apowerb-ui:
     image: ${APOWERB_FRONTEND_IMAGE:-apowerb/apowerb-ui}:${APOWERB_FRONTEND_TAG:-latest}
     pull_policy: always
     environment:
+      # Server-side only, read at runtime by the route handlers.
       API_URL: http://apowerb:8000
-      NEXT_PUBLIC_API_URL: ${PUBLIC_API_URL:-http://localhost:8000}
+      # NEXT_PUBLIC_API_URL is deliberately NOT set. It is inlined at build
+      # time, so setting it here changes nothing; unset, the client falls back
+      # to relative URLs and reaches the backend through this proxy, which is
+      # what we want -- the browser never needs the backend's address.
     ports:
       - "${FRONT_PORT:-3000}:3000"
     depends_on:
       - apowerb
     restart: unless-stopped
 
-volumes:
-  postgres-data:
-  apowerb-data:
+  apowerb:
+    image: ${APOWERB_BACKEND_IMAGE:-apowerb/apowerb}:${APOWERB_BACKEND_TAG:-latest}
+    pull_policy: always
+    environment:
+      # ── Managed cluster (Hostman > Databases), not a service of this stack ──
+      # Prefer the cluster's PRIVATE address when the app sits in the same
+      # region: the connection is NOT encrypted today (DB_SSLMODE is accepted
+      # but not applied to the app's own connection), so a public address would
+      # carry credentials in the clear across the internet.
+      DB_HOST: ${DB_HOST:?set DB_HOST to the managed cluster address}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_NAME: ${DB_NAME:?set DB_NAME (Hostman creates default_db)}
+      DB_USER: ${DB_USER:?set DB_USER (Hostman creates gen_user)}
+      DB_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD}
+      DB_SSLMODE: ${DB_SSLMODE:-require}
+      # The 21 tables are created on first start, in the `public` schema.
+      DB_SCHEMA: ${DB_SCHEMA:-public}
+
+      # ── Required ──
+      # A valid Fernet key (32 bytes, url-safe base64 -- 44 characters).
+      # Generate with: openssl rand -base64 32
+      # WARNING: changing it makes every already connected integration
+      # unreadable.
+      ENCRYPT_KEY: ${ENCRYPT_KEY:?set ENCRYPT_KEY to a valid Fernet key}
+
+      # ── Shared model ──
+      # BOTH are needed. With only one, the provider is not offered at all --
+      # silently -- and every agent has to carry its own API key.
+      DEFAULT_LLM_MODEL: ${DEFAULT_LLM_MODEL:-}
+      DEFAULT_LLM_API_KEY: ${DEFAULT_LLM_API_KEY:-}
+      DEFAULT_LLM_API_BASE: ${DEFAULT_LLM_API_BASE:-}
+
+      # ── Edition ──
+      # Empty = open-source edition. Commercial bricks are named here and must
+      # be installed in the image.
+      TH2_EXTENSIONS: ${TH2_EXTENSIONS:-}
+
+      # ── Mode ──
+      # Left on `development` because `production` REFUSES TO START without
+      # RAG_WEBHOOK_SECRET and GOOGLE_WEBHOOK_AUDIENCE, and forbids
+      # BYPASS_AUTH and ENCRYPT_LEGACY_ON_BOOT. Those refusals are deliberate:
+      # RAG_WEBHOOK_SECRET is the only credential guarding an unauthenticated
+      # endpoint. To harden this deployment, set all three together:
+      #   WORKING_MODE=production
+      #   RAG_WEBHOOK_SECRET=$(openssl rand -hex 32)
+      #   GOOGLE_WEBHOOK_AUDIENCE=<the real audience, never "tbd">
+      # `production` also marks the session cookie Secure, which the platform's
+      # HTTPS domain satisfies -- but a plain-HTTP test on the raw IP would then
+      # fail to log in.
+      WORKING_MODE: ${WORKING_MODE:-development}
+      RAG_WEBHOOK_SECRET: ${RAG_WEBHOOK_SECRET:-}
+      GOOGLE_WEBHOOK_AUDIENCE: ${GOOGLE_WEBHOOK_AUDIENCE:-}
+    restart: unless-stopped
