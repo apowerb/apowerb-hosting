@@ -20,7 +20,7 @@ Every command below is run from the repository root.
 cp .env.example .env && ./scripts/generate-secrets.sh
 ```
 
-The script fills `ENCRYPT_KEY` (a Fernet key) and `TEST_TOKEN`, and never
+The script fills `ENCRYPT_KEY` (a Fernet key), and never
 replaces a value that is already set. Then change `DB_PASSWORD`, which ships as
 a placeholder, and restrict the file: `chmod 600 .env`.
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Fills ENCRYPT_KEY and TEST_TOKEN in `.env` when they are empty.
+# Fills ENCRYPT_KEY in `.env` when it is empty.
 #
 # NEVER replaces a value that is already set: regenerating ENCRYPT_KEY would
 # make every integration token already encrypted in the database unreadable.
@@ -35,7 +35,6 @@ fill_if_empty() {
 
 echo "Generating the missing secrets in .env"
 fill_if_empty ENCRYPT_KEY "$(generate_fernet_key)"
-fill_if_empty TEST_TOKEN "$(openssl rand -hex 24)"
 
 echo
 echo "Ready. Start with:  docker compose -f docker-compose/docker-compose.yml --env-file .env up -d"

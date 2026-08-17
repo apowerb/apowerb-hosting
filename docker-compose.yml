@@ -26,7 +26,6 @@ services:
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
       DB_SSLMODE: ${DB_SSLMODE:-disable}
-      TEST_TOKEN: ${TEST_TOKEN}
       ENCRYPT_KEY: ${ENCRYPT_KEY}
       TH2_EXTENSIONS: ${TH2_EXTENSIONS:-}
       WORKING_MODE: ${WORKING_MODE:-development}
