@@ -41,11 +41,14 @@ services:
     # This couple was proven together: sign-up, sign-in, an agent created and
     # read back, and the designated e-mail becoming ADMIN on sign-up.
     #
-    # 0.1.7 is a FLOOR for the frontend, not a preference: sign-up answers 502
-    # on 0.1.6 and earlier, so nobody can create an account at all.
+    # 0.1.8 is a FLOOR for the frontend, not a preference. Two defects sit
+    # below it: sign-up answers 502 on 0.1.6 and earlier, so nobody can create
+    # an account at all; and up to 0.1.7 the sidebar named `/usage` and an
+    # ADMIN section, whose pages ship only in the commercial bricks -- an
+    # open-source install advertised a 404 in its own menu.
     #
     # Override both tags together when you move, never one alone.
-    image: ${APOWERB_FRONTEND_IMAGE:-apowerb/apowerb-ui}:${APOWERB_FRONTEND_TAG:-0.1.7}
+    image: ${APOWERB_FRONTEND_IMAGE:-apowerb/apowerb-ui}:${APOWERB_FRONTEND_TAG:-0.1.8}
     pull_policy: always
     environment:
       # Server-side only, read at runtime by the route handlers.
