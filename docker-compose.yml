@@ -41,14 +41,15 @@ services:
     # This couple was proven together: sign-up, sign-in, an agent created and
     # read back, and the designated e-mail becoming ADMIN on sign-up.
     #
-    # 0.1.8 is a FLOOR for the frontend, not a preference. Two defects sit
+    # 0.1.9 is a FLOOR for the frontend, not a preference. Three defects sit
     # below it: sign-up answers 502 on 0.1.6 and earlier, so nobody can create
-    # an account at all; and up to 0.1.7 the sidebar named `/usage` and an
-    # ADMIN section, whose pages ship only in the commercial bricks -- an
-    # open-source install advertised a 404 in its own menu.
+    # an account at all; up to 0.1.7 the sidebar named `/usage` and an ADMIN
+    # section whose pages ship only in the commercial bricks; and up to 0.1.8
+    # the supervision SCREEN was still served -- the menu no longer named it,
+    # but typing the URL reached it, and a dashboard button still linked there.
     #
     # Override both tags together when you move, never one alone.
-    image: ${APOWERB_FRONTEND_IMAGE:-apowerb/apowerb-ui}:${APOWERB_FRONTEND_TAG:-0.1.8}
+    image: ${APOWERB_FRONTEND_IMAGE:-apowerb/apowerb-ui}:${APOWERB_FRONTEND_TAG:-0.1.9}
     pull_policy: always
     environment:
       # Server-side only, read at runtime by the route handlers.
@@ -64,10 +65,12 @@ services:
     restart: unless-stopped
 
   apowerb:
-    # Pinned to the version proven with the frontend above. 0.2.3 is a FLOOR:
+    # Pinned to the version proven with the frontend above. 0.2.4 is a FLOOR:
     # earlier images ignore DEFAULT_SUPERADMIN_EMAIL unless the account already
-    # exists, which on a new install is never true.
-    image: ${APOWERB_BACKEND_IMAGE:-apowerb/apowerb}:${APOWERB_BACKEND_TAG:-0.2.3}
+    # exists, which on a new install is never true (< 0.2.3), and still serve
+    # `/api/supervision/sessions` from the core (< 0.2.4), which would leave
+    # this open-source stack answering on a route it does not ship a screen for.
+    image: ${APOWERB_BACKEND_IMAGE:-apowerb/apowerb}:${APOWERB_BACKEND_TAG:-0.2.4}
     pull_policy: always
     environment:
       # ── Managed cluster (Hostman > Databases), not a service of this stack ──
