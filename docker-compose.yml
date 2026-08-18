@@ -58,11 +58,19 @@ services:
       # region: the connection is NOT encrypted today (DB_SSLMODE is accepted
       # but not applied to the app's own connection), so a public address would
       # carry credentials in the clear across the internet.
-      DB_HOST: ${DB_HOST:?set DB_HOST to the managed cluster address}
+      # No `:?` on any of these on purpose. That form makes Compose ABORT
+      # before starting anything, which is the wrong failure on a platform
+      # where the app is created first and the database is attached after --
+      # you would not even get a container to read the error in.
+      #
+      # Nothing is lost: the server already refuses to boot without them and
+      # names the missing ones ("variable(s) d'environnement manquante(s) —
+      # DB_HOST"). One guard, in the place that can explain itself.
+      DB_HOST: ${DB_HOST:-}
       DB_PORT: ${DB_PORT:-5432}
-      DB_NAME: ${DB_NAME:?set DB_NAME (Hostman creates default_db)}
-      DB_USER: ${DB_USER:?set DB_USER (Hostman creates gen_user)}
-      DB_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD}
+      DB_NAME: ${DB_NAME:-}
+      DB_USER: ${DB_USER:-}
+      DB_PASSWORD: ${DB_PASSWORD:-}
       DB_SSLMODE: ${DB_SSLMODE:-require}
       # The 21 tables are created on first start, in the `public` schema.
       DB_SCHEMA: ${DB_SCHEMA:-public}
@@ -72,7 +80,7 @@ services:
       # Generate with: openssl rand -base64 32
       # WARNING: changing it makes every already connected integration
       # unreadable.
-      ENCRYPT_KEY: ${ENCRYPT_KEY:?set ENCRYPT_KEY to a valid Fernet key}
+      ENCRYPT_KEY: ${ENCRYPT_KEY:-}
 
       # ── Shared model ──
       # BOTH are needed. With only one, the provider is not offered at all --
@@ -85,6 +93,17 @@ services:
       # Empty = open-source edition. Commercial bricks are named here and must
       # be installed in the image.
       TH2_EXTENSIONS: ${TH2_EXTENSIONS:-}
+
+      # ── First administrator ──
+      # On a new database nobody is an ADMIN: `role` defaults to USER and no
+      # route exposes it. Set the e-mail to create (or promote) the account.
+      # No default is shipped -- a default password is a published password.
+      #   unknown account + password -> created, as ADMIN
+      #   unknown account, no password -> nothing (an account nobody can sign
+      #                                   into helps no one)
+      #   existing account -> promoted, its password is NEVER rewritten
+      DEFAULT_SUPERADMIN_EMAIL: ${DEFAULT_SUPERADMIN_EMAIL:-}
+      DEFAULT_SUPERADMIN_PASSWORD: ${DEFAULT_SUPERADMIN_PASSWORD:-}
 
       # ── Mode ──
       # Left on `development` because `production` REFUSES TO START without
