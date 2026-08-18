@@ -54,23 +54,31 @@ services:
     pull_policy: always
     environment:
       # ── Managed cluster (Hostman > Databases), not a service of this stack ──
+      # Point this at a database of its OWN. Reusing one that already holds
+      # apowerb tables created by ANOTHER PostgreSQL role leaves the server
+      # running but unusable: every migration fails with "must be owner of
+      # table user", the bootstrap administrator is never created, and startup
+      # still reports success. Measured on a real deployment.
+      #
       # Prefer the cluster's PRIVATE address when the app sits in the same
       # region: the connection is NOT encrypted today (DB_SSLMODE is accepted
       # but not applied to the app's own connection), so a public address would
       # carry credentials in the clear across the internet.
-      # No `:?` on any of these on purpose. That form makes Compose ABORT
-      # before starting anything, which is the wrong failure on a platform
-      # where the app is created first and the database is attached after --
-      # you would not even get a container to read the error in.
+      # `:?` on every field the server cannot start without. The database is
+      # a separate resource, created BEFORE the app, so these values are always
+      # known by the time the app is deployed -- there is nothing to be gained
+      # by starting without them.
       #
-      # Nothing is lost: the server already refuses to boot without them and
-      # names the missing ones ("variable(s) d'environnement manquante(s) —
-      # DB_HOST"). One guard, in the place that can explain itself.
-      DB_HOST: ${DB_HOST:-}
+      # Failing here is the better failure. Without it the stack comes up, the
+      # frontend serves, and the backend restarts in a loop behind it: an
+      # application that looks deployed and cannot be used. The server's own
+      # guard then only shows up in the logs, which is far too late and far too
+      # quiet.
+      DB_HOST: ${DB_HOST:?set DB_HOST -- the managed cluster address}
       DB_PORT: ${DB_PORT:-5432}
-      DB_NAME: ${DB_NAME:-}
-      DB_USER: ${DB_USER:-}
-      DB_PASSWORD: ${DB_PASSWORD:-}
+      DB_NAME: ${DB_NAME:?set DB_NAME -- use a database of its own, see below}
+      DB_USER: ${DB_USER:?set DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD}
       DB_SSLMODE: ${DB_SSLMODE:-require}
       # The 21 tables are created on first start, in the `public` schema.
       DB_SCHEMA: ${DB_SCHEMA:-public}
@@ -80,7 +88,7 @@ services:
       # Generate with: openssl rand -base64 32
       # WARNING: changing it makes every already connected integration
       # unreadable.
-      ENCRYPT_KEY: ${ENCRYPT_KEY:-}
+      ENCRYPT_KEY: ${ENCRYPT_KEY:?set ENCRYPT_KEY -- a Fernet key, `openssl rand -base64 32`}
 
       # ── Shared model ──
       # BOTH are needed. With only one, the provider is not offered at all --
