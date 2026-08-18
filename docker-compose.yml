@@ -34,7 +34,18 @@ services:
   # FIRST on purpose: this is the service the platform proxies to the domain.
   # ─────────────────────────────────────────────────────────────────────────────
   apowerb-ui:
-    image: ${APOWERB_FRONTEND_IMAGE:-apowerb/apowerb-ui}:${APOWERB_FRONTEND_TAG:-latest}
+    # PINNED, deliberately. `latest` is a moving tag: it promises nothing about
+    # the two images having been tested together, and it makes a deployment
+    # unreproducible -- redeploy tomorrow and you may get a different pair.
+    #
+    # This couple was proven together: sign-up, sign-in, an agent created and
+    # read back, and the designated e-mail becoming ADMIN on sign-up.
+    #
+    # 0.1.7 is a FLOOR for the frontend, not a preference: sign-up answers 502
+    # on 0.1.6 and earlier, so nobody can create an account at all.
+    #
+    # Override both tags together when you move, never one alone.
+    image: ${APOWERB_FRONTEND_IMAGE:-apowerb/apowerb-ui}:${APOWERB_FRONTEND_TAG:-0.1.7}
     pull_policy: always
     environment:
       # Server-side only, read at runtime by the route handlers.
@@ -50,7 +61,10 @@ services:
     restart: unless-stopped
 
   apowerb:
-    image: ${APOWERB_BACKEND_IMAGE:-apowerb/apowerb}:${APOWERB_BACKEND_TAG:-latest}
+    # Pinned to the version proven with the frontend above. 0.2.3 is a FLOOR:
+    # earlier images ignore DEFAULT_SUPERADMIN_EMAIL unless the account already
+    # exists, which on a new install is never true.
+    image: ${APOWERB_BACKEND_IMAGE:-apowerb/apowerb}:${APOWERB_BACKEND_TAG:-0.2.3}
     pull_policy: always
     environment:
       # ── Managed cluster (Hostman > Databases), not a service of this stack ──
