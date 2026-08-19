@@ -41,16 +41,18 @@ services:
     # This couple was proven together: sign-up, sign-in, an agent created and
     # read back, and the designated e-mail becoming ADMIN on sign-up.
     #
-    # 0.1.10 is a FLOOR for the frontend, not a preference. Below it the
-    # open-source build is missing the control panel entirely: `/admin`
-    # answers 404 and `/api/admin/*` answers 500, because the screen and its
-    # route handler landed after 0.1.9 was cut. Older floors still hold:
+    # 0.1.11 is a FLOOR for the frontend, not a preference. 0.1.10 shipped the
+    # control panel screen but its proxy read `params` as an object where this
+    # Next version hands a Promise, so every `/api/admin/*` call left as
+    # `/api/admin/` and came back 404 -- the screen rendered and said "Not
+    # Found" against a healthy backend. Below 0.1.10 the panel is missing
+    # outright. Older floors still hold:
     # sign-up answers 502 on 0.1.6 and earlier; up to 0.1.7 the sidebar named
     # pages that ship only in commercial bricks; up to 0.1.8 the supervision
     # screen was still served to anyone typing its URL.
     #
     # Override both tags together when you move, never one alone.
-    image: ${APOWERB_FRONTEND_IMAGE:-apowerb/apowerb-ui}:${APOWERB_FRONTEND_TAG:-0.1.10}
+    image: ${APOWERB_FRONTEND_IMAGE:-apowerb/apowerb-ui}:${APOWERB_FRONTEND_TAG:-0.1.11}
     pull_policy: always
     environment:
       # Server-side only, read at runtime by the route handlers.
