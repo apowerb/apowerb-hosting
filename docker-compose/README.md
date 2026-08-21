@@ -5,6 +5,8 @@ Use this option to run the stack from the published container images.
 ## Files
 
 - Compose entrypoint: [docker-compose.yml](docker-compose.yml)
+- Collector configuration, used by the optional logs profile:
+  [otel-collector.yaml](otel-collector.yaml)
 - Traefik overlay: [docker-compose.traefik.yml](docker-compose.traefik.yml)
 - Environment template: [../.env.example](../.env.example)
 - Secret bootstrap script: [../scripts/generate-secrets.sh](../scripts/generate-secrets.sh)
@@ -42,12 +44,49 @@ The Compose stack runs three services:
 - `apowerb` backend on port `8000`
 - `apowerb-ui` frontend on port `3000`
 
+## Logs and agent traces (optional)
+
+Off by default. Two more services — an OpenTelemetry collector and the
+`th2pulse` ingest — are deployed only when the `logs` profile is on, and the
+stack is otherwise unchanged.
+
+Uncomment both lines in `.env`:
+
+```
+COMPOSE_PROFILES=logs
+OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
+```
+
+They belong together. The profile alone runs an ingest nobody writes to; the
+endpoint alone leaves the application retrying an exporter with nowhere to
+send.
+
+`./scripts/generate-secrets.sh` fills `TH2PULSE_INGEST_TOKEN` and
+`TH2PULSE_QUERY_TOKEN`. They are required, not hardening: the ingest binds
+`0.0.0.0` inside its container — a container's loopback reaches nothing — and
+refuses to start without them, because `/spans` serves recorded tool
+arguments and responses.
+
+What gets stored: the agent traces ADK emits natively — tool executions with
+their arguments and responses, LLM calls, durations — each tied to its
+conversation and user, in a `th2pulse` schema of the same Postgres.
+Application log records are a separate path and stay empty for now: they need
+the backend image to call `th2pulse.init_observability`, which it does not
+do yet.
+
+The collector is not optional plumbing between the two: the application
+exports OTLP in protobuf, the ingest reads OTLP/JSON only, and
+`encoding: json` in [otel-collector.yaml](otel-collector.yaml) is what
+bridges them.
+
 ## Published images
 
 The stack uses the published images below:
 
 - Backend: `apowerb/apowerb`
 - Frontend: `apowerb/apowerb-ui`
+- Ingest, with the `logs` profile: `apowerb/th2pulse`
+- Collector, with the `logs` profile: `otel/opentelemetry-collector-contrib`
 
 These can be overridden in `.env` with:
 
@@ -55,6 +94,8 @@ These can be overridden in `.env` with:
 - `APOWERB_BACKEND_TAG`
 - `APOWERB_FRONTEND_IMAGE`
 - `APOWERB_FRONTEND_TAG`
+- `TH2PULSE_IMAGE`, `TH2PULSE_TAG`
+- `OTEL_COLLECTOR_IMAGE`, `OTEL_COLLECTOR_TAG`
 
 ## Important environment variables
 
