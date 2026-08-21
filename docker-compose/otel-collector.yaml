@@ -1,0 +1,51 @@
+# OpenTelemetry Collector, between the application and th2pulse.
+#
+# It is not optional plumbing. ADK exports OTLP over HTTP in **protobuf**,
+# and the th2pulse ingest reads OTLP/**JSON** only. The collector is what
+# translates between them -- `encoding: json` on the exporter below is the
+# single line that makes the whole path work, and dropping it produces a
+# silent dead end: the application exports happily, the ingest rejects
+# every payload.
+
+receivers:
+  otlp:
+    protocols:
+      http:
+        # 0.0.0.0, not localhost: this is a container, and the application
+        # reaches it across the Docker network.
+        endpoint: 0.0.0.0:4318
+      grpc:
+        endpoint: 0.0.0.0:4317
+
+processors:
+  # First in every pipeline, as upstream recommends. Without it, an ingest
+  # that is down or slow -- a restart, a migration -- makes the collector
+  # queue in memory until the container is killed. It sheds load instead.
+  memory_limiter:
+    check_interval: 5s
+    limit_percentage: 75
+    spike_limit_percentage: 20
+  batch:
+
+exporters:
+  otlphttp/pulse:
+    endpoint: http://th2pulse:4319
+    encoding: json
+    headers:
+      # The ingest binds 0.0.0.0 inside its container, so it requires this
+      # token rather than relying on a loopback bind. Same value as
+      # TH2PULSE_INGEST_TOKEN in .env.
+      X-Th2Pulse-Token: ${env:TH2PULSE_INGEST_TOKEN}
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [otlphttp/pulse]
+    logs:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [otlphttp/pulse]
+    # No metrics pipeline: the ingest accepts /v1/metrics and drops it.
+    # Declaring one here would only move where they are discarded.

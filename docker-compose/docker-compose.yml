@@ -38,6 +38,12 @@ services:
       NOTIFICATION_EMAIL: ${NOTIFICATION_EMAIL:-}
       NOTIFICATION_INTEGRATION_OWNER: ${NOTIFICATION_INTEGRATION_OWNER:-}
       SUPER_ADMIN_EMAIL: ${SUPER_ADMIN_EMAIL:-}
+      # Observability. ADK reads this at startup and builds a span exporter
+      # when it is set; unset, it emits nothing and costs nothing. It must be
+      # set TOGETHER with COMPOSE_PROFILES=logs -- set alone, the application
+      # keeps retrying an exporter that has nowhere to send. See .env.example.
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-apowerb}
     volumes:
       - apowerb-data:/app/data
     ports:
@@ -57,6 +63,78 @@ services:
       - "${FRONT_PORT:-3000}:3000"
     depends_on:
       - apowerb
+    restart: unless-stopped
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # Optional: logs and agent traces. Off by default.
+  #
+  #   COMPOSE_PROFILES=logs
+  #   OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
+  #
+  # Both lines, together -- see .env.example. Nothing else in the stack
+  # changes, and with the profile off these two services are not created at
+  # all: `docker compose up` stays the three services it was.
+  #
+  # What this stores today: the agent traces ADK emits natively -- tool
+  # executions with their arguments and responses, LLM calls, durations,
+  # each tagged with its conversation. The `/logs` side of the ingest stays
+  # empty until the application adopts the th2pulse logging bridge
+  # (`th2pulse.init_observability`), which this image does not call yet.
+  # ───────────────────────────────────────────────────────────────────────────
+  otel-collector:
+    profiles: [logs]
+    image: ${OTEL_COLLECTOR_IMAGE:-otel/opentelemetry-collector-contrib}:${OTEL_COLLECTOR_TAG:-0.159.0}
+    command: ["--config=/etc/otel/config.yaml"]
+    environment:
+      TH2PULSE_INGEST_TOKEN: ${TH2PULSE_INGEST_TOKEN:-}
+    volumes:
+      - ./otel-collector.yaml:/etc/otel/config.yaml:ro
+    depends_on:
+      th2pulse:
+        condition: service_healthy
+    restart: unless-stopped
+
+  th2pulse:
+    profiles: [logs]
+    # Pinned, like the other two. 0.1.4 is a FLOOR, not a preference: images
+    # before it never create the schema named below, so the service
+    # restart-loops on "no schema has been selected to create in". And
+    # everything before 0.1.3 exits on start outright -- the published 0.1.2
+    # was built without the `ingest` extra and dies on "No module named
+    # fastapi".
+    image: ${TH2PULSE_IMAGE:-apowerb/th2pulse}:${TH2PULSE_TAG:-0.1.4}
+    pull_policy: always
+    environment:
+      # Its own schema in the stack's Postgres rather than a second database:
+      # the tables are created there on first start.
+      TH2PULSE_DB_DSN: postgresql://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}
+      TH2PULSE_DB_SCHEMA: ${TH2PULSE_DB_SCHEMA:-th2pulse}
+      # Required, both of them. The image binds 0.0.0.0 -- a container's
+      # loopback reaches nothing -- so the endpoints have no other protection
+      # and the service refuses to start without these. `/spans` serves
+      # recorded tool arguments and responses; it is not a read to leave open.
+      # `./scripts/generate-secrets.sh` fills them.
+      TH2PULSE_INGEST_TOKEN: ${TH2PULSE_INGEST_TOKEN:-}
+      TH2PULSE_QUERY_TOKEN: ${TH2PULSE_QUERY_TOKEN:-}
+    # Deliberately publishes no host port: only the collector writes to it,
+    # over the internal network. Note that "internal" is the whole stack
+    # network -- every container here can reach it, which is why the tokens
+    # above are not decoration.
+    #
+    # It also connects as DB_USER, the same role the application uses. That
+    # keeps the stack to one database and one set of credentials, and it
+    # means this service is not a smaller blast radius than the backend --
+    # only a smaller surface. Give it a role of its own if that matters to
+    # your deployment.
+    healthcheck:
+      # No curl in the image; python is what it runs on.
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:4319/healthz', timeout=3)"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    depends_on:
+      postgres:
+        condition: service_healthy
     restart: unless-stopped
 
 volumes:

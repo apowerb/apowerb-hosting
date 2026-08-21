@@ -25,6 +25,15 @@ fill_if_empty() {
         echo "  ${key}: already set, left as is"
         return
     fi
+    if ! grep -qE "^${key}=" .env; then
+        # An .env copied from an older template has no line to substitute.
+        # The sed below would then match nothing and this script would still
+        # print "generated" -- a success message for a file it did not
+        # change. Append instead, and say which of the two happened.
+        printf '%s=%s\n' "$key" "$value" >> .env
+        echo "  ${key}: appended (this .env predates it)"
+        return
+    fi
     # Portable across macOS and Linux: `sed -i` does not take the same
     # arguments on both.
     local tmp
@@ -35,6 +44,10 @@ fill_if_empty() {
 
 echo "Generating the missing secrets in .env"
 fill_if_empty ENCRYPT_KEY "$(generate_fernet_key)"
+# Filled whether or not the logs profile is used: an empty value there stops
+# the ingest from starting, and having them ready costs nothing.
+fill_if_empty TH2PULSE_INGEST_TOKEN "$(openssl rand -hex 32)"
+fill_if_empty TH2PULSE_QUERY_TOKEN "$(openssl rand -hex 32)"
 
 echo
 echo "Ready. Start with:  docker compose -f docker-compose/docker-compose.yml --env-file .env up -d"
