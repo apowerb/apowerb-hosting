@@ -41,18 +41,25 @@ services:
     # This couple was proven together: sign-up, sign-in, an agent created and
     # read back, and the designated e-mail becoming ADMIN on sign-up.
     #
-    # 0.1.11 is a FLOOR for the frontend, not a preference. 0.1.10 shipped the
-    # control panel screen but its proxy read `params` as an object where this
-    # Next version hands a Promise, so every `/api/admin/*` call left as
-    # `/api/admin/` and came back 404 -- the screen rendered and said "Not
-    # Found" against a healthy backend. Below 0.1.10 the panel is missing
-    # outright. Older floors still hold:
-    # sign-up answers 502 on 0.1.6 and earlier; up to 0.1.7 the sidebar named
-    # pages that ship only in commercial bricks; up to 0.1.8 the supervision
-    # screen was still served to anyone typing its URL.
+    # 0.1.12 is a FLOOR for the frontend, not a preference, and it is the
+    # floor imposed by the backend below. 0.1.11 still bundled an SDK
+    # reaching `/api/admin/organizations`, which backend 0.2.6 stopped
+    # serving when organisations became a commercial brick -- measured on the
+    # two backends side by side, that path answers 401 on 0.2.5 and 404 on
+    # 0.2.6 while `/api/admin/users` answers 401 on both. Counted in the
+    # images themselves: 20 occurrences in 0.1.11, 0 in 0.1.12.
+    #
+    # Older floors still hold. 0.1.10 shipped the control panel screen but
+    # its proxy read `params` as an object where this Next version hands a
+    # Promise, so every `/api/admin/*` call left as `/api/admin/` and came
+    # back 404 -- the screen rendered and said "Not Found" against a healthy
+    # backend. Below 0.1.10 the panel is missing outright. Sign-up answers
+    # 502 on 0.1.6 and earlier; up to 0.1.7 the sidebar named pages that ship
+    # only in commercial bricks; up to 0.1.8 the supervision screen was still
+    # served to anyone typing its URL.
     #
     # Override both tags together when you move, never one alone.
-    image: ${APOWERB_FRONTEND_IMAGE:-apowerb/apowerb-ui}:${APOWERB_FRONTEND_TAG:-0.1.11}
+    image: ${APOWERB_FRONTEND_IMAGE:-apowerb/apowerb-ui}:${APOWERB_FRONTEND_TAG:-0.1.12}
     pull_policy: always
     environment:
       # Server-side only, read at runtime by the route handlers.
@@ -68,16 +75,19 @@ services:
     restart: unless-stopped
 
   apowerb:
-    # Pinned to the version proven with the frontend above. 0.2.5 is a FLOOR,
-    # and the two tags MUST move together: the frontend above ships the
-    # control panel screen, and only 0.2.5 serves `/api/admin` for it. Pair it
-    # with 0.2.4 and the screen is there while the API is not.
+    # Pinned to the version proven with the frontend above, and the two tags
+    # MUST move together -- in both directions. 0.2.5 remains the FLOOR: the
+    # frontend ships the control panel screen and only 0.2.5 serves
+    # `/api/admin` for it, so pairing it with 0.2.4 leaves the screen there
+    # while the API is not. 0.2.6 adds a CEILING to the frontend instead: it
+    # stopped serving `/api/admin/organizations`, which 0.1.11 still called.
+    #
     # Earlier floors still hold: images before 0.2.3 ignore
     # DEFAULT_SUPERADMIN_EMAIL unless the account already exists (never true on
     # a new install), and images before 0.2.4 still serve
     # `/api/supervision/sessions` from the core -- a route this open-source
     # stack ships no screen for.
-    image: ${APOWERB_BACKEND_IMAGE:-apowerb/apowerb}:${APOWERB_BACKEND_TAG:-0.2.5}
+    image: ${APOWERB_BACKEND_IMAGE:-apowerb/apowerb}:${APOWERB_BACKEND_TAG:-0.2.6}
     pull_policy: always
     environment:
       # ── Managed cluster (Hostman > Databases), not a service of this stack ──
