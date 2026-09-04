@@ -122,6 +122,17 @@ services:
   # each tagged with its conversation. The `/logs` side of the ingest stays
   # empty until the application adopts the th2pulse logging bridge
   # (`th2pulse.init_observability`), which this image does not call yet.
+  #
+  # WHAT THIS PROFILE WAS PROVEN TO DO, and what it was not. Proven: a
+  # span POSTed to the collector comes back out of the ingest's `/spans`,
+  # and `/spans` answers 401 without the query token. NOT proven: that the
+  # Logging SCREEN of the published frontend reads it. Measured in the
+  # published images apowerb-ui 0.1.12 and 0.1.13 -- the screen and its six
+  # `/api/logging/*` server routes are there, but `x-th2pulse-query-token`,
+  # `x-th2pulse-token` and `PULSE_API_TOKEN` appear ZERO times anywhere in
+  # the image (control: `dashboard` matches 164 files, so the search does
+  # look). Turning this profile on therefore collects telemetry that no
+  # published frontend has been shown to display.
   # ───────────────────────────────────────────────────────────────────────────
   otel-collector:
     profiles: [pulse, logs]
@@ -204,8 +215,14 @@ services:
     # the CMD was `uv run`, which re-resolves the environment at every
     # container start and so needs PyPI reachable from inside the container,
     # and the build context carried no README.md although pyproject declares
-    # one, so that resolution failed anyway. Fixed in apowerb/th2etl#15,
-    # together with the smoke test that would have caught it.
+    # one, so that resolution failed anyway. Fixed in PR #15 of the
+    # apowerb/th2etl REPOSITORY, together with the smoke test that would
+    # have caught it.
+    #
+    # Mind the two namespaces, they do not match and both are correct:
+    # the image is th2farid/th2etl (apowerb/th2etl on Docker Hub is 404)
+    # while th2pulse below is apowerb/th2pulse (th2farid/th2pulse is 404).
+    # Checked against Docker Hub on 2026-09-04.
     image: ${TH2ETL_IMAGE:-th2farid/th2etl}:${TH2ETL_TAG:-0.0.12}
     pull_policy: always
     environment:
