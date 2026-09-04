@@ -24,7 +24,10 @@ Use this option to run the stack from the published container images.
 3. Start the stack.
 
 Run these from the repository root. The Compose file lives in this folder, so
-it has to be named explicitly — there is none at the root.
+it has to be named explicitly. There IS a `docker-compose.yml` at the root, and
+it is not this one: it targets Hostman App Platform, has no Postgres, and will
+refuse to start without a managed database. Naming the file is what keeps the
+two apart.
 
 ```bash
 cp .env.example .env

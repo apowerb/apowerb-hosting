@@ -18,6 +18,12 @@ and it is designed to run from published images or from a Kubernetes/Helm chart.
 - Docker Hub chart: [oci://registry-1.docker.io/apowerb/apowerb](https://hub.docker.com/r/apowerb/apowerb)
 - GitHub Container Registry chart: [oci://ghcr.io/apowerb/apowerb](https://github.com/orgs/apowerb/packages)
 
+> The `docker-compose.yml` at the repository root is **not** the self-hosted stack:
+> it targets [Hostman App Platform](https://hostman.com), which reads a Compose file
+> from the root and from nowhere else. It has no Postgres and expects a managed
+> database. For a laptop or a plain VM, use `docker-compose/docker-compose.yml` --
+> option 1 below.
+
 ## Deployment options
 
 - [Docker Compose](docker-compose/README.md)
@@ -65,13 +71,13 @@ To enable ingress, set `ingress.enabled: true` in `helm/apowerb/values.yaml` or 
 
 ### 4. Single VM / HTTPS with Traefik
 
-For a single-host deployment, overlay the Traefik HTTPS compose file on top of the existing stack.
+For a single-host deployment, overlay the Traefik HTTPS compose file on top of the Compose stack above.
 
 ```bash
 cp .env.example .env
 # set APP_HOST and ACME_EMAIL in .env
 
-docker compose -f docker-compose.yml -f docker-compose.traefik.yml up -d
+docker compose -f docker-compose/docker-compose.yml -f docker-compose/docker-compose.traefik.yml --env-file .env up -d
 ```
 
 The app is served through `https://$APP_HOST`.
