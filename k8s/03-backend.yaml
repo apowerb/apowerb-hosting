@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: apowerb
-          image: apowerb/apowerb:latest
+          image: apowerb/apowerb:0.2.8
           ports:
             - containerPort: 8000
           env:

@@ -91,6 +91,11 @@ The stack uses the published images below:
 - Ingest, with the `logs` profile: `apowerb/th2pulse`
 - Collector, with the `logs` profile: `otel/opentelemetry-collector-contrib`
 
+The backend and frontend tags are PINNED to a pair that was proven together,
+not left on `latest`. They cap each other in both directions -- the frontend
+calls routes the older backends do not serve, and a newer backend can drop a
+route an older frontend still calls -- so move both or neither.
+
 These can be overridden in `.env` with:
 
 - `APOWERB_BACKEND_IMAGE`

@@ -52,9 +52,23 @@ services:
   # FIRST on purpose: this is the service the platform proxies to the domain.
   # ─────────────────────────────────────────────────────────────────────────────
   apowerb-ui:
-    # PINNED, deliberately. `latest` is a moving tag: it promises nothing about
-    # the two images having been tested together, and it makes a deployment
-    # unreproducible -- redeploy tomorrow and you may get a different pair.
+    # PINNED, deliberately, and on this platform that is not a preference.
+    #
+    # Measured on this very app, 04/09, two deployments of the same repository:
+    # with `APOWERB_BACKEND_TAG=latest` the deploy log shows NO `Pulling` line,
+    # finishes in 5s and reports success -- while the container keeps running
+    # the image already in the host's cache. With an explicit version tag the
+    # same deploy shows `apowerb Pulling` .. `Pulled`, takes 49s, and the new
+    # code is actually there. `pull_policy: always` below does not survive the
+    # platform's own compose handling.
+    #
+    # The consequence is worse than an unreproducible install: for three weeks
+    # this deployment served a backend from 18/08 while its tag said `latest`,
+    # and nothing anywhere contradicted that -- not the panel, not the deploy
+    # log. A moving tag here is a frozen tag that claims to be current.
+    #
+    # `latest` also promises nothing about the two images having been tested
+    # together -- redeploy tomorrow and you may get a different pair.
     #
     # This couple was proven together: sign-up, sign-in, an agent created and
     # read back, and the designated e-mail becoming ADMIN on sign-up.
@@ -105,7 +119,37 @@ services:
     # a new install), and images before 0.2.4 still serve
     # `/api/supervision/sessions` from the core -- a route this open-source
     # stack ships no screen for.
-    image: ${APOWERB_BACKEND_IMAGE:-apowerb/apowerb}:${APOWERB_BACKEND_TAG:-0.2.6}
+    #
+    # Moved 0.2.6 -> 0.2.8 on 04/09. What was measured, and only that: no route
+    # the 0.1.12 frontend calls DISAPPEARED. Both images were probed side by
+    # side against the concrete `/api` paths extracted from that bundle, with
+    # `/api/agents` answering 401 on both as the positive witness and an
+    # invented `/api/admin/...` answering 404 as the negative one. No path
+    # answers 404 on one and not the other, so the ceiling this file exists to
+    # guard against did not move.
+    #
+    # That is route EXISTENCE, not route signatures. `GET /api/webhooks/logs`
+    # did change: 0.2.8 adds optional query parameters and a `total` key
+    # alongside `logs`. Both are additive, which is why the frontend does not
+    # notice -- but "no difference" would be the wrong thing to remember.
+    #
+    # The reason to be on 0.2.8 is a data-loss bug fixed in `update_agent`.
+    # Before it, every column was written unconditionally, so a field the edit
+    # form does not expose arrived as None and WIPED the stored value: saving
+    # an agent to change its model silently cleared `output_key`,
+    # `output_schema_name`, `skip_when_upstream` and three more. An ADK
+    # sequential pipeline then stops handing state between sub-agents while
+    # still returning 200 -- wrong results, no error. 0.2.8 reads Pydantic's
+    # `model_fields_set` and leaves omitted fields alone.
+    #
+    # Upgrading in place was proven on the same database: a schema created by
+    # 0.2.3 came up under 0.2.8 with 16 -> 22 tables created on start, the
+    # pre-existing account still signing in, the agent created beforehand read
+    # back, no restart loop. The way BACK was proven too, which is what makes
+    # this reversible: a database migrated by 0.2.8 (22 tables) served by a
+    # 0.2.6 backend starts clean, signs the same account in, reads the same
+    # agent back, and logs no error. Pinning forward is not a one-way door.
+    image: ${APOWERB_BACKEND_IMAGE:-apowerb/apowerb}:${APOWERB_BACKEND_TAG:-0.2.8}
     pull_policy: always
     environment:
       # ── Managed cluster (Hostman > Databases), not a service of this stack ──
