@@ -262,9 +262,14 @@ services:
     # ⚠️⚠️ 0.0.12 IS NOT PUBLISHED YET. Docker Hub carries latest and 0.0.7
     # to 0.0.11; the release that produces 0.0.12 is PR #15 of the th2etl
     # repository. Until it lands, `COMPOSE_PROFILES=etl` fails at `up` with
-    # "not found" and -- measured -- creates NO container at all, not even
-    # the three base ones: `pull_policy: always` makes the missing image
-    # abort the whole run, and it does so even where the tag exists locally.
+    # "not found": `pull_policy: always` makes the missing image abort the
+    # whole run, and it does so even on a host where the tag exists locally,
+    # because the policy skips the local cache.
+    #
+    # Measured in both starting states, because they differ. From nothing:
+    # `up` exits 1 and creates NO container, not even the three base ones.
+    # With the base stack already up: `up` exits 1 and the three keep
+    # running untouched -- nothing is torn down, nothing advances.
     #
     # That is deliberate, and it is the least bad of three bad options. The
     # profile is off by default, so nothing changes for anyone who does not
