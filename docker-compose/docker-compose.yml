@@ -1,5 +1,23 @@
 name: apowerb
 
+# Three services are always there: the database, the backend, the interface.
+#
+# Two more are OPTIONAL, one profile each, both off unless you ask for them:
+#
+#   COMPOSE_PROFILES=pulse   observability -- agent traces and logs
+#   COMPOSE_PROFILES=etl     orchestration -- scheduled agent runs
+#   COMPOSE_PROFILES=pulse,etl               both
+#
+# Neither profile is only a profile: each needs ONE more line in .env to be
+# reached by the backend, and the profile without that line runs a service
+# nobody talks to. Both pairs are documented in .env.example, next to the
+# services below.
+#
+# `docker compose config --services` is the answer to "what will this run",
+# and it is worth asking: COMPOSE_PROFILES is read from your shell FIRST and
+# from .env second, so a stale export elsewhere turns a profile on while the
+# file still says off.
+
 services:
   postgres:
     image: postgres:16-alpine
@@ -40,10 +58,30 @@ services:
       SUPER_ADMIN_EMAIL: ${SUPER_ADMIN_EMAIL:-}
       # Observability. ADK reads this at startup and builds a span exporter
       # when it is set; unset, it emits nothing and costs nothing. It must be
-      # set TOGETHER with COMPOSE_PROFILES=logs -- set alone, the application
+      # set TOGETHER with COMPOSE_PROFILES=pulse -- set alone, the application
       # keeps retrying an exporter that has nowhere to send. See .env.example.
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
       OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-apowerb}
+      # Orchestration. `mage` is the default and there is no Mage in this
+      # stack, which is why the Orchestrator screen answers 503 out of the
+      # box: `/api/pipelines` says "Mage is unreachable", truthfully.
+      #
+      # ORCHESTRATOR=th2etl is the OTHER line of the etl pair. The profile
+      # without it runs an orchestrator the backend never addresses; this
+      # without the profile points the backend at a service that is not there.
+      # A Compose environment cannot depend on a profile, which is why this is
+      # a line you set rather than something the profile sets for you.
+      ORCHESTRATOR: ${ORCHESTRATOR:-mage}
+      TH2ETL_BASE_URL: ${TH2ETL_BASE_URL:-http://th2etl:8000}
+      # The third option, for a deployment that wants neither: set this to
+      # false and the feature and its screen go away, instead of a screen that
+      # is there and answers 503. Measured with the profile off:
+      # `GET /api/pipelines` -> 503 "No orchestrator is configured in this
+      # installation."
+      SCHEDULER_ENABLED: ${SCHEDULER_ENABLED:-true}
+      # Must equal the th2etl service's API_KEY below. Without it th2etl
+      # answers 401 and scheduling stops.
+      TH2ETL_API_KEY: ${TH2ETL_API_KEY:-}
     volumes:
       - apowerb-data:/app/data
     ports:
@@ -66,14 +104,18 @@ services:
     restart: unless-stopped
 
   # ───────────────────────────────────────────────────────────────────────────
-  # Optional: logs and agent traces. Off by default.
+  # OPTIONAL — observability. Logs and agent traces. Off by default.
   #
-  #   COMPOSE_PROFILES=logs
+  #   COMPOSE_PROFILES=pulse
   #   OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
   #
   # Both lines, together -- see .env.example. Nothing else in the stack
   # changes, and with the profile off these two services are not created at
   # all: `docker compose up` stays the three services it was.
+  #
+  # `logs` is kept beside `pulse` as a second name for this profile, because
+  # that is what it was called when it shipped and an existing .env should
+  # keep working. Either name turns these two on.
   #
   # What this stores today: the agent traces ADK emits natively -- tool
   # executions with their arguments and responses, LLM calls, durations,
@@ -82,7 +124,7 @@ services:
   # (`th2pulse.init_observability`), which this image does not call yet.
   # ───────────────────────────────────────────────────────────────────────────
   otel-collector:
-    profiles: [logs]
+    profiles: [pulse, logs]
     image: ${OTEL_COLLECTOR_IMAGE:-otel/opentelemetry-collector-contrib}:${OTEL_COLLECTOR_TAG:-0.159.0}
     command: ["--config=/etc/otel/config.yaml"]
     environment:
@@ -95,7 +137,7 @@ services:
     restart: unless-stopped
 
   th2pulse:
-    profiles: [logs]
+    profiles: [pulse, logs]
     # Pinned, like the other two. 0.1.4 is a FLOOR, not a preference: images
     # before it never create the schema named below, so the service
     # restart-loops on "no schema has been selected to create in". And
@@ -136,6 +178,99 @@ services:
       postgres:
         condition: service_healthy
     restart: unless-stopped
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # OPTIONAL — orchestration. Scheduled agent runs. Off by default.
+  #
+  #   COMPOSE_PROFILES=etl
+  #   ORCHESTRATOR=th2etl
+  #   TH2ETL_API_KEY=<a secret; ./scripts/generate-secrets.sh fills it>
+  #
+  # This is what makes the Orchestrator screen work. Without it the backend
+  # defaults to ORCHESTRATOR=mage, this stack ships no Mage, and
+  # `/api/pipelines` answers 503 "Mage is unreachable" -- which is the honest
+  # answer, and still a broken screen for anyone self-hosting.
+  #
+  # Two services, not one. th2etl does NOT create the agent pipelines on
+  # demand -- the backend only checks that they exist and logs "run the th2etl
+  # seed to provision it" when they do not. So the seed runs here, once per
+  # `up`, and it is idempotent: it skips what is already there.
+  # ───────────────────────────────────────────────────────────────────────────
+  th2etl:
+    profiles: [etl]
+    # Pinned, like everything else here. 0.0.12 is a FLOOR and not a
+    # preference: every image published before it -- 0.0.8 through 0.0.11 and
+    # latest -- exits 1 on `docker run`. Two defects, measured 2026-09-04:
+    # the CMD was `uv run`, which re-resolves the environment at every
+    # container start and so needs PyPI reachable from inside the container,
+    # and the build context carried no README.md although pyproject declares
+    # one, so that resolution failed anyway. Fixed in apowerb/th2etl#15,
+    # together with the smoke test that would have caught it.
+    image: ${TH2ETL_IMAGE:-th2farid/th2etl}:${TH2ETL_TAG:-0.0.12}
+    pull_policy: always
+    environment:
+      DATABASE_HOST: postgres
+      DATABASE_PORT: "5432"
+      DATABASE_NAME: ${DB_NAME}
+      DATABASE_USER: ${DB_USER}
+      DATABASE_PASSWORD: ${DB_PASSWORD}
+      # DATABASE_SCHEMA is deliberately NOT set. th2etl qualifies its tables
+      # with the schema but never creates it, so naming one that does not
+      # exist leaves the service up with its API dead: "Application startup
+      # failed" on `schema "th2etl" does not exist`, container still there.
+      # Unset, its six tables land in `public` -- all of them `etl_`-prefixed,
+      # so they cannot collide with the backend's own.
+      #
+      # Required in practice, and deliberately NOT written `:?`. Compose
+      # interpolates the whole file before it looks at profiles -- measured:
+      # a `:?` here aborts `docker compose config` for everyone, profile off
+      # included. So the guard stays where it can be conditional: th2etl
+      # itself refuses every business route with "Authentication not
+      # configured: set API_KEY" rather than serving them open.
+      API_KEY: ${TH2ETL_API_KEY:-}
+      # Where th2etl's ADK blocks call back into the backend.
+      ADK_BASE_URL: ${ADK_BASE_URL:-http://apowerb:8000}
+      ENCRYPT_KEY: ${ENCRYPT_KEY}
+    # No host port on purpose: only the backend talks to it, over the internal
+    # network. That network is the whole stack, which is why API_KEY above is
+    # a requirement and not hardening.
+    healthcheck:
+      # No curl in the image; python is what it runs on. /openapi.json rather
+      # than a business route: it needs no key, and it only answers once the
+      # application has finished starting -- which is the thing being asked.
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:8000/openapi.json', timeout=3)"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Provisions the `agents` and `process_pdf` pipelines th2etl needs before the
+  # backend can schedule anything. Runs to completion and stops -- `restart:
+  # "no"` on purpose: a seed that restarts forever is a seed running
+  # concurrently with itself, which this one is explicitly not safe for.
+  th2etl-seed:
+    profiles: [etl]
+    image: ${TH2ETL_IMAGE:-th2farid/th2etl}:${TH2ETL_TAG:-0.0.12}
+    pull_policy: always
+    command: ["python", "-m", "th2etl.seeds.default_pipelines"]
+    environment:
+      DATABASE_HOST: postgres
+      DATABASE_PORT: "5432"
+      DATABASE_NAME: ${DB_NAME}
+      DATABASE_USER: ${DB_USER}
+      DATABASE_PASSWORD: ${DB_PASSWORD}
+      API_KEY: ${TH2ETL_API_KEY:-}
+      # The seed writes this into every ADK block config, so it is the address
+      # those blocks will call at run time. Same value as th2etl above.
+      ADK_BASE_URL: ${ADK_BASE_URL:-http://apowerb:8000}
+      ENCRYPT_KEY: ${ENCRYPT_KEY}
+    depends_on:
+      th2etl:
+        condition: service_healthy
+    restart: "no"
 
 volumes:
   postgres-data:
