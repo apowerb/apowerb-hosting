@@ -82,6 +82,20 @@ docker compose -f docker-compose/docker-compose.yml -f docker-compose/docker-com
 
 The app is served through `https://$APP_HOST`.
 
+## After deploying, prove it
+
+```bash
+scripts/check-deployment.sh https://your-host.example
+```
+
+A container that is up proves nothing, and neither does a page that renders.
+This probes the deployment from outside and exits non-zero if the frontend and
+the backend are not the pair they should be -- the failure that twice left this
+stack with a control panel rendering at `/admin` and answering 404 behind it.
+
+Every assertion carries a witness, positive and negative, so a host answering
+404 to everything fails the check instead of passing it.
+
 ## Notes
 
 - `ENCRYPT_KEY` is required for startup and must be preserved.

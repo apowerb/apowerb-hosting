@@ -37,9 +37,13 @@
 # ⚠️ The platform redeploys the FIRST service on a commit and has been observed
 # leaving the second one on its previous image (19/08 and 04/09: the interface
 # moved, the backend did not, and `/api/admin/users` answered 404 behind a
-# control panel that rendered fine). After a deployment, prove the BACKEND
-# moved -- `/api/admin/users` must answer 401, not 404 -- and redeploy that
-# service by hand if it did not.
+# control panel that rendered fine). A comment nobody runs would not have caught
+# either episode, so there is a check that does:
+#
+#     scripts/check-deployment.sh https://your-host.example
+#
+# Run it after every deployment. It exits non-zero on that exact signature and
+# names the remedy (redeploy the BACKEND service by hand).
 #
 # `name:` below is shared with `docker-compose/docker-compose.yml` on purpose:
 # renaming either one would orphan the containers of every stack already

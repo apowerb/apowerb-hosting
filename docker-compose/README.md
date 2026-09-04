@@ -37,7 +37,12 @@ docker compose -f docker-compose/docker-compose.yml --env-file .env up -d
 ```
 
 To check that the result actually works — schema, sign-up, sign-in, and an agent
-answering — follow [TESTING.md](TESTING.md).
+answering — follow [TESTING.md](TESTING.md). For a ten-second check of a
+deployment you already have, from outside:
+
+```bash
+scripts/check-deployment.sh http://localhost:3000
+```
 
 ## What this starts
 
