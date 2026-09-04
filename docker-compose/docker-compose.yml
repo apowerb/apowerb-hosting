@@ -56,6 +56,18 @@ services:
       NOTIFICATION_EMAIL: ${NOTIFICATION_EMAIL:-}
       NOTIFICATION_INTEGRATION_OWNER: ${NOTIFICATION_INTEGRATION_OWNER:-}
       SUPER_ADMIN_EMAIL: ${SUPER_ADMIN_EMAIL:-}
+      # A different variable, not a spelling of the one above: that one is
+      # who receives ETL alerts, this one is who becomes an administrator.
+      # Without it a fresh install has no admin at all, and the Logging
+      # screen -- administrators only -- is empty for everyone.
+      #
+      # The e-mail alone is the whole configuration: whoever signs up with
+      # that address is created ADMIN, with their own password. Proven on a
+      # fresh install, 04/09/2026. The password below only creates the
+      # account up front and is optional; a shipped default password is a
+      # published one, so neither has a default.
+      DEFAULT_SUPERADMIN_EMAIL: ${DEFAULT_SUPERADMIN_EMAIL:-}
+      DEFAULT_SUPERADMIN_PASSWORD: ${DEFAULT_SUPERADMIN_PASSWORD:-}
       # Observability. ADK reads this at startup and builds a span exporter
       # when it is set; unset, it emits nothing and costs nothing. It must be
       # set TOGETHER with COMPOSE_PROFILES=pulse -- set alone, the application
@@ -97,6 +109,17 @@ services:
     environment:
       API_URL: http://apowerb:8000
       NEXT_PUBLIC_API_URL: ${PUBLIC_API_URL:-http://localhost:8000}
+      # Where the Logging screen reads from. Without it the frontend falls
+      # back to its own loopback, where nothing listens, and every request
+      # answers 502 "Logging store unavailable" -- measured 04/09/2026.
+      # Harmless when the profile is off: the screen is simply empty, as it
+      # already was.
+      PULSE_API_URL: http://th2pulse:4319
+      # The ingest binds 0.0.0.0 and rejects a reader that presents no token.
+      # Same value as the ingest's own, server-side only, never sent to the
+      # browser. Unset on both sides, the ingest accepts reads and this
+      # changes nothing.
+      PULSE_QUERY_TOKEN: ${TH2PULSE_QUERY_TOKEN:-}
     ports:
       - "${FRONT_PORT:-3000}:3000"
     depends_on:
