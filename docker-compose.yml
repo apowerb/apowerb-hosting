@@ -77,7 +77,17 @@ services:
     # This couple was proven together: sign-up, sign-in, an agent created and
     # read back, and the designated e-mail becoming ADMIN on sign-up.
     #
-    # 0.1.12 is a FLOOR for the frontend, not a preference, and it is the
+    # 0.1.13 carries the fix without which the BI screens do not work at all
+    # in a Compose deployment: `/api/v1/*` had no route handler, so dashboards,
+    # charts, datasets and CSV upload fell through to a rewrite frozen at build
+    # time on `http://localhost:8000` -- the frontend container itself, where
+    # nothing listens. Measured on 0.1.12 against a healthy 0.2.8 backend:
+    # `/api/v1/dashboards` answered 500 through the frontend and 401 straight
+    # to the backend, and an INVENTED `/api/v1/...` answered 500 as well, which
+    # is what proves the request never left. On 0.1.13: 401 and 404, and
+    # `POST /api/v1/dashboards` returns 201.
+    #
+    # 0.1.12 remains a FLOOR for the frontend, not a preference, and it is the
     # floor imposed by the backend below. 0.1.11 still bundled an SDK
     # reaching `/api/admin/organizations`, which backend 0.2.6 stopped
     # serving when organisations became a commercial brick -- measured on the
@@ -95,7 +105,7 @@ services:
     # served to anyone typing its URL.
     #
     # Override both tags together when you move, never one alone.
-    image: ${APOWERB_FRONTEND_IMAGE:-apowerb/apowerb-ui}:${APOWERB_FRONTEND_TAG:-0.1.12}
+    image: ${APOWERB_FRONTEND_IMAGE:-apowerb/apowerb-ui}:${APOWERB_FRONTEND_TAG:-0.1.13}
     pull_policy: always
     environment:
       # Server-side only, read at runtime by the route handlers.

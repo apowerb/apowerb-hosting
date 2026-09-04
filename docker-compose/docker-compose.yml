@@ -64,7 +64,7 @@ services:
     # Pinned with the backend above -- see the note there. 0.1.12 is a floor:
     # 0.1.11 still bundled an SDK calling `/api/admin/organizations`, which the
     # backend stopped serving when organisations became a commercial brick.
-    image: ${APOWERB_FRONTEND_IMAGE:-apowerb/apowerb-ui}:${APOWERB_FRONTEND_TAG:-0.1.12}
+    image: ${APOWERB_FRONTEND_IMAGE:-apowerb/apowerb-ui}:${APOWERB_FRONTEND_TAG:-0.1.13}
     pull_policy: always
     environment:
       API_URL: http://apowerb:8000

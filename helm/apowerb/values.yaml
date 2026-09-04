@@ -9,7 +9,7 @@ image:
     pullPolicy: IfNotPresent
   frontend:
     repository: apowerb/apowerb-ui
-    tag: 0.1.12
+    tag: 0.1.13
     pullPolicy: IfNotPresent
   postgres:
     repository: postgres
