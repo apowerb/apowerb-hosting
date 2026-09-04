@@ -44,10 +44,11 @@ fill_if_empty() {
 
 echo "Generating the missing secrets in .env"
 fill_if_empty ENCRYPT_KEY "$(generate_fernet_key)"
-# Filled whether or not the logs profile is used: an empty value there stops
-# the ingest from starting, and having them ready costs nothing.
+# Filled whether or not the optional profiles are used: an empty value stops
+# the service it belongs to from serving, and having them ready costs nothing.
 fill_if_empty TH2PULSE_INGEST_TOKEN "$(openssl rand -hex 32)"
 fill_if_empty TH2PULSE_QUERY_TOKEN "$(openssl rand -hex 32)"
+fill_if_empty TH2ETL_API_KEY "$(openssl rand -hex 32)"
 
 echo
 echo "Ready. Start with:  docker compose -f docker-compose/docker-compose.yml --env-file .env up -d"
