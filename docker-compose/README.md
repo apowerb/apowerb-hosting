@@ -24,7 +24,10 @@ Use this option to run the stack from the published container images.
 3. Start the stack.
 
 Run these from the repository root. The Compose file lives in this folder, so
-it has to be named explicitly — there is none at the root.
+it has to be named explicitly. There IS a `docker-compose.yml` at the root, and
+it is not this one: it targets Hostman App Platform, has no Postgres, and will
+refuse to start without a managed database. Naming the file is what keeps the
+two apart.
 
 ```bash
 cp .env.example .env
@@ -34,7 +37,12 @@ docker compose -f docker-compose/docker-compose.yml --env-file .env up -d
 ```
 
 To check that the result actually works — schema, sign-up, sign-in, and an agent
-answering — follow [TESTING.md](TESTING.md).
+answering — follow [TESTING.md](TESTING.md). For a ten-second check of a
+deployment you already have, from outside:
+
+```bash
+scripts/check-deployment.sh http://localhost:3000
+```
 
 ## What this starts
 
@@ -87,6 +95,11 @@ The stack uses the published images below:
 - Frontend: `apowerb/apowerb-ui`
 - Ingest, with the `logs` profile: `apowerb/th2pulse`
 - Collector, with the `logs` profile: `otel/opentelemetry-collector-contrib`
+
+The backend and frontend tags are PINNED to a pair that was proven together,
+not left on `latest`. They cap each other in both directions -- the frontend
+calls routes the older backends do not serve, and a newer backend can drop a
+route an older frontend still calls -- so move both or neither.
 
 These can be overridden in `.env` with:
 

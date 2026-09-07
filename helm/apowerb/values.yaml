@@ -4,11 +4,12 @@ namespaceOverride: ""
 image:
   backend:
     repository: apowerb/apowerb
-    tag: latest
+    # Paired with the frontend tag below -- move both or neither.
+    tag: 0.2.8
     pullPolicy: IfNotPresent
   frontend:
     repository: apowerb/apowerb-ui
-    tag: latest
+    tag: 0.1.13
     pullPolicy: IfNotPresent
   postgres:
     repository: postgres

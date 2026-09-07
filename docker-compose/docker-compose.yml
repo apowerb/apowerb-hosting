@@ -35,7 +35,14 @@ services:
     restart: unless-stopped
 
   apowerb:
-    image: ${APOWERB_BACKEND_IMAGE:-apowerb/apowerb}:${APOWERB_BACKEND_TAG:-latest}
+    # Pinned, like every other deployment path in this repository. `latest` is
+    # a moving tag: it promises nothing about the two images having been tested
+    # together, and it makes an install unreproducible -- run the quick start
+    # tomorrow and you may get a different pair. This one was proven together
+    # (sign-up, sign-in, an agent created and read back, the control panel API
+    # answering). Override BOTH tags in `.env` when you move, never one alone:
+    # the frontend and the backend cap each other in both directions.
+    image: ${APOWERB_BACKEND_IMAGE:-apowerb/apowerb}:${APOWERB_BACKEND_TAG:-0.2.8}
     pull_policy: always
     environment:
       DB_HOST: postgres
@@ -104,7 +111,10 @@ services:
     restart: unless-stopped
 
   apowerb-ui:
-    image: ${APOWERB_FRONTEND_IMAGE:-apowerb/apowerb-ui}:${APOWERB_FRONTEND_TAG:-latest}
+    # Pinned with the backend above -- see the note there. 0.1.12 is a floor:
+    # 0.1.11 still bundled an SDK calling `/api/admin/organizations`, which the
+    # backend stopped serving when organisations became a commercial brick.
+    image: ${APOWERB_FRONTEND_IMAGE:-apowerb/apowerb-ui}:${APOWERB_FRONTEND_TAG:-0.1.13}
     pull_policy: always
     environment:
       API_URL: http://apowerb:8000

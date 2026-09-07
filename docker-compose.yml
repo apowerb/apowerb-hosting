@@ -1,8 +1,15 @@
-# Compose file for Hostman App Platform.
+# Compose file for Hostman App Platform. NOT the self-hosted stack.
 #
-# App Platform reads `docker-compose.yml` from the repository ROOT, so this file
-# lives at the root of the `hostman` branch. The root file on `main` targets a
-# plain VM or a laptop and keeps its own Postgres; the two cannot be one file.
+# For a laptop, a plain VM, or a Kubernetes-free host of your own, use
+# `docker-compose/docker-compose.yml` instead -- it ships its own Postgres and
+# needs no managed database. See `docker-compose/README.md`.
+#
+# This file sits at the repository ROOT because App Platform reads
+# `docker-compose.yml` from there and from nowhere else. That is the only
+# reason: the root of an open-source repository would otherwise belong to the
+# stack most people run. The two cannot be one file -- the platform forbids
+# what the self-hosted stack is built on -- so the root is spent on the one
+# that has no choice about where it lives.
 #
 # Every difference below is imposed by the platform, and each was checked
 # against its documentation and against a real stack:
@@ -26,6 +33,21 @@
 # Publishing it would expose the authentication API in the clear, next to the
 # platform's TLS. If the interface cannot reach the backend, that internal
 # network is the first thing to look at -- not a missing port.
+#
+# ⚠️ The platform redeploys the FIRST service on a commit and has been observed
+# leaving the second one on its previous image (19/08 and 04/09: the interface
+# moved, the backend did not, and `/api/admin/users` answered 404 behind a
+# control panel that rendered fine). A comment nobody runs would not have caught
+# either episode, so there is a check that does:
+#
+#     scripts/check-deployment.sh https://your-host.example
+#
+# Run it after every deployment. It exits non-zero on that exact signature and
+# names the remedy (redeploy the BACKEND service by hand).
+#
+# `name:` below is shared with `docker-compose/docker-compose.yml` on purpose:
+# renaming either one would orphan the containers of every stack already
+# running. Do not run both on the same host.
 
 name: apowerb
 
@@ -34,14 +56,38 @@ services:
   # FIRST on purpose: this is the service the platform proxies to the domain.
   # ─────────────────────────────────────────────────────────────────────────────
   apowerb-ui:
-    # PINNED, deliberately. `latest` is a moving tag: it promises nothing about
-    # the two images having been tested together, and it makes a deployment
-    # unreproducible -- redeploy tomorrow and you may get a different pair.
+    # PINNED, deliberately, and on this platform that is not a preference.
+    #
+    # Measured on this very app, 04/09, two deployments of the same repository:
+    # with `APOWERB_BACKEND_TAG=latest` the deploy log shows NO `Pulling` line,
+    # finishes in 5s and reports success -- while the container keeps running
+    # the image already in the host's cache. With an explicit version tag the
+    # same deploy shows `apowerb Pulling` .. `Pulled`, takes 49s, and the new
+    # code is actually there. `pull_policy: always` below does not survive the
+    # platform's own compose handling.
+    #
+    # The consequence is worse than an unreproducible install: for three weeks
+    # this deployment served a backend from 18/08 while its tag said `latest`,
+    # and nothing anywhere contradicted that -- not the panel, not the deploy
+    # log. A moving tag here is a frozen tag that claims to be current.
+    #
+    # `latest` also promises nothing about the two images having been tested
+    # together -- redeploy tomorrow and you may get a different pair.
     #
     # This couple was proven together: sign-up, sign-in, an agent created and
     # read back, and the designated e-mail becoming ADMIN on sign-up.
     #
-    # 0.1.12 is a FLOOR for the frontend, not a preference, and it is the
+    # 0.1.13 carries the fix without which the BI screens do not work at all
+    # in a Compose deployment: `/api/v1/*` had no route handler, so dashboards,
+    # charts, datasets and CSV upload fell through to a rewrite frozen at build
+    # time on `http://localhost:8000` -- the frontend container itself, where
+    # nothing listens. Measured on 0.1.12 against a healthy 0.2.8 backend:
+    # `/api/v1/dashboards` answered 500 through the frontend and 401 straight
+    # to the backend, and an INVENTED `/api/v1/...` answered 500 as well, which
+    # is what proves the request never left. On 0.1.13: 401 and 404, and
+    # `POST /api/v1/dashboards` returns 201.
+    #
+    # 0.1.12 remains a FLOOR for the frontend, not a preference, and it is the
     # floor imposed by the backend below. 0.1.11 still bundled an SDK
     # reaching `/api/admin/organizations`, which backend 0.2.6 stopped
     # serving when organisations became a commercial brick -- measured on the
@@ -59,7 +105,7 @@ services:
     # served to anyone typing its URL.
     #
     # Override both tags together when you move, never one alone.
-    image: ${APOWERB_FRONTEND_IMAGE:-apowerb/apowerb-ui}:${APOWERB_FRONTEND_TAG:-0.1.12}
+    image: ${APOWERB_FRONTEND_IMAGE:-apowerb/apowerb-ui}:${APOWERB_FRONTEND_TAG:-0.1.13}
     pull_policy: always
     environment:
       # Server-side only, read at runtime by the route handlers.
@@ -87,7 +133,37 @@ services:
     # a new install), and images before 0.2.4 still serve
     # `/api/supervision/sessions` from the core -- a route this open-source
     # stack ships no screen for.
-    image: ${APOWERB_BACKEND_IMAGE:-apowerb/apowerb}:${APOWERB_BACKEND_TAG:-0.2.6}
+    #
+    # Moved 0.2.6 -> 0.2.8 on 04/09. What was measured, and only that: no route
+    # the 0.1.12 frontend calls DISAPPEARED. Both images were probed side by
+    # side against the concrete `/api` paths extracted from that bundle, with
+    # `/api/agents` answering 401 on both as the positive witness and an
+    # invented `/api/admin/...` answering 404 as the negative one. No path
+    # answers 404 on one and not the other, so the ceiling this file exists to
+    # guard against did not move.
+    #
+    # That is route EXISTENCE, not route signatures. `GET /api/webhooks/logs`
+    # did change: 0.2.8 adds optional query parameters and a `total` key
+    # alongside `logs`. Both are additive, which is why the frontend does not
+    # notice -- but "no difference" would be the wrong thing to remember.
+    #
+    # The reason to be on 0.2.8 is a data-loss bug fixed in `update_agent`.
+    # Before it, every column was written unconditionally, so a field the edit
+    # form does not expose arrived as None and WIPED the stored value: saving
+    # an agent to change its model silently cleared `output_key`,
+    # `output_schema_name`, `skip_when_upstream` and three more. An ADK
+    # sequential pipeline then stops handing state between sub-agents while
+    # still returning 200 -- wrong results, no error. 0.2.8 reads Pydantic's
+    # `model_fields_set` and leaves omitted fields alone.
+    #
+    # Upgrading in place was proven on the same database: a schema created by
+    # 0.2.3 came up under 0.2.8 with 16 -> 22 tables created on start, the
+    # pre-existing account still signing in, the agent created beforehand read
+    # back, no restart loop. The way BACK was proven too, which is what makes
+    # this reversible: a database migrated by 0.2.8 (22 tables) served by a
+    # 0.2.6 backend starts clean, signs the same account in, reads the same
+    # agent back, and logs no error. Pinning forward is not a one-way door.
+    image: ${APOWERB_BACKEND_IMAGE:-apowerb/apowerb}:${APOWERB_BACKEND_TAG:-0.2.8}
     pull_policy: always
     environment:
       # ── Managed cluster (Hostman > Databases), not a service of this stack ──
@@ -111,7 +187,18 @@ services:
       # application that looks deployed and cannot be used. The server's own
       # guard then only shows up in the logs, which is far too late and far too
       # quiet.
-      DB_HOST: ${DB_HOST:?set DB_HOST -- the managed cluster address}
+      # This message is the signpost for anyone who cloned the repository and ran
+      # `docker compose up` at the root out of habit: DB_HOST is the first
+      # variable evaluated, so it is the one they will read.
+      #
+      # Keep it short and keep it neutral. App Platform runs `docker compose`
+      # several times per deployment -- to build, and again to scan for exposed
+      # ports -- and those extra invocations do NOT receive the application's
+      # environment variables, so this guard fires and is logged on EVERY
+      # successful deployment (seen at 12:25 on 04/09, level INFO, followed by
+      # "Deploy succeeded"). Anything phrased as a question or an accusation
+      # reads as a fault in a deploy log where nothing is wrong.
+      DB_HOST: ${DB_HOST:?set DB_HOST -- the managed cluster address (this root file targets Hostman App Platform; the self-hosted stack is docker-compose/docker-compose.yml, which brings its own Postgres)}
       DB_PORT: ${DB_PORT:-5432}
       DB_NAME: ${DB_NAME:?set DB_NAME -- use a database of its own, see below}
       DB_USER: ${DB_USER:?set DB_USER}

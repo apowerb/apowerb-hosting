@@ -4,8 +4,8 @@ This option adds TLS termination through Traefik on top of the existing Docker C
 
 ## Files
 
-- Compose base: [../docker-compose.yml](../docker-compose.yml)
-- Traefik overlay: [../docker-compose.traefik.yml](../docker-compose.traefik.yml)
+- Compose base: [../docker-compose/docker-compose.yml](../docker-compose/docker-compose.yml)
+- Traefik overlay: [../docker-compose/docker-compose.traefik.yml](../docker-compose/docker-compose.traefik.yml)
 - Traefik config: [traefik.yml](traefik.yml)
 
 ## Quick start
@@ -14,7 +14,7 @@ This option adds TLS termination through Traefik on top of the existing Docker C
 cp .env.example .env
 # set APP_HOST and ACME_EMAIL in .env
 
-docker compose -f docker-compose.yml -f docker-compose.traefik.yml up -d
+docker compose -f docker-compose/docker-compose.yml -f docker-compose/docker-compose.traefik.yml --env-file .env up -d
 ```
 
 ## Access
@@ -25,3 +25,6 @@ The frontend is served at `https://$APP_HOST`.
 
 - Traefik handles TLS and the Let's Encrypt challenge.
 - This path is intended for a single self-hosted VM with a public hostname.
+- Run the commands from the repository ROOT: the Compose files live in
+  `docker-compose/`, and the root `docker-compose.yml` is the Hostman file,
+  not this stack.
