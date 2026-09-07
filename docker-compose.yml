@@ -110,6 +110,13 @@ services:
     environment:
       # Server-side only, read at runtime by the route handlers.
       API_URL: http://apowerb:8000
+      # Where the Logging screen reads from. Without it the frontend falls back
+      # to its own loopback, where nothing listens, and the screen says
+      # "Logging store unreachable" -- measured on this deployment, 2026-09-07.
+      PULSE_API_URL: http://th2pulse:4319
+      # Same value as the ingest's own query token, server-side only, never
+      # sent to the browser. Generate it once and set it in the platform.
+      PULSE_QUERY_TOKEN: ${TH2PULSE_QUERY_TOKEN:-}
       # NEXT_PUBLIC_API_URL is deliberately NOT set. It is inlined at build
       # time, so setting it here changes nothing; unset, the client falls back
       # to relative URLs and reaches the backend through this proxy, which is
@@ -250,6 +257,91 @@ services:
       # HTTPS domain satisfies -- but a plain-HTTP test on the raw IP would then
       # fail to log in.
       WORKING_MODE: ${WORKING_MODE:-development}
+      # Observability. apowerb.configs.observability bridges application log
+      # records to the collector below when this is set, and logs a line saying
+      # so at startup ("application logs bridged to ..."). Unset, it logs
+      # "no OTLP endpoint set, application logs stay local" -- which is what this
+      # deployment printed on every start until 2026-09-07. The image must
+      # carry the `otel` extra (apowerb >= 0.2.10) or the same line becomes
+      # "th2pulse is not installed".
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-apowerb}
+      # Log timestamps in a zone people read. Servers run on UTC; unset, every
+      # line prints +00:00 and someone has to add two hours in their head.
+      TH2_LOG_TZ: ${TH2_LOG_TZ:-Europe/Paris}
       RAG_WEBHOOK_SECRET: ${RAG_WEBHOOK_SECRET:-}
       GOOGLE_WEBHOOK_AUDIENCE: ${GOOGLE_WEBHOOK_AUDIENCE:-}
+    restart: unless-stopped
+
+  # --- Observability: logs and agent traces ---------------------------------
+  # Ported from docker-compose/docker-compose.yml, with two differences that
+  # this platform imposes:
+  #   - no profile: App Platform reads this file and nothing else, and whether
+  #     it honours Compose profiles is not documented. On a demo, always-on is
+  #     the point anyway.
+  #   - no Postgres service: th2pulse stores its traces in its own schema of
+  #     the managed cluster, connecting as the same role the application uses.
+  #     The connection is unencrypted like the application's own (see above),
+  #     so the cluster's PRIVATE address matters here too.
+  th2pulse:
+    image: ${TH2PULSE_IMAGE:-apowerb/th2pulse}:${TH2PULSE_TAG:-0.1.4}
+    pull_policy: always
+    environment:
+      TH2PULSE_DB_DSN: postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT:-5432}/${DB_NAME}
+      TH2PULSE_DB_SCHEMA: ${TH2PULSE_DB_SCHEMA:-th2pulse}
+      # Both required by the ingest: it refuses to start without them. Generate
+      # two random values (openssl rand -hex 32) and set them in the platform.
+      TH2PULSE_INGEST_TOKEN: ${TH2PULSE_INGEST_TOKEN:?set TH2PULSE_INGEST_TOKEN -- the ingest refuses to start without it}
+      TH2PULSE_QUERY_TOKEN: ${TH2PULSE_QUERY_TOKEN:?set TH2PULSE_QUERY_TOKEN -- the ingest refuses to start without it}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:4319/healthz', timeout=3)"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  otel-collector:
+    image: ${OTEL_COLLECTOR_IMAGE:-otel/opentelemetry-collector-contrib}:${OTEL_COLLECTOR_TAG:-0.159.0}
+    # The configuration is passed through an environment variable rather than a
+    # mounted file: App Platform does not mount files from the repository. The
+    # collector reads `--config=env:NAME` natively (validated with 0.159.0).
+    # `$$` keeps `${env:...}` for the collector -- a single `$` would make
+    # Compose interpolate it here, as an empty variable, and the ingest would
+    # reject every record with 401.
+    command: ["--config=env:OTEL_CFG"]
+    environment:
+      TH2PULSE_INGEST_TOKEN: ${TH2PULSE_INGEST_TOKEN:?set TH2PULSE_INGEST_TOKEN}
+      OTEL_CFG: |
+        receivers:
+          otlp:
+            protocols:
+              http:
+                endpoint: 0.0.0.0:4318
+              grpc:
+                endpoint: 0.0.0.0:4317
+        processors:
+          memory_limiter:
+            check_interval: 5s
+            limit_percentage: 75
+            spike_limit_percentage: 20
+          batch:
+        exporters:
+          otlphttp/pulse:
+            endpoint: http://th2pulse:4319
+            encoding: json
+            headers:
+              X-Th2Pulse-Token: $${env:TH2PULSE_INGEST_TOKEN}
+        service:
+          pipelines:
+            traces:
+              receivers: [otlp]
+              processors: [memory_limiter, batch]
+              exporters: [otlphttp/pulse]
+            logs:
+              receivers: [otlp]
+              processors: [memory_limiter, batch]
+              exporters: [otlphttp/pulse]
+    depends_on:
+      th2pulse:
+        condition: service_healthy
     restart: unless-stopped
