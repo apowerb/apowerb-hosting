@@ -155,6 +155,29 @@ services:
   # each tagged with its conversation. The `/logs` side of the ingest stays
   # empty until the application adopts the th2pulse logging bridge
   # (`th2pulse.init_observability`), which this image does not call yet.
+  #
+  # WHAT THIS PROFILE WAS PROVEN TO DO. A span POSTed to the collector comes
+  # back out of the ingest's `/spans`, and `/spans` answers 401 without the
+  # query token.
+  #
+  # ⚠️ WHERE IT STOPS TODAY, and it is a live trap. Measured inside the
+  # published images apowerb-ui 0.1.12 AND 0.1.13 (control run in the same
+  # command: `dashboard` matches 164 files, so the search does look):
+  #
+  #     PULSE_API_URL           6 files   -- it knows WHERE the ingest is
+  #     PULSE_QUERY_TOKEN       0 files   -- it never reads the token
+  #     x-th2pulse-query-token  0 files   -- it never sends the header
+  #
+  # So the published frontend can reach the ingest and cannot authenticate to
+  # it. `./scripts/generate-secrets.sh` fills TH2PULSE_QUERY_TOKEN by default,
+  # which makes the ingest REQUIRE what the frontend does not send: the
+  # Logging screen then stays empty on an otherwise correct install. Leaving
+  # TH2PULSE_QUERY_TOKEN empty on both sides opens the ingest's reads instead
+  # -- `/spans` serves recorded tool arguments and responses, so that is a
+  # deliberate trade, not a default.
+  #
+  # (Inference, not exercised end to end: the two measurements above are, the
+  # empty screen that follows from them is not.)
   # ───────────────────────────────────────────────────────────────────────────
   otel-collector:
     profiles: [pulse, logs]
@@ -237,8 +260,34 @@ services:
     # the CMD was `uv run`, which re-resolves the environment at every
     # container start and so needs PyPI reachable from inside the container,
     # and the build context carried no README.md although pyproject declares
-    # one, so that resolution failed anyway. Fixed in apowerb/th2etl#15,
-    # together with the smoke test that would have caught it.
+    # one, so that resolution failed anyway. Fixed in PR #15 of the
+    # apowerb/th2etl REPOSITORY, together with the smoke test that would
+    # have caught it.
+    #
+    # Mind the two namespaces, they do not match and both are correct:
+    # the image is th2farid/th2etl (apowerb/th2etl on Docker Hub is 404)
+    # while th2pulse below is apowerb/th2pulse (th2farid/th2pulse is 404).
+    # Checked against Docker Hub on 2026-09-04.
+    #
+    # ⚠️⚠️ 0.0.12 IS NOT PUBLISHED YET. Docker Hub carries latest and 0.0.7
+    # to 0.0.11; the release that produces 0.0.12 is PR #15 of the th2etl
+    # repository. Until it lands, `COMPOSE_PROFILES=etl` fails at `up` with
+    # "not found": `pull_policy: always` makes the missing image abort the
+    # whole run, and it does so even on a host where the tag exists locally,
+    # because the policy skips the local cache.
+    #
+    # Measured in both starting states, because they differ. From nothing:
+    # `up` exits 1 and creates NO container, not even the three base ones.
+    # With the base stack already up: `up` exits 1 and the three keep
+    # running untouched -- nothing is torn down, nothing advances.
+    #
+    # That is deliberate, and it is the least bad of three bad options. The
+    # profile is off by default, so nothing changes for anyone who does not
+    # ask for it (measured: profile off, `up` exits 0). Pointing this at
+    # 0.0.11 or latest instead would start a container that `docker compose
+    # ps` reports as `running` while it restarts forever -- every published
+    # tag exits 1 on `docker run`. A loud failure that names its cause beats
+    # a container that lies about being up.
     image: ${TH2ETL_IMAGE:-th2farid/th2etl}:${TH2ETL_TAG:-0.0.12}
     pull_policy: always
     environment:
