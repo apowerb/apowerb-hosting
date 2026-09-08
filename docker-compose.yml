@@ -291,6 +291,7 @@ services:
   # `python -m th2etl.seeds.default_pipelines` provisions blocs agents_runner,
   # pdf_extract, pdf_agent and pipelines agents, process_pdf -- the two the
   # backend expects from an orchestrator.
+  th2etl:
     image: ${TH2ETL_IMAGE:-apowerb/th2etl}:${TH2ETL_TAG:-0.0.12}
     environment:
       DATABASE_HOST: ${DB_HOST}
