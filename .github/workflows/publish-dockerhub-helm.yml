@@ -1,4 +1,10 @@
-name: Publish Helm chart to OCI registries
+name: Publish Helm chart to Docker Hub
+
+# Un seul registre : Docker Hub, celui de l'organisation apowerb, d'où sortent
+# déjà les images du produit. GHCR a été retiré le 08/09/26 — le push y
+# réussissait mais le paquet naît PRIVÉ dans une organisation GitHub, donc
+# `helm pull oci://ghcr.io/apowerb/apowerb` rendait 403 en anonyme. Publier là
+# où personne ne peut tirer n'est pas publier.
 
 on:
   release:
@@ -18,7 +24,6 @@ on:
 
 permissions:
   contents: read
-  packages: write
 
 jobs:
   publish-helm-oci:
@@ -82,18 +87,3 @@ jobs:
           CHART_TGZ="apowerb-${VERSION}.tgz"
           helm push "$CHART_TGZ" "oci://registry-1.docker.io/apowerb"
 
-      - name: Login to GitHub Container Registry
-        env:
-          GHCR_USERNAME: ${{ github.actor }}
-          GHCR_TOKEN: ${{ github.token }}
-        run: |
-          echo "$GHCR_TOKEN" | helm registry login ghcr.io \
-            --username "$GHCR_USERNAME" \
-            --password-stdin
-
-      - name: Push chart to GitHub Container Registry
-        env:
-          VERSION: ${{ steps.release.outputs.version }}
-        run: |
-          CHART_TGZ="apowerb-${VERSION}.tgz"
-          helm push "$CHART_TGZ" "oci://ghcr.io/${{ github.repository_owner }}/apowerb"
