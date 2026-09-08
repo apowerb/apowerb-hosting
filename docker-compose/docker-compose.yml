@@ -259,14 +259,21 @@ services:
     # apowerb/th2pulse and apowerb/apowerb. Until then this pointed at
     # th2farid/th2etl:0.0.12, because apowerb/th2etl did not exist.
     #
-    # 0.0.11 in this namespace is not the old 0.0.11 of the other one -- the
-    # digests differ and this one already carries what 0.0.12 was cut for: the
-    # CMD is `python -m th2etl --serve-api`, so the container no longer
-    # re-resolves its environment from PyPI at every start (which needed PyPI
-    # reachable from inside the container and made every earlier tag exit 1).
-    # Measured against a throwaway Postgres on 2026-09-08: starts, answers 200
-    # on /openapi.json, carries th2etl.seeds.default_pipelines.
-    image: ${TH2ETL_IMAGE:-apowerb/th2etl}:${TH2ETL_TAG:-0.0.11}
+    # 0.0.12 is the first tag published by the release chain rewritten in
+    # apowerb/th2etl#18: the image installs the PyPI wheel of its own tag, so
+    # what it reports is what it contains, and it is smoke-tested on amd64 AND
+    # arm64 before publication. 0.0.11 under this namespace was a hand-run of
+    # that workflow, cut before v0.0.12 existed on PyPI; both work, but only
+    # 0.0.12 has a wheel of the same version behind it.
+    #
+    # Measured on 2026-09-08 with this file and `--profile etl` on a virgin
+    # database: healthy reporting 0.0.12, the seed exiting 0 after creating
+    # blocs agents_runner/pdf_extract/pdf_agent and pipelines
+    # agents/process_pdf, `GET th2etl:8000/pipelines/` returning both with the
+    # API key and 401 without it, backend 200 on /health and 401 on
+    # /api/pipelines -- a live authenticated route, not the 503 of an
+    # unreachable orchestrator.
+    image: ${TH2ETL_IMAGE:-apowerb/th2etl}:${TH2ETL_TAG:-0.0.12}
     pull_policy: always
     environment:
       DATABASE_HOST: postgres
@@ -313,7 +320,7 @@ services:
   # concurrently with itself, which this one is explicitly not safe for.
   th2etl-seed:
     profiles: [etl]
-    image: ${TH2ETL_IMAGE:-apowerb/th2etl}:${TH2ETL_TAG:-0.0.11}
+    image: ${TH2ETL_IMAGE:-apowerb/th2etl}:${TH2ETL_TAG:-0.0.12}
     pull_policy: always
     command: ["python", "-m", "th2etl.seeds.default_pipelines"]
     environment:

@@ -308,14 +308,20 @@ services:
   # product ships under, like apowerb/th2pulse and apowerb/apowerb. It carried
   # th2farid/th2etl:0.0.12 until then, because apowerb/th2etl did not exist yet.
   #
-  # 0.0.11 there is NOT the old 0.0.11 of the other namespace: different digest,
-  # and it already carries the fix that 0.0.12 was cut for (the CMD is
-  # `python -m th2etl --serve-api`, not `uv run`, so the container no longer
-  # re-resolves its environment from PyPI at every start). Measured side by side
-  # against a throwaway Postgres on 2026-09-08: both start, both answer 200 on
-  # /openapi.json, both carry th2etl.seeds.default_pipelines.
+  # 0.0.12 is the first tag published by the release chain rewritten in
+  # apowerb/th2etl#18: the image installs the PyPI wheel of its own tag, so the
+  # version it reports is the version it contains, and it is smoke-tested on
+  # amd64 AND arm64 before publication. 0.0.11 under this namespace was a
+  # hand-run of that workflow, cut before v0.0.12 existed on PyPI; both work,
+  # but only 0.0.12 has a wheel of the same version behind it.
+  #
+  # Measured on 2026-09-08 with this file and `--profile etl` on a virgin
+  # database: th2etl healthy reporting 0.0.12, the seed exiting 0 after
+  # creating blocs agents_runner/pdf_extract/pdf_agent and pipelines
+  # agents/process_pdf, and `GET th2etl:8000/pipelines/` returning both with
+  # the API key, 401 without it.
   th2etl:
-    image: ${TH2ETL_IMAGE:-apowerb/th2etl}:${TH2ETL_TAG:-0.0.11}
+    image: ${TH2ETL_IMAGE:-apowerb/th2etl}:${TH2ETL_TAG:-0.0.12}
     environment:
       DATABASE_HOST: ${DB_HOST}
       DATABASE_PORT: ${DB_PORT:-5432}
@@ -356,7 +362,7 @@ services:
   # by itself: up to 30 attempts, 10 s apart, then gives up with the seed's
   # own error. Order-only `depends_on` keeps th2etl starting first.
   th2etl-seed:
-    image: ${TH2ETL_IMAGE:-apowerb/th2etl}:${TH2ETL_TAG:-0.0.11}
+    image: ${TH2ETL_IMAGE:-apowerb/th2etl}:${TH2ETL_TAG:-0.0.12}
     command: ["sh", "-c", "for i in $$(seq 1 30); do python -m th2etl.seeds.default_pipelines && exit 0; echo \"seed: attempt $$i failed, th2etl not ready yet\"; sleep 10; done; exit 1"]
     environment:
       DATABASE_HOST: ${DB_HOST}
