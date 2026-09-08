@@ -28,7 +28,26 @@ Ce qu'il reste à vérifier, dans cet ordre :
        kubectl -n {{ include "apowerb.namespace" . }} logs job/{{ include "apowerb.th2etl.fullname" . }}-seed
 {{- end }}
 
-  2. L'interface dit elle-même ce qui n'est pas configuré :
+  2. Atteindre l'interface :
+{{- if .Values.ingress.enabled }}
+       http{{ if .Values.ingress.tlsEnabled }}s{{ end }}://{{ .Values.ingress.host }}
+  {{- if not .Values.ingress.tlsEnabled }}
+
+  ⚠️  ingress.tlsEnabled=false : l'interface est servie en clair, et les liens
+      de vérification d'adresse partiront en http://. Activez-le une fois
+      cert-manager en place (annotation `cert-manager.io/cluster-issuer`).
+  {{- end }}
+{{- else if eq .Values.service.frontend.type "LoadBalancer" }}
+       kubectl -n {{ include "apowerb.namespace" . }} get svc {{ include "apowerb.frontend.fullname" . }}
+       (l'adresse externe apparaît quand le fournisseur a attribué l'IP)
+{{- else }}
+       kubectl -n {{ include "apowerb.namespace" . }} port-forward svc/{{ include "apowerb.frontend.fullname" . }} 3000:{{ .Values.service.frontend.port }}
+
+       Rien n'est exposé au dehors : activez `ingress.enabled`, ou passez
+       `service.frontend.type` à LoadBalancer.
+{{- end }}
+
+  3. L'interface dit elle-même ce qui n'est pas configuré :
      connectez-vous en administrateur, puis Admin → Configuration.
      La pastille de la barre latérale compte ce qui manque encore.
 {{- if not .Values.th2etl.apiKey }}
@@ -44,6 +63,12 @@ Ce qu'il reste à vérifier, dans cet ordre :
       intégration ne peut être enregistrée.
 {{- end }}
 
-  3. Les capacités qui dépendent d'un fournisseur (Google, Microsoft, S3,
+{{- if eq .Values.postgres.password "change-me" }}
+
+  ⚠️  postgres.password vaut encore `change-me`, la valeur livrée. Un mot de
+      passe publié dans un dépôt public n'en est plus un.
+{{- end }}
+
+  4. Les capacités qui dépendent d'un fournisseur (Google, Microsoft, S3,
      SMTP) se posent par `backend.env` et le Secret ; la liste exacte des
      variables est celle qu'affiche l'écran Configuration.

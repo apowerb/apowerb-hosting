@@ -38,7 +38,13 @@ service:
     type: ClusterIP
     port: 8000
   frontend:
-    type: LoadBalancer
+    # ClusterIP par défaut : l'interface s'atteint par l'Ingress ci-dessous.
+    # C'était `LoadBalancer`, ce qui réclame un équilibreur au fournisseur --
+    # une IP publique facturée -- même quand un ingress controller est déjà
+    # là pour ça, et laisse le service `Pending` sans fin sur un cluster qui
+    # n'en propose pas. Mettez `LoadBalancer` si vous n'utilisez pas
+    # d'Ingress ; `kubectl port-forward` suffit pour un essai.
+    type: ClusterIP
     port: 3000
   postgres:
     type: ClusterIP
@@ -50,9 +56,15 @@ service:
     type: ClusterIP
     port: 4319
 
+# PostgreSQL vit DANS le cluster, délibérément (David, 08/09/26) : le chart
+# doit s'installer à l'identique ailleurs que chez un hébergeur qui propose
+# des bases managées. Une base managée reste possible -- il suffit alors de
+# désactiver ce StatefulSet et de pointer le backend ailleurs -- mais ce n'est
+# pas le défaut, et le chart ne dépend d'aucun fournisseur.
 postgres:
   database: th2agent
   user: th2agent
+  # À remplacer : un mot de passe livré par défaut est un mot de passe publié.
   password: change-me
   storage: 8Gi
   storageClass: ""
@@ -194,10 +206,17 @@ secret:
 
 ingress:
   enabled: false
+  # `nginx` ou `traefik` selon l'add-on installé sur le cluster.
   className: ""
   host: apowerb.local
+  # Avec cert-manager, l'émetteur se déclare ici :
+  #   cert-manager.io/cluster-issuer: letsencrypt-prod
   annotations: {}
+  # Pose la section `tls` de l'Ingress. Sans elle, l'interface est servie en
+  # clair -- et les liens de vérification d'adresse partiraient en http://.
   tlsEnabled: false
+  # Vide : le nom est déduit (`<nom du chart>-tls`), ce que cert-manager
+  # remplit tout seul. À renseigner pour réutiliser un secret existant.
   tlsSecretName: ""
 
 
