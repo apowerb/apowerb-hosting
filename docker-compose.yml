@@ -282,6 +282,23 @@ services:
       GOOGLE_WEBHOOK_AUDIENCE: ${GOOGLE_WEBHOOK_AUDIENCE:-}
     restart: unless-stopped
 
+  # Orchestration: th2etl runs the pipelines the Orchestrator screen schedules.
+  # Ported from docker-compose/docker-compose.yml with three differences that
+  # are Hostman's, measured on 2026-09-07:
+  #   - no `profiles`: this platform's support for Compose profiles is not
+  #     documented, and an always-on service is what a demo wants;
+  #   - no `pull_policy: always`: the platform drops it ("Sanitizing docker
+  #     compose"), and on a host that honours it a missing tag aborts the
+  #     whole `up` before a single container exists;
+  #   - no `condition: service_healthy` anywhere: on 2026-09-07 that single
+  #     condition on th2pulse failed the entire deployment, the platform's
+  #     rollback collided on port 3000 and the demo answered 502 everywhere.
+  #     An optional service must never be able to take the essential ones down.
+  #
+  # Restored on 2026-09-08: #18 removed these lines while retagging, and they
+  # are the only record of why this file differs from the self-hosted one. What
+  # they describe is not a style choice -- adding any of the three back is how
+  # the 2026-09-07 outage happened.
   # The image is apowerb/th2etl -- the namespace this product ships under, like
   # apowerb/th2pulse and apowerb/apowerb. It carried th2farid/th2etl until
   # 2026-09-08, because apowerb/th2etl did not exist yet.
@@ -350,6 +367,16 @@ services:
       - th2etl
     restart: "no"
 
+  # --- Observability: logs and agent traces ---------------------------------
+  # Ported from docker-compose/docker-compose.yml, with two differences that
+  # this platform imposes:
+  #   - no profile: App Platform reads this file and nothing else, and whether
+  #     it honours Compose profiles is not documented. On a demo, always-on is
+  #     the point anyway.
+  #   - no Postgres service: th2pulse stores its traces in its own schema of
+  #     the managed cluster, connecting as the same role the application uses.
+  #     The connection is unencrypted like the application's own (see above),
+  #     so the cluster's PRIVATE address matters here too.
   th2pulse:
     image: ${TH2PULSE_IMAGE:-apowerb/th2pulse}:${TH2PULSE_TAG:-0.1.4}
     pull_policy: always
