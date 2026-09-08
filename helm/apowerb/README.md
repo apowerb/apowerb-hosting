@@ -42,6 +42,17 @@ empty strings. A `values-secrets.yaml` outside version control, passed with
 
 ## Install from a published release
 
+## Versions
+
+La série courante est **0.4.x** (David, 08/09/26) : les correctifs et les
+ajouts sortent en `0.4.1`, `0.4.2`… Ne pas repartir sur une mineure sans
+raison — `0.3.0` a été taguée entre deux merges et ne porte pas les
+correctifs qui l'ont suivie, ce qui a coûté un bump de rattrapage.
+
+Bumper `version:` dans `Chart.yaml` fait publier : `chart-releaser` crée la
+release au push sur `main`, et la publication OCI se lance à la main (voir
+plus bas). Une version inchangée ne publie rien, quel que soit le contenu.
+
 Le chart est publié sur **Docker Hub**, dans l'organisation d'où sortent déjà
 les images du produit :
 
