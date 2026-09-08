@@ -1,5 +1,12 @@
 {{- define "apowerb.name" -}}
-{{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" -}}
+{{/*
+Le nom du PRODUIT, fige, et non `.Chart.Name` : le paquet se nomme
+`apowerb-chart` depuis qu'il ne partage plus le depot Docker Hub des images,
+et ce renommage ne doit toucher aucune ressource. Sans cette constante, chaque
+objet serait devenu `apowerb-chart-backend`, `apowerb-chart-secrets`... et un
+`helm upgrade` aurait tout recree a cote de l'existant.
+*/}}
+{{- default "apowerb" .Values.nameOverride | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
 {{- define "apowerb.namespace" -}}

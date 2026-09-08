@@ -48,24 +48,29 @@ jobs:
           # `helm package --version apowerb-0.2.0` → « Invalid Semantic
           # Version », donc AUCUNE publication n'a jamais abouti par ce chemin.
           TAG_NAME="${{ inputs.tag || github.ref_name }}"
-          VERSION="${TAG_NAME#apowerb-}"
+          # Le prefixe vient du chart lui-meme : il s'appelait `apowerb`, il
+          # s'appelle `apowerb-chart`, et un prefixe ecrit en dur redonnerait
+          # ici `chart-0.4.1`.
+          CHART_NAME="$(helm show chart ./helm/apowerb-chart | awk '/^name:/{print $2}')"
+          VERSION="${TAG_NAME#${CHART_NAME}-}"
+          VERSION="${VERSION#apowerb-}"
           VERSION="${VERSION#v}"
           # Un tag qui ne porte pas de version : le chart dit la sienne, plutôt
           # que de casser le paquet.
           if ! printf '%s' "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+'; then
-            VERSION="$(helm show chart ./helm/apowerb | awk '/^version:/{print $2}')"
+            VERSION="$(helm show chart ./helm/apowerb-chart | awk '/^version:/{print $2}')"
             echo "Tag '$TAG_NAME' sans version : on prend celle de Chart.yaml ($VERSION)."
           fi
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Lint chart
-        run: helm lint ./helm/apowerb
+        run: helm lint ./helm/apowerb-chart
 
       - name: Package chart with release version
         env:
           VERSION: ${{ steps.release.outputs.version }}
         run: |
-          helm package ./helm/apowerb --version "$VERSION"
+          helm package ./helm/apowerb-chart --version "$VERSION"
 
       - name: Login to Docker Hub OCI registry
         env:
@@ -84,6 +89,9 @@ jobs:
         env:
           VERSION: ${{ steps.release.outputs.version }}
         run: |
-          CHART_TGZ="apowerb-${VERSION}.tgz"
+          # `helm package` nomme l'archive d'apres Chart.yaml, pas d'apres
+          # le repertoire : un nom ecrit en dur casse au premier renommage.
+          CHART_NAME="$(helm show chart ./helm/apowerb-chart | awk '/^name:/{print $2}')"
+          CHART_TGZ="${CHART_NAME}-${VERSION}.tgz"
           helm push "$CHART_TGZ" "oci://registry-1.docker.io/apowerb"
 
