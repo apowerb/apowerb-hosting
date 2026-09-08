@@ -29,6 +29,19 @@ and it is designed to run from published images or from a Kubernetes/Helm chart.
 - [Docker Compose](docker-compose/README.md)
 - [Kubernetes](k8s/README.md)
 - [Helm](helm/apowerb-chart/README.md)
+
+> **La doc passe avant le déploiement.** Une PR qui déplace le chart — son nom,
+> sa version, son chemin — échoue tant que
+> [`apowerb-docs`](https://github.com/apowerb/apowerb-docs) la contredit. Une PR
+> de doc **ouverte** suffit à passer le garde : préparer les deux ensemble est le
+> geste attendu, pas une entorse. Une ligne qui cite volontairement l'ancien état
+> se marque `docs-in-sync: ignore`.
+>
+> Le 8 septembre 2026, le site a servi pendant une heure une commande
+> d'installation périmée. Elle **fonctionnait** — l'ancien chart est toujours
+> tirable — et installait la pile d'avant th2etl, th2pulse et le volume
+> persistant. Aucune erreur, aucun rouge : c'est ce silence que
+> `.github/workflows/docs-in-sync.yml` supprime.
 - [Single VM / HTTPS with Traefik](traefik/README.md)
 
 ### 1. Docker Compose
