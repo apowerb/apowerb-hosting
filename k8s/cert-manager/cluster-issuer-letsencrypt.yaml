@@ -24,8 +24,8 @@ metadata:
 spec:
   acme:
     server: https://acme-v02.api.letsencrypt.org/directory
-    # ⚠️ À remplacer : Let's Encrypt y envoie les avis d'expiration.
-    email: CHANGEME@thaink2.com
+    # Let's Encrypt y envoie les avis d'expiration : une boîte réellement lue.
+    email: david.gnaglo@thaink2.com
     privateKeySecretRef:
       # Créé par cert-manager : la clé de compte ACME, pas un certificat.
       name: letsencrypt-prod-account-key
@@ -51,7 +51,7 @@ metadata:
 spec:
   acme:
     server: https://acme-staging-v02.api.letsencrypt.org/directory
-    email: CHANGEME@thaink2.com
+    email: david.gnaglo@thaink2.com
     privateKeySecretRef:
       name: letsencrypt-staging-account-key
     solvers:
