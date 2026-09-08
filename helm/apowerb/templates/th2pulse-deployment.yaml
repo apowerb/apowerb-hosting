@@ -31,7 +31,7 @@ spec:
             - name: TH2PULSE_DB_DSN
               valueFrom:
                 secretKeyRef:
-                  name: apowerb-secrets
+                  name: {{ include "apowerb.secretName" . }}
                   key: TH2PULSE_DB_DSN
             - name: TH2PULSE_DB_SCHEMA
               value: {{ .Values.th2pulse.schema | quote }}
@@ -40,12 +40,12 @@ spec:
             - name: TH2PULSE_INGEST_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: apowerb-secrets
+                  name: {{ include "apowerb.secretName" . }}
                   key: TH2PULSE_INGEST_TOKEN
             - name: TH2PULSE_QUERY_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: apowerb-secrets
+                  name: {{ include "apowerb.secretName" . }}
                   key: TH2PULSE_QUERY_TOKEN
           resources:
             {{- toYaml .Values.th2pulse.resources | nindent 12 }}

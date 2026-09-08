@@ -29,17 +29,17 @@ spec:
             - name: POSTGRES_DB
               valueFrom:
                 secretKeyRef:
-                  name: apowerb-secrets
+                  name: {{ include "apowerb.secretName" . }}
                   key: DB_NAME
             - name: POSTGRES_USER
               valueFrom:
                 secretKeyRef:
-                  name: apowerb-secrets
+                  name: {{ include "apowerb.secretName" . }}
                   key: DB_USER
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: apowerb-secrets
+                  name: {{ include "apowerb.secretName" . }}
                   key: DB_PASSWORD
           resources:
             requests:

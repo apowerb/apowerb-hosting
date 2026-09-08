@@ -32,29 +32,29 @@ spec:
             - name: DB_NAME
               valueFrom:
                 secretKeyRef:
-                  name: apowerb-secrets
+                  name: {{ include "apowerb.secretName" . }}
                   key: DB_NAME
             - name: DB_USER
               valueFrom:
                 secretKeyRef:
-                  name: apowerb-secrets
+                  name: {{ include "apowerb.secretName" . }}
                   key: DB_USER
             - name: DB_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: apowerb-secrets
+                  name: {{ include "apowerb.secretName" . }}
                   key: DB_PASSWORD
             - name: DB_SSLMODE
               value: {{ .Values.backend.env.dbSslmode | quote }}
             - name: ENCRYPT_KEY
               valueFrom:
                 secretKeyRef:
-                  name: apowerb-secrets
+                  name: {{ include "apowerb.secretName" . }}
                   key: ENCRYPT_KEY
             - name: TEST_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: apowerb-secrets
+                  name: {{ include "apowerb.secretName" . }}
                   key: TEST_TOKEN
             - name: TH2_EXTENSIONS
               value: {{ .Values.backend.env.th2Extensions | quote }}
@@ -75,7 +75,7 @@ spec:
             - name: TH2ETL_API_KEY
               valueFrom:
                 secretKeyRef:
-                  name: apowerb-secrets
+                  name: {{ include "apowerb.secretName" . }}
                   key: TH2ETL_API_KEY
             {{- end }}
             {{- if .Values.otelCollector.enabled }}

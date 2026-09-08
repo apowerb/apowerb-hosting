@@ -51,28 +51,39 @@ prendre le risque qu'un seed écrive ailleurs que là où l'orchestrateur lit.
 - name: DATABASE_NAME
   valueFrom:
     secretKeyRef:
-      name: apowerb-secrets
+      name: {{ include "apowerb.secretName" . }}
       key: DB_NAME
 - name: DATABASE_USER
   valueFrom:
     secretKeyRef:
-      name: apowerb-secrets
+      name: {{ include "apowerb.secretName" . }}
       key: DB_USER
 - name: DATABASE_PASSWORD
   valueFrom:
     secretKeyRef:
-      name: apowerb-secrets
+      name: {{ include "apowerb.secretName" . }}
       key: DB_PASSWORD
 - name: API_KEY
   valueFrom:
     secretKeyRef:
-      name: apowerb-secrets
+      name: {{ include "apowerb.secretName" . }}
       key: TH2ETL_API_KEY
 - name: ADK_BASE_URL
   value: "http://{{ include "apowerb.backend.fullname" . }}:{{ .Values.service.backend.port }}"
 - name: ENCRYPT_KEY
   valueFrom:
     secretKeyRef:
-      name: apowerb-secrets
+      name: {{ include "apowerb.secretName" . }}
       key: ENCRYPT_KEY
+{{- end -}}
+
+{{/*
+Le nom du Secret. Il était écrit en dur (« apowerb-secrets ») dans neuf
+fichiers : avec un ``nameOverride``, tous les autres objets étaient renommés
+et deux releases dans le même namespace se disputaient le MÊME Secret -- la
+seconde écrasant les identifiants de la première. Par défaut la valeur ne
+change pas, donc une installation existante n'a rien à faire.
+*/}}
+{{- define "apowerb.secretName" -}}
+{{- printf "%s-secrets" (include "apowerb.name" .) -}}
 {{- end -}}

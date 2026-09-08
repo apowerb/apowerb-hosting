@@ -1,5 +1,7 @@
 replicaCount: 1
 namespaceOverride: ""
+# Préfixe de tous les objets ; vide, c'est le nom du chart ("apowerb").
+nameOverride: ""
 
 image:
   backend:
@@ -98,9 +100,6 @@ ingress:
   tlsEnabled: false
   tlsSecretName: ""
 
-serviceAccount:
-  create: true
-  name: ""
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Orchestrateur des pipelines (th2etl). Le backend ne l'appelle que s'il a

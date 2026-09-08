@@ -39,7 +39,7 @@ spec:
             - name: TH2PULSE_INGEST_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: apowerb-secrets
+                  name: {{ include "apowerb.secretName" . }}
                   key: TH2PULSE_INGEST_TOKEN
           volumeMounts:
             - name: config

@@ -38,7 +38,7 @@ spec:
             - name: PULSE_QUERY_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: apowerb-secrets
+                  name: {{ include "apowerb.secretName" . }}
                   key: TH2PULSE_QUERY_TOKEN
             {{- end }}
           resources:
