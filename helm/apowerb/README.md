@@ -42,6 +42,17 @@ empty strings. A `values-secrets.yaml` outside version control, passed with
 
 ## Install from a published release
 
+> ⚠️ **Aucune version de ce chart n'est publiée pour l'instant.** Le workflow
+> `release-helm.yml` échoue à chaque push sur `main` — `chart-releaser` sort en
+> `exit status 128` faute de branche `gh-pages`, et les huit derniers runs sont
+> tous en échec. Il n'existe donc ni tag `apowerb-x.y.z`, ni release, ni chart
+> sur les deux registres, malgré les commandes ci-dessous.
+>
+> C'est réparable en une ligne (créer la branche `gh-pages`), mais publier
+> viendra **après** un premier `helm install` réussi sur un vrai cluster : ce
+> chart n'a encore été vérifié que par `helm lint` et `kubeconform`. En
+> attendant, il s'installe depuis les sources — c'est la section précédente.
+
 Docker Hub:
 
 ```bash
