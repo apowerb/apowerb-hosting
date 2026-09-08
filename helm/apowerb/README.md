@@ -42,28 +42,27 @@ empty strings. A `values-secrets.yaml` outside version control, passed with
 
 ## Install from a published release
 
-> ⚠️ **Aucune version de ce chart n'est publiée pour l'instant.** Le workflow
-> `release-helm.yml` échoue à chaque push sur `main` — `chart-releaser` sort en
-> `exit status 128` faute de branche `gh-pages`, et les huit derniers runs sont
-> tous en échec. Il n'existe donc ni tag `apowerb-x.y.z`, ni release, ni chart
-> sur les deux registres, malgré les commandes ci-dessous.
->
-> C'est réparable en une ligne (créer la branche `gh-pages`), mais publier
-> viendra **après** un premier `helm install` réussi sur un vrai cluster : ce
-> chart n'a encore été vérifié que par `helm lint` et `kubeconform`. En
-> attendant, il s'installe depuis les sources — c'est la section précédente.
-
-Docker Hub:
+Le chart est publié sur **Docker Hub**, dans l'organisation d'où sortent déjà
+les images du produit :
 
 ```bash
 helm install apowerb oci://registry-1.docker.io/apowerb/apowerb --version 0.2.0
 ```
 
-GitHub Container Registry:
+> GHCR a été retiré le 08/09/26. Le push y réussissait, mais un paquet naît
+> **privé** dans une organisation GitHub : `helm pull oci://ghcr.io/apowerb/apowerb`
+> répondait `403 Forbidden` en anonyme. Publier là où personne ne peut tirer
+> n'est pas publier.
 
-```bash
-helm install apowerb oci://ghcr.io/apowerb/apowerb --version 0.2.0
-```
+> ⚠️ **Le chart et les images partagent le dépôt `apowerb/apowerb`.** Sur Docker
+> Hub, un dépôt ne se subdivise pas, et `helm push` y dépose le chart sous le
+> nom du chart. Mesuré : `apowerb/apowerb:0.2.0` pèse 10 ko — c'est le chart ;
+> `apowerb/apowerb:0.2.12` pèse 250 Mo — c'est le backend. Les deux séries de
+> versions avancent séparément : le jour où elles se croisent, l'une écrase
+> l'autre. Le remède tient en deux lignes (`name: apowerb-chart` dans
+> `Chart.yaml`, `nameOverride: apowerb` dans `values.yaml`, qui garde les noms
+> d'objets inchangés) mais il renomme l'artefact publié — décision à prendre,
+> pas à subir.
 
 ## A smaller stack
 
