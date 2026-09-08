@@ -42,7 +42,7 @@ services:
     # (sign-up, sign-in, an agent created and read back, the control panel API
     # answering). Override BOTH tags in `.env` when you move, never one alone:
     # the frontend and the backend cap each other in both directions.
-    image: ${APOWERB_BACKEND_IMAGE:-apowerb/apowerb}:${APOWERB_BACKEND_TAG:-0.2.11}
+    image: ${APOWERB_BACKEND_IMAGE:-apowerb/apowerb}:${APOWERB_BACKEND_TAG:-0.2.12}
     pull_policy: always
     environment:
       DB_HOST: postgres
@@ -114,7 +114,7 @@ services:
     # Pinned with the backend above -- see the note there. 0.1.12 is a floor:
     # 0.1.11 still bundled an SDK calling `/api/admin/organizations`, which the
     # backend stopped serving when organisations became a commercial brick.
-    image: ${APOWERB_FRONTEND_IMAGE:-apowerb/apowerb-ui}:${APOWERB_FRONTEND_TAG:-0.1.17}
+    image: ${APOWERB_FRONTEND_IMAGE:-apowerb/apowerb-ui}:${APOWERB_FRONTEND_TAG:-0.1.18}
     pull_policy: always
     environment:
       API_URL: http://apowerb:8000
