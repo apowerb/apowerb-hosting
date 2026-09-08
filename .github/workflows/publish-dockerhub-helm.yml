@@ -3,6 +3,18 @@ name: Publish Helm chart to OCI registries
 on:
   release:
     types: [published]
+  # `chart-releaser` crée la release avec le GITHUB_TOKEN du workflow, et
+  # GitHub refuse qu'un événement produit par ce jeton en déclenche un autre --
+  # la protection anti-boucle. Mesuré le 08/09/26 : la release `apowerb-0.2.0`
+  # est bien apparue, et AUCUN run de publication n'a suivi. Sans ce
+  # déclencheur manuel, publier demanderait un jeton personnel dans les
+  # secrets, ou de republier la release à la main.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag à publier (ex. apowerb-0.2.0). Défaut : la ref choisie ci-dessus."
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -30,7 +42,7 @@ jobs:
           # Avec l'ancien `${TAG_NAME#v}`, le second donnait
           # `helm package --version apowerb-0.2.0` → « Invalid Semantic
           # Version », donc AUCUNE publication n'a jamais abouti par ce chemin.
-          TAG_NAME="${GITHUB_REF_NAME}"
+          TAG_NAME="${{ inputs.tag || github.ref_name }}"
           VERSION="${TAG_NAME#apowerb-}"
           VERSION="${VERSION#v}"
           # Un tag qui ne porte pas de version : le chart dit la sienne, plutôt
