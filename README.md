@@ -28,7 +28,7 @@ and it is designed to run from published images or from a Kubernetes/Helm chart.
 
 - [Docker Compose](docker-compose/README.md)
 - [Kubernetes](k8s/README.md)
-- [Helm](helm/apowerb/README.md)
+- [Helm](helm/apowerb-chart/README.md)
 - [Single VM / HTTPS with Traefik](traefik/README.md)
 
 ### 1. Docker Compose
@@ -61,13 +61,13 @@ kubectl apply -f k8s/
 Install the chart from the local source tree.
 
 ```bash
-helm upgrade --install apowerb ./helm/apowerb \
+helm upgrade --install apowerb ./helm/apowerb-chart \
   --namespace apowerb \
   --create-namespace \
-  --values ./helm/apowerb/values.yaml
+  --values ./helm/apowerb-chart/values.yaml
 ```
 
-To enable ingress, set `ingress.enabled: true` in `helm/apowerb/values.yaml` or use the example in [k8s/05-ingress.yaml](k8s/05-ingress.yaml).
+To enable ingress, set `ingress.enabled: true` in `helm/apowerb-chart/values.yaml` or use the example in [k8s/05-ingress.yaml](k8s/05-ingress.yaml).
 
 ### 4. Single VM / HTTPS with Traefik
 

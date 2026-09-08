@@ -31,4 +31,4 @@ The sample ingress is available in [05-ingress.yaml](05-ingress.yaml).
 
 ## Notes
 
-This path is the raw Kubernetes deployment option. For a packaged deployment, use the Helm chart in the `helm/apowerb` folder.
+This path is the raw Kubernetes deployment option. For a packaged deployment, use the Helm chart in the `helm/apowerb-chart` folder.

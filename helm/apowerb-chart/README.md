@@ -17,8 +17,8 @@ Each one is a single switch: `th2etl.enabled`, `th2pulse.enabled`,
 
 ## OCI locations
 
-- Docker Hub chart: https://hub.docker.com/r/apowerb/apowerb
-- GitHub Container Registry chart: https://github.com/orgs/apowerb/packages
+- Docker Hub chart: https://hub.docker.com/r/apowerb/apowerb-chart
+- Docker Hub images: https://hub.docker.com/r/apowerb/apowerb (le backend, pas le chart)
 
 ## Install from source
 
@@ -27,7 +27,7 @@ without the two `th2pulse` tokens — that service does not start without them,
 so failing at install is the honest moment to say it.
 
 ```bash
-helm upgrade --install apowerb ./helm/apowerb \
+helm upgrade --install apowerb ./helm/apowerb-chart \
   --namespace apowerb --create-namespace \
   --set backend.env.encryptKey="$(openssl rand -base64 32)" \
   --set th2etl.apiKey="$(openssl rand -hex 32)" \
@@ -54,10 +54,10 @@ release au push sur `main`, et la publication OCI se lance à la main (voir
 plus bas). Une version inchangée ne publie rien, quel que soit le contenu.
 
 Le chart est publié sur **Docker Hub**, dans l'organisation d'où sortent déjà
-les images du produit :
+les images du produit — mais dans un dépôt à lui, `apowerb/apowerb-chart` :
 
 ```bash
-helm install apowerb oci://registry-1.docker.io/apowerb/apowerb --version 0.4.0
+helm install apowerb oci://registry-1.docker.io/apowerb/apowerb-chart --version 0.4.1
 ```
 
 > GHCR a été retiré le 08/09/26. Le push y réussissait, mais un paquet naît
@@ -65,22 +65,30 @@ helm install apowerb oci://registry-1.docker.io/apowerb/apowerb --version 0.4.0
 > répondait `403 Forbidden` en anonyme. Publier là où personne ne peut tirer
 > n'est pas publier.
 
-> ⚠️ **Le chart et les images partagent le dépôt `apowerb/apowerb`.** Sur Docker
-> Hub, un dépôt ne se subdivise pas, et `helm push` y dépose le chart sous le
-> nom du chart. Mesuré : `apowerb/apowerb:0.2.0` pèse 10 ko — c'est le chart ;
-> `apowerb/apowerb:0.2.12` pèse 250 Mo — c'est le backend. Les deux séries de
-> versions avancent séparément : le jour où elles se croisent, l'une écrase
-> l'autre. Le remède tient en deux lignes (`name: apowerb-chart` dans
-> `Chart.yaml`, `nameOverride: apowerb` dans `values.yaml`, qui garde les noms
-> d'objets inchangés) mais il renomme l'artefact publié — décision à prendre,
-> pas à subir.
+> **Le chart s'appelle `apowerb-chart` depuis la 0.4.1**, et c'est ce nom qui
+> devient le dépôt Docker Hub. Avant, chart et images partageaient
+> `apowerb/apowerb` : `apowerb/apowerb:0.2.0` pèse 10 ko — c'était le chart ;
+> `:0.2.12` pèse 250 Mo — c'est le backend. Deux séries de versions dans un
+> seul espace de noms, dont l'une aurait fini par écraser l'autre.
+>
+> Le renommage ne touche **aucune ressource Kubernetes** : `apowerb.name` est
+> figé sur `apowerb` plutôt que dérivé de `.Chart.Name`, sinon chaque objet
+> serait devenu `apowerb-chart-backend` et un `helm upgrade` aurait tout
+> recréé à côté de l'existant. Mesuré : `helm template` avant et après le
+> renommage ne diffère que par les commentaires `# Source:` que Helm écrit
+> lui-même — zéro ligne de contenu. `nameOverride` reste disponible pour ce à
+> quoi il sert, faire cohabiter deux releases dans un namespace.
+>
+> Les versions publiées avant le renommage restent sous
+> `oci://registry-1.docker.io/apowerb/apowerb` (0.2.0 et 0.4.0) : elles n'ont
+> pas été déplacées.
 
 ## A smaller stack
 
 Nothing beyond the product itself is mandatory:
 
 ```bash
-helm upgrade --install apowerb ./helm/apowerb \
+helm upgrade --install apowerb ./helm/apowerb-chart \
   --set th2etl.enabled=false \
   --set th2pulse.enabled=false \
   --set otelCollector.enabled=false \
@@ -172,8 +180,8 @@ kubectl -n apowerb logs job/apowerb-th2etl-seed
 ## Checks that do not need a cluster
 
 ```bash
-helm lint helm/apowerb
-helm template rel helm/apowerb --set th2pulse.ingestToken=x --set th2pulse.queryToken=y | \
+helm lint helm/apowerb-chart
+helm template rel helm/apowerb-chart --set th2pulse.ingestToken=x --set th2pulse.queryToken=y | \
   kubeconform -strict -summary -kubernetes-version 1.30.0
 ```
 
