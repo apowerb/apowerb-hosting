@@ -87,3 +87,32 @@ change pas, donc une installation existante n'a rien à faire.
 {{- define "apowerb.secretName" -}}
 {{- printf "%s-secrets" (include "apowerb.name" .) -}}
 {{- end -}}
+
+{{/*
+L'origine publique du front. Explicite d'abord ; sinon deduite de l'ingress,
+qui route deja tout vers le front. Rien du tout si ni l'un ni l'autre : le
+coeur garde ses defauts localhost, et l'ecran Configuration le dit -- ce qui
+vaut mieux qu'une valeur inventee qu'aucun fournisseur OAuth n'acceptera.
+*/}}
+{{- define "apowerb.appPublicUrl" -}}
+{{- if .Values.publicUrls.appPublicUrl -}}
+{{- .Values.publicUrls.appPublicUrl | trimSuffix "/" -}}
+{{- else if .Values.ingress.enabled -}}
+{{- printf "%s://%s" (ternary "https" "http" .Values.ingress.tlsEnabled) .Values.ingress.host -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+L'origine de l'API vue de l'exterieur, celle que les webhooks composent.
+Elle suit celle du front par defaut : l'ingress envoie tout au front, qui
+relaie `/api`. Microsoft refuse un `notificationUrl` en http, donc un ingress
+sans TLS produira bien une URL, et Graph la rejettera -- explicitement, ce qui
+est encore la meilleure des deux facons d'apprendre qu'il manque le TLS.
+*/}}
+{{- define "apowerb.publicBaseUrl" -}}
+{{- if .Values.publicUrls.publicBaseUrl -}}
+{{- .Values.publicUrls.publicBaseUrl | trimSuffix "/" -}}
+{{- else -}}
+{{- include "apowerb.appPublicUrl" . -}}
+{{- end -}}
+{{- end -}}

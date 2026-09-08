@@ -1,6 +1,6 @@
 apiVersion: v2
 name: apowerb
 description: apowerb, its interface, PostgreSQL, the th2etl orchestrator, the th2pulse log store and an OpenTelemetry collector
-version: 0.2.0
+version: 0.3.0
 appVersion: "0.2.12"
 type: application
