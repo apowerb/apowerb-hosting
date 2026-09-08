@@ -105,7 +105,7 @@ services:
     # served to anyone typing its URL.
     #
     # Override both tags together when you move, never one alone.
-    image: ${APOWERB_FRONTEND_IMAGE:-apowerb/apowerb-ui}:${APOWERB_FRONTEND_TAG:-0.1.13}
+    image: ${APOWERB_FRONTEND_IMAGE:-apowerb/apowerb-ui}:${APOWERB_FRONTEND_TAG:-0.1.18}
     pull_policy: always
     environment:
       # Server-side only, read at runtime by the route handlers.
@@ -170,7 +170,7 @@ services:
     # this reversible: a database migrated by 0.2.8 (22 tables) served by a
     # 0.2.6 backend starts clean, signs the same account in, reads the same
     # agent back, and logs no error. Pinning forward is not a one-way door.
-    image: ${APOWERB_BACKEND_IMAGE:-apowerb/apowerb}:${APOWERB_BACKEND_TAG:-0.2.8}
+    image: ${APOWERB_BACKEND_IMAGE:-apowerb/apowerb}:${APOWERB_BACKEND_TAG:-0.2.12}
     pull_policy: always
     environment:
       # ── Managed cluster (Hostman > Databases), not a service of this stack ──

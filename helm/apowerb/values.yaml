@@ -5,11 +5,11 @@ image:
   backend:
     repository: apowerb/apowerb
     # Paired with the frontend tag below -- move both or neither.
-    tag: 0.2.8
+    tag: 0.2.12
     pullPolicy: IfNotPresent
   frontend:
     repository: apowerb/apowerb-ui
-    tag: 0.1.13
+    tag: 0.1.18
     pullPolicy: IfNotPresent
   postgres:
     repository: postgres
