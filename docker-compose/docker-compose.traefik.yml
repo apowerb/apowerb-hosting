@@ -1,6 +1,11 @@
 services:
   traefik:
-    image: traefik:v3.1
+    # Épinglé au patch, comme les autres images de ce dépôt : `v3.7` suivrait
+    # les correctifs sans le dire, et un tag mobile est un tag figé qui prétend
+    # être courant. v3.1 datait de 2024 ; les options utilisées ci-dessous
+    # (entrypoints, résolveur ACME, provider docker) n'ont pas changé de forme
+    # dans la série 3.x, seule l'image bouge.
+    image: traefik:v3.7.13
     command:
       - --providers.docker=true
       - --providers.docker.exposedbydefault=false

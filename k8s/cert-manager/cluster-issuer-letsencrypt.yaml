@@ -1,0 +1,66 @@
+# Émetteur Let's Encrypt pour cert-manager.
+#
+# cert-manager installé ne délivre aucun certificat : il attend un émetteur.
+# Celui-ci est *cluster-scoped* (utilisable depuis n'importe quel namespace),
+# d'où `ClusterIssuer` et non `Issuer` — le chart applicatif ne le crée pas :
+# un émetteur pour tout le cluster n'appartient pas à une release.
+#
+# Le défi HTTP-01 passe par l'Ingress : cert-manager crée un Ingress temporaire
+# sur `/.well-known/acme-challenge/…`, que Let's Encrypt vient lire. Il faut
+# donc que le nom public pointe DÉJÀ sur l'IP de l'ingress controller, et que
+# le port 80 soit joignable — sinon la commande réussit et le certificat reste
+# en `False`, ce qui se lit dans `kubectl describe certificate`.
+#
+#   kubectl apply -f cluster-issuer-letsencrypt.yaml
+#   kubectl get clusterissuer letsencrypt-prod -o wide     # READY=True attendu
+#
+# L'Ingress du chart s'y raccroche par une annotation :
+#   --set ingress.tlsEnabled=true \
+#   --set ingress.annotations."cert-manager\.io/cluster-issuer"=letsencrypt-prod
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    # ⚠️ À remplacer : Let's Encrypt y envoie les avis d'expiration.
+    email: CHANGEME@thaink2.com
+    privateKeySecretRef:
+      # Créé par cert-manager : la clé de compte ACME, pas un certificat.
+      name: letsencrypt-prod-account-key
+    solvers:
+      - http01:
+          ingress:
+            # `ingressClassName`, pas `class` : ce dernier passe par l'ancienne
+            # annotation `kubernetes.io/ingress.class` et n'est plus recommandé
+            # que pour ingress-gce. Avec `class`, l'Ingress temporaire du défi
+            # naît sans classe reconnue, Traefik ne le route pas, et le
+            # certificat reste `Ready: False` sans que rien n'ait échoué
+            # bruyamment.
+            ingressClassName: traefik
+---
+# Le même, contre l'environnement de test de Let's Encrypt. Ses certificats ne
+# sont pas reconnus par les navigateurs, mais ses quotas sont larges : c'est
+# par lui qu'on éprouve la chaîne (DNS, port 80, ingress) sans consommer les
+# 5 échecs/heure de la production, qui bloquent ensuite pour une semaine.
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-staging
+spec:
+  acme:
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    email: CHANGEME@thaink2.com
+    privateKeySecretRef:
+      name: letsencrypt-staging-account-key
+    solvers:
+      - http01:
+          ingress:
+            # `ingressClassName`, pas `class` : ce dernier passe par l'ancienne
+            # annotation `kubernetes.io/ingress.class` et n'est plus recommandé
+            # que pour ingress-gce. Avec `class`, l'Ingress temporaire du défi
+            # naît sans classe reconnue, Traefik ne le route pas, et le
+            # certificat reste `Ready: False` sans que rien n'ait échoué
+            # bruyamment.
+            ingressClassName: traefik
