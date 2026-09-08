@@ -97,6 +97,51 @@ configured), `uploads`, `artifacts_store`, `agents_pool`.
 - Configuring S3 (`storage_mode`, `S3_*`) makes BI files bypass the disk
   entirely; the volume then only holds uploads and artifacts.
 
+## Features and their credentials
+
+Everything the product can be told to do lives under a handful of values. Each
+one is passed to the backend **only when it has a value** — a variable set to
+an empty string is not an absent variable: pydantic-settings counts it as
+provided and it replaces the core's default instead of deferring to it. That is
+what sent an empty `redirect_uri` to Microsoft on the demo (`AADSTS90102`).
+
+| Value | Environment | Without it |
+|---|---|---|
+| `defaultLlm.model`, `defaultLlm.apiKey` | `DEFAULT_LLM_*` | no shared model: every user must bring their own key to run an agent |
+| `integrations.microsoft.clientId` / `clientSecret` | `MICROSOFT_INTEGRATION_*` | no Outlook connection, no Outlook webhook, no agent-sent mail |
+| `integrations.google.clientId` / `clientSecret` | `GOOGLE_INTEGRATION_*` | no Drive, Gmail or Calendar |
+| `storage.mode`, `storage.s3.*` | `STORAGE_MODE`, `S3_*` | uploads stay on the volume (see *Storage*) |
+| `mail.host`, `mail.port`, `mail.from` | `SMTP_*` | no e-mail verification, no password reset |
+| `superadmin.email`, `password` | `DEFAULT_SUPERADMIN_*` | no administrator account is created on first boot |
+
+Sensitive halves (`apiKey`, `clientSecret`, `accessKeySecret`, `mail.password`,
+`superadmin.password`, `ragWebhookSecret`) go through the Secret, referenced
+with `optional: true` — so a Secret you provide yourself
+(`secret.create=false`) can carry those keys without repeating the values here.
+
+Whatever is left unset is not a silent hole: `Admin → Configuration` in the
+product lists exactly what is missing, by variable name, to administrators
+only.
+
+## Public URLs
+
+`publicUrls.appPublicUrl` is the origin the **front** answers on, and the core
+derives from it the CORS origins and the GitHub, Google and Outlook Mail
+callbacks — one value for nine settings. `publicUrls.publicBaseUrl` is the
+origin **webhook providers dial**; unset, it follows the front, since the
+ingress routes everything to the front and the front relays `/api`.
+
+Leave both empty with an ingress enabled and they are derived from
+`ingress.host` and `ingress.tlsEnabled`. Leave them empty without an ingress
+and nothing is passed at all: the core keeps its localhost defaults, and the
+Configuration screen says so — which beats inventing an origin no OAuth
+provider will accept.
+
+`ORCHESTRATOR=th2etl` is set alongside `TH2ETL_BASE_URL` whenever th2etl is
+enabled. The core picks its orchestration client from that variable and
+defaults to `mage`, so address and key alone leave the Orchestrator screen
+empty next to a perfectly healthy th2etl — measured on the demo, 2026-09-08.
+
 ## Optional ingress
 
 Enable ingress in `values.yaml` with `ingress.enabled: true`.

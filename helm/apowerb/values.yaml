@@ -72,6 +72,11 @@ backend:
     workingMode: development
     encryptKey: ""
     testToken: ""
+    # Schema Postgres, si le votre n'est pas `public`.
+    dbSchema: ""
+    # Fuseau des horodatages ecrits dans les journaux (ex. Europe/Paris).
+    logTz: ""
+
   resources:
     requests:
       cpu: 200m
@@ -79,6 +84,101 @@ backend:
     limits:
       cpu: 500m
       memory: 512Mi
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Ou cette installation repond, en public.
+#
+# Le coeur deduit de `appPublicUrl` tout ce qu'un navigateur doit atteindre :
+# origines CORS, callbacks GitHub, Google et Outlook Mail. Une seule valeur
+# pour neuf reglages -- a condition qu'elle ne soit PAS vide : une variable
+# posee vide compte comme fournie et remplace le defaut au lieu de s'effacer
+# devant lui. C'est pourquoi rien ici n'est emis tant que la valeur manque.
+#
+# Laisse vide avec un ingress actif, l'URL est deduite de `ingress.host` et de
+# `ingress.tlsEnabled`. Sans ingress ni valeur, le coeur garde ses defauts
+# localhost et l'ecran Configuration le dit.
+# ─────────────────────────────────────────────────────────────────────────────
+publicUrls:
+  # L'origine du FRONT, sans chemin ni slash final : https://apowerb.example.
+  appPublicUrl: ""
+  # L'origine de l'API, que les webhooks Microsoft et Google composent. Vide,
+  # elle suit `appPublicUrl` : l'ingress route tout vers le front, qui relaie
+  # `/api`. Le code ajoute `/api/...` lui-meme -- une origine, pas un chemin.
+  publicBaseUrl: ""
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Modele offert par defaut aux agents, sans que l'utilisateur pose sa cle.
+# Sans lui, chacun doit apporter la sienne pour faire tourner un agent.
+# ─────────────────────────────────────────────────────────────────────────────
+defaultLlm:
+  model: ""
+  apiKey: ""
+  # Point d'entree compatible OpenAI, pour un fournisseur tiers ou local.
+  apiBase: ""
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Connexions tierces. Chacune se declare aussi cote fournisseur, et l'URI de
+# redirection doit y correspondre au caractere pres.
+#
+# ⚠️ `microsoft.*` ici, ce sont les INTEGRATIONS (Outlook, OneDrive, Teams).
+# La famille MICROSOFT_* sans _INTEGRATION sert a la connexion des
+# utilisateurs : deux jeux d'identifiants distincts, aux noms voisins.
+# ─────────────────────────────────────────────────────────────────────────────
+integrations:
+  microsoft:
+    clientId: ""
+    clientSecret: ""
+    # `common` accepte tous les tenants ; mettez le votre pour le restreindre.
+    tenantId: ""
+    # Jamais deduite, volontairement : le coeur laisse ce champ vide plutot
+    # que de pointer ailleurs, pour qu'un vide se lise « pas configure ».
+    redirectUri: ""
+    # Callback d'Outlook Mail, distinct du precedent. Vide, le coeur le deduit
+    # de l'URL publique : `<origine>/emailing/microsoft/callback`.
+    outlookMailRedirectUri: ""
+  google:
+    clientId: ""
+    clientSecret: ""
+    # Vide, deduit : `<origine>/integrations/google/callback`.
+    redirectUri: ""
+    # Reclamee seulement par les webhooks Google.
+    webhookAudience: ""
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Ou vont les fichiers deposes. `local` ecrit dans le volume du backend ;
+# `S3` exige les cinq champs ci-dessous, sinon le coeur retombe sur le disque.
+# ─────────────────────────────────────────────────────────────────────────────
+storage:
+  mode: local
+  s3:
+    endpoint: ""
+    region: ""
+    bucket: ""
+    accessKey: ""
+    accessKeySecret: ""
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Courrier systeme : verification d'adresse et reinitialisation de mot de
+# passe. Sans lui, un utilisateur qui perd son mot de passe reste bloque.
+# ─────────────────────────────────────────────────────────────────────────────
+mail:
+  host: ""
+  port: ""
+  from: ""
+  user: ""
+  password: ""
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Compte superadministrateur cree au premier demarrage, s'il n'existe pas
+# deja. Les deux champs vont ensemble : l'un sans l'autre ne cree rien.
+# ─────────────────────────────────────────────────────────────────────────────
+superadmin:
+  email: ""
+  password: ""
+
+# Signature des appels entrants du service RAG. Le coeur porte un defaut
+# public (`th2-webhook-default-secret`) : posez le votre en production.
+ragWebhookSecret: ""
 
 frontend:
   resources:
