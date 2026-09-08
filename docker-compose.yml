@@ -288,6 +288,28 @@ services:
       TH2_LOG_TZ: ${TH2_LOG_TZ:-Europe/Paris}
       RAG_WEBHOOK_SECRET: ${RAG_WEBHOOK_SECRET:-}
       GOOGLE_WEBHOOK_AUDIENCE: ${GOOGLE_WEBHOOK_AUDIENCE:-}
+      # Where this installation answers, in public. The core deduces every
+      # browser-facing callback from APP_PUBLIC_URL, so these two facts stand
+      # in for nine settings -- but only when they actually reach the
+      # container, and only when they are not empty.
+      #
+      # Measured on the demo, 2026-09-08, two refusals from the same root:
+      #   * empty is NOT absent. pydantic-settings counts a declared-but-empty
+      #     variable as PROVIDED, so `${X:-}` REPLACES the shipped default
+      #     instead of falling back to it, and the deduction below skips a
+      #     field that "was provided". With OUTLOOK_MAIL_REDIRECT_URI declared
+      #     empty, the core handed Microsoft "" -> AADSTS90102, 'redirect_uri'
+      #     value must be a valid absolute URI.
+      #   * PUBLIC_BASE_URL was not declared at all, so the Outlook webhook
+      #     asked Graph to call http://localhost:8000/api/webhooks/... ->
+      #     HTTP 400, NotificationUrl scheme='http' is not supported.
+      #
+      # Hence: a non-empty fallback on every one of them. Unset, they are the
+      # values the core ships; set, they are this deployment's own origin.
+      APP_PUBLIC_URL: ${APP_PUBLIC_URL:-http://localhost:3000}
+      # Where THIS API answers publicly, which webhook providers dial. The
+      # code appends `/api/...` itself, so this is an origin, no path.
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-${APP_PUBLIC_URL:-http://localhost:8000}}
       # Everything below is optional and empty by default: the backend runs
       # without it, and `GET /api/config/setup` reports each family as not
       # configured. But it has to be DECLARED here, or setting it in the
@@ -300,12 +322,17 @@ services:
       MICROSOFT_INTEGRATION_CLIENT_ID: ${MICROSOFT_INTEGRATION_CLIENT_ID:-}
       MICROSOFT_INTEGRATION_CLIENT_SECRET: ${MICROSOFT_INTEGRATION_CLIENT_SECRET:-}
       MICROSOFT_INTEGRATION_TENANT_ID: ${MICROSOFT_INTEGRATION_TENANT_ID:-common}
+      # Left empty on purpose: the core excludes this one from the
+      # deduction above because its shipped default is empty rather
+      # than localhost, so an unset value reads as 'not configured'
+      # instead of pointing somewhere wrong. Set it in the platform.
       MICROSOFT_INTEGRATION_REDIRECT_URI: ${MICROSOFT_INTEGRATION_REDIRECT_URI:-}
-      OUTLOOK_MAIL_REDIRECT_URI: ${OUTLOOK_MAIL_REDIRECT_URI:-}
+      # Path fixed by the core (`_DERIVED_FROM_FRONT`), origin from above.
+      OUTLOOK_MAIL_REDIRECT_URI: ${OUTLOOK_MAIL_REDIRECT_URI:-${APP_PUBLIC_URL:-http://localhost:3000}/emailing/microsoft/callback}
       # Google: Drive, Gmail, Calendar.
       GOOGLE_INTEGRATION_CLIENT_ID: ${GOOGLE_INTEGRATION_CLIENT_ID:-}
       GOOGLE_INTEGRATION_CLIENT_SECRET: ${GOOGLE_INTEGRATION_CLIENT_SECRET:-}
-      GOOGLE_INTEGRATION_REDIRECT_URI: ${GOOGLE_INTEGRATION_REDIRECT_URI:-}
+      GOOGLE_INTEGRATION_REDIRECT_URI: ${GOOGLE_INTEGRATION_REDIRECT_URI:-${APP_PUBLIC_URL:-http://localhost:3000}/integrations/google/callback}
       # Object storage. Unset, uploads land in a local directory inside the
       # container -- which a redeploy throws away. Set all five to keep them.
       STORAGE_MODE: ${STORAGE_MODE:-local}
