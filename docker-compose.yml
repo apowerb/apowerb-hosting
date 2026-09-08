@@ -266,6 +266,15 @@ services:
       # "th2pulse is not installed".
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
       OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-apowerb}
+      # The collector below has no metrics pipeline: the SDK's periodic metric
+      # export answered 404 every minute in the demo logs (08/09). Traces and
+      # logs are what the Logging screen reads; metrics are switched off.
+      OTEL_METRICS_EXPORTER: ${OTEL_METRICS_EXPORTER:-none}
+      # Orchestration (the Orchestrator screen, /api/pipelines) is served by
+      # th2etl below. The backend answers 503 on every pipeline route until it
+      # can reach it; nothing else depends on it.
+      TH2ETL_BASE_URL: ${TH2ETL_BASE_URL:-http://th2etl:8000}
+      TH2ETL_API_KEY: ${TH2ETL_API_KEY:-}
       # Log timestamps in a zone people read. Servers run on UTC; unset, every
       # line prints +00:00 and someone has to add two hours in their head.
       TH2_LOG_TZ: ${TH2_LOG_TZ:-Europe/Paris}
@@ -283,6 +292,79 @@ services:
   #     the managed cluster, connecting as the same role the application uses.
   #     The connection is unencrypted like the application's own (see above),
   #     so the cluster's PRIVATE address matters here too.
+  # Orchestration: th2etl runs the pipelines the Orchestrator screen schedules.
+  # Ported from docker-compose/docker-compose.yml with three differences that
+  # are Hostman's, measured on 2026-09-07:
+  #   - no `profiles`: this platform's support for Compose profiles is not
+  #     documented, and an always-on service is what a demo wants;
+  #   - no `pull_policy: always`: the platform drops it ("Sanitizing docker
+  #     compose"), and on a host that honours it a missing tag aborts the
+  #     whole `up` before a single container exists;
+  #   - no `condition: service_healthy` anywhere: on 2026-09-07 that single
+  #     condition on th2pulse failed the entire deployment, the platform's
+  #     rollback collided on port 3000 and the demo answered 502 everywhere.
+  #     An optional service must never be able to take the essential ones down.
+  # Mind the namespace: the image is th2farid/th2etl (apowerb/th2etl is 404 on
+  # Docker Hub). 0.0.12 is a FLOOR: every earlier tag exits 1 on `docker run`.
+  th2etl:
+    image: ${TH2ETL_IMAGE:-th2farid/th2etl}:${TH2ETL_TAG:-0.0.12}
+    environment:
+      DATABASE_HOST: ${DB_HOST}
+      DATABASE_PORT: ${DB_PORT:-5432}
+      DATABASE_NAME: ${DB_NAME}
+      DATABASE_USER: ${DB_USER}
+      DATABASE_PASSWORD: ${DB_PASSWORD}
+      # DATABASE_SCHEMA deliberately NOT set: th2etl qualifies its tables with
+      # the schema but never creates it. Unset, its six `etl_`-prefixed tables
+      # land in `public`, where they cannot collide with the backend's own.
+      #
+      # Required in practice, and deliberately not `:?`: th2etl refuses every
+      # business route with "Authentication not configured: set API_KEY"
+      # rather than serving them open, which is the right failure for an
+      # optional service. Generate one (`openssl rand -hex 32`) and set it in
+      # the platform, on this service and on apowerb (same variable).
+      API_KEY: ${TH2ETL_API_KEY:-}
+      # Where th2etl's ADK blocks call back into the backend.
+      ADK_BASE_URL: ${ADK_BASE_URL:-http://apowerb:8000}
+      ENCRYPT_KEY: ${ENCRYPT_KEY}
+    # No host port: only the backend talks to it, over the internal network.
+    healthcheck:
+      # No curl in the image; python is what it runs on. /openapi.json needs
+      # no key and only answers once the application has finished starting.
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:8000/openapi.json', timeout=3)"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  # Provisions the `agents` and `process_pdf` pipelines th2etl needs before the
+  # backend can schedule anything. Runs to completion and stops -- `restart:
+  # "no"` on purpose: a seed that restarts forever runs concurrently with
+  # itself, which this one is explicitly not safe for.
+  #
+  # The seed needs th2etl's tables, which th2etl creates at startup. The
+  # self-hosted stack waits with `condition: service_healthy`; here that
+  # condition is exactly what must not exist (see above), so the seed waits
+  # by itself: up to 30 attempts, 10 s apart, then gives up with the seed's
+  # own error. Order-only `depends_on` keeps th2etl starting first.
+  th2etl-seed:
+    image: ${TH2ETL_IMAGE:-th2farid/th2etl}:${TH2ETL_TAG:-0.0.12}
+    command: ["sh", "-c", "for i in $$(seq 1 30); do python -m th2etl.seeds.default_pipelines && exit 0; echo \"seed: attempt $$i failed, th2etl not ready yet\"; sleep 10; done; exit 1"]
+    environment:
+      DATABASE_HOST: ${DB_HOST}
+      DATABASE_PORT: ${DB_PORT:-5432}
+      DATABASE_NAME: ${DB_NAME}
+      DATABASE_USER: ${DB_USER}
+      DATABASE_PASSWORD: ${DB_PASSWORD}
+      API_KEY: ${TH2ETL_API_KEY:-}
+      # The seed writes this into every ADK block config: the address those
+      # blocks will call at run time. Same value as th2etl above.
+      ADK_BASE_URL: ${ADK_BASE_URL:-http://apowerb:8000}
+      ENCRYPT_KEY: ${ENCRYPT_KEY}
+    depends_on:
+      - th2etl
+    restart: "no"
+
   th2pulse:
     image: ${TH2PULSE_IMAGE:-apowerb/th2pulse}:${TH2PULSE_TAG:-0.1.4}
     pull_policy: always
