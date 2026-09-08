@@ -1,0 +1,22 @@
+{{- if .Values.th2pulse.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "apowerb.th2pulse.fullname" . }}
+  namespace: {{ include "apowerb.namespace" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "apowerb.name" . }}
+    app.kubernetes.io/component: th2pulse
+spec:
+  # Interne : l'interface l'interroge côté serveur, le navigateur jamais --
+  # c'est ce qui garde le jeton de lecture hors du bundle.
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: {{ include "apowerb.name" . }}
+    app.kubernetes.io/component: th2pulse
+  ports:
+    - name: http
+      port: {{ .Values.service.th2pulse.port }}
+      targetPort: 4319
+      protocol: TCP
+{{- end }}

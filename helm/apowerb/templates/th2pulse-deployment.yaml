@@ -1,0 +1,64 @@
+{{- if .Values.th2pulse.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "apowerb.th2pulse.fullname" . }}
+  namespace: {{ include "apowerb.namespace" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "apowerb.name" . }}
+    app.kubernetes.io/component: th2pulse
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "apowerb.name" . }}
+      app.kubernetes.io/component: th2pulse
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "apowerb.name" . }}
+        app.kubernetes.io/component: th2pulse
+    spec:
+      containers:
+        - name: th2pulse
+          image: "{{ .Values.image.th2pulse.repository }}:{{ .Values.image.th2pulse.tag }}"
+          imagePullPolicy: {{ .Values.image.th2pulse.pullPolicy }}
+          ports:
+            - containerPort: 4319
+          env:
+            # Le magasin de journaux partage la base d'apowerb, dans un schéma
+            # à lui : rien à provisionner de plus, et rien à mélanger.
+            - name: TH2PULSE_DB_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "apowerb.secretName" . }}
+                  key: TH2PULSE_DB_DSN
+            - name: TH2PULSE_DB_SCHEMA
+              value: {{ .Values.th2pulse.schema | quote }}
+            # Les deux jetons sont exigés au démarrage : sans eux le service
+            # refuse de se lever, il n'y a pas de mode « sans jeton ».
+            - name: TH2PULSE_INGEST_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "apowerb.secretName" . }}
+                  key: TH2PULSE_INGEST_TOKEN
+            - name: TH2PULSE_QUERY_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "apowerb.secretName" . }}
+                  key: TH2PULSE_QUERY_TOKEN
+          resources:
+            {{- toYaml .Values.th2pulse.resources | nindent 12 }}
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 4319
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 4319
+            initialDelaySeconds: 30
+            periodSeconds: 15
+{{- end }}

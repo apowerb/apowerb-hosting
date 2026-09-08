@@ -1,0 +1,21 @@
+{{- if .Values.th2etl.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "apowerb.th2etl.fullname" . }}
+  namespace: {{ include "apowerb.namespace" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "apowerb.name" . }}
+    app.kubernetes.io/component: th2etl
+spec:
+  # Jamais exposé au dehors : seul le backend l'appelle, avec sa clé d'API.
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: {{ include "apowerb.name" . }}
+    app.kubernetes.io/component: th2etl
+  ports:
+    - name: http
+      port: {{ .Values.service.th2etl.port }}
+      targetPort: 8000
+      protocol: TCP
+{{- end }}
