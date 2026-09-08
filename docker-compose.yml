@@ -304,10 +304,18 @@ services:
   #     condition on th2pulse failed the entire deployment, the platform's
   #     rollback collided on port 3000 and the demo answered 502 everywhere.
   #     An optional service must never be able to take the essential ones down.
-  # Mind the namespace: the image is th2farid/th2etl (apowerb/th2etl is 404 on
-  # Docker Hub). 0.0.12 is a FLOOR: every earlier tag exits 1 on `docker run`.
+  # The image is apowerb/th2etl, published 2026-09-08 -- the namespace this
+  # product ships under, like apowerb/th2pulse and apowerb/apowerb. It carried
+  # th2farid/th2etl:0.0.12 until then, because apowerb/th2etl did not exist yet.
+  #
+  # 0.0.11 there is NOT the old 0.0.11 of the other namespace: different digest,
+  # and it already carries the fix that 0.0.12 was cut for (the CMD is
+  # `python -m th2etl --serve-api`, not `uv run`, so the container no longer
+  # re-resolves its environment from PyPI at every start). Measured side by side
+  # against a throwaway Postgres on 2026-09-08: both start, both answer 200 on
+  # /openapi.json, both carry th2etl.seeds.default_pipelines.
   th2etl:
-    image: ${TH2ETL_IMAGE:-th2farid/th2etl}:${TH2ETL_TAG:-0.0.12}
+    image: ${TH2ETL_IMAGE:-apowerb/th2etl}:${TH2ETL_TAG:-0.0.11}
     environment:
       DATABASE_HOST: ${DB_HOST}
       DATABASE_PORT: ${DB_PORT:-5432}
@@ -348,7 +356,7 @@ services:
   # by itself: up to 30 attempts, 10 s apart, then gives up with the seed's
   # own error. Order-only `depends_on` keeps th2etl starting first.
   th2etl-seed:
-    image: ${TH2ETL_IMAGE:-th2farid/th2etl}:${TH2ETL_TAG:-0.0.12}
+    image: ${TH2ETL_IMAGE:-apowerb/th2etl}:${TH2ETL_TAG:-0.0.11}
     command: ["sh", "-c", "for i in $$(seq 1 30); do python -m th2etl.seeds.default_pipelines && exit 0; echo \"seed: attempt $$i failed, th2etl not ready yet\"; sleep 10; done; exit 1"]
     environment:
       DATABASE_HOST: ${DB_HOST}
