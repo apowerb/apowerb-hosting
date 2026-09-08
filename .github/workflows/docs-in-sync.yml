@@ -1,0 +1,36 @@
+name: Docs in sync
+
+# Ce dépôt décide ce qui est déployé ; `apowerb-docs` dit au monde comment
+# l'installer. Quand les deux divergent, c'est la doc qu'on lit.
+#
+# Le 08/09/2026, `docs.apowerb.com` a servi pendant une heure
+# `helm install apowerb oci://registry-1.docker.io/apowerb/apowerb --version 0.2.0`
+# alors que le chart s'appelait `apowerb-chart` et sortait en 0.4.1. Personne
+# n'a rien vu, pour une raison qui vaut d'être retenue : la commande périmée
+# FONCTIONNAIT. L'ancien chart est toujours tirable, et installait simplement
+# la pile d'avant th2etl, th2pulse et le volume persistant.
+#
+# Le garde n'exige pas que la doc soit mergée d'abord -- une PR ouverte qui
+# corrige suffit, parce que préparer les deux ensemble est le geste attendu.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: La doc dit-elle ce que ce dépôt déploie ?
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Le jeton du workflow suffit : `apowerb-docs` est public, et sans lui
+      # le quota anonyme (60 appels par heure) s'épuiserait à plusieurs PR.
+      - name: Compare le chart à ce que la doc écrit
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python3 .github/scripts/check_docs_in_sync.py
