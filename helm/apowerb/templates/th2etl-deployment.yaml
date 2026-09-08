@@ -1,0 +1,49 @@
+{{- if .Values.th2etl.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "apowerb.th2etl.fullname" . }}
+  namespace: {{ include "apowerb.namespace" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "apowerb.name" . }}
+    app.kubernetes.io/component: th2etl
+spec:
+  # L'orchestrateur tient un ordonnanceur : deux répliques exécuteraient deux
+  # fois la même pipeline planifiée.
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "apowerb.name" . }}
+      app.kubernetes.io/component: th2etl
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "apowerb.name" . }}
+        app.kubernetes.io/component: th2etl
+    spec:
+      containers:
+        - name: th2etl
+          image: "{{ .Values.image.th2etl.repository }}:{{ .Values.image.th2etl.tag }}"
+          imagePullPolicy: {{ .Values.image.th2etl.pullPolicy }}
+          ports:
+            - containerPort: 8000
+          env:
+            {{- include "apowerb.th2etl.env" . | nindent 12 }}
+          resources:
+            {{- toYaml .Values.th2etl.resources | nindent 12 }}
+          # L'image ne sert pas /health : `/openapi.json` est ce que le
+          # healthcheck du compose interroge déjà, et ce que la bascule
+          # 0.0.11/0.0.12 a mesuré des deux côtés.
+          readinessProbe:
+            httpGet:
+              path: /openapi.json
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /openapi.json
+              port: 8000
+            initialDelaySeconds: 30
+            periodSeconds: 15
+{{- end }}

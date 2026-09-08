@@ -1,0 +1,53 @@
+{{- if .Values.otelCollector.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "apowerb.otel.fullname" . }}
+  namespace: {{ include "apowerb.namespace" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "apowerb.name" . }}
+    app.kubernetes.io/component: otel-collector
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "apowerb.name" . }}
+      app.kubernetes.io/component: otel-collector
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "apowerb.name" . }}
+        app.kubernetes.io/component: otel-collector
+      annotations:
+        # Une configuration modifiée doit relancer le collecteur : sans cette
+        # empreinte, `helm upgrade` réécrit le ConfigMap et le pod continue
+        # avec l'ancienne -- une configuration sur disque ne prouve pas son
+        # chargement.
+        checksum/config: {{ include (print $.Template.BasePath "/otel-collector-configmap.yaml") . | sha256sum }}
+    spec:
+      containers:
+        - name: otel-collector
+          image: "{{ .Values.image.otelCollector.repository }}:{{ .Values.image.otelCollector.tag }}"
+          imagePullPolicy: {{ .Values.image.otelCollector.pullPolicy }}
+          args: ["--config=/conf/config.yaml"]
+          ports:
+            - name: otlp-http
+              containerPort: 4318
+            - name: otlp-grpc
+              containerPort: 4317
+          env:
+            - name: TH2PULSE_INGEST_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: apowerb-secrets
+                  key: TH2PULSE_INGEST_TOKEN
+          volumeMounts:
+            - name: config
+              mountPath: /conf
+          resources:
+            {{- toYaml .Values.otelCollector.resources | nindent 12 }}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "apowerb.otel.fullname" . }}
+{{- end }}

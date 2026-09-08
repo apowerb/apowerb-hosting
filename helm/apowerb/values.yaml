@@ -15,6 +15,21 @@ image:
     repository: postgres
     tag: 16-alpine
     pullPolicy: IfNotPresent
+  # Orchestrateur des pipelines. 0.0.12 est la version dont l'entrée est
+  # `python -m th2etl --serve-api` ; les images `th2farid/*` d'avant la bascule
+  # de namespace ne sont PAS les mêmes, malgré des numéros identiques.
+  th2etl:
+    repository: apowerb/th2etl
+    tag: 0.0.12
+    pullPolicy: IfNotPresent
+  th2pulse:
+    repository: apowerb/th2pulse
+    tag: 0.1.4
+    pullPolicy: IfNotPresent
+  otelCollector:
+    repository: otel/opentelemetry-collector-contrib
+    tag: 0.159.0
+    pullPolicy: IfNotPresent
 
 service:
   backend:
@@ -26,6 +41,12 @@ service:
   postgres:
     type: ClusterIP
     port: 5432
+  th2etl:
+    type: ClusterIP
+    port: 8000
+  th2pulse:
+    type: ClusterIP
+    port: 4319
 
 postgres:
   database: th2agent
@@ -80,3 +101,94 @@ ingress:
 serviceAccount:
   create: true
   name: ""
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Orchestrateur des pipelines (th2etl). Le backend ne l'appelle que s'il a
+# BASE_URL *et* clé : sans la clé, l'écran Orchestrateur dit « pas encore
+# configuré » au lieu d'échouer.
+# ─────────────────────────────────────────────────────────────────────────────
+th2etl:
+  enabled: true
+  # `openssl rand -hex 32`, la même valeur des deux côtés : le backend la
+  # présente, th2etl la vérifie.
+  apiKey: ""
+  seed:
+    # Pose les pipelines par défaut dans la base. Un Job, pas un service : il
+    # se termine. Rejoué à chaque install et upgrade -- l'opération est
+    # idempotente, elle ne double pas les pipelines déjà là.
+    enabled: true
+    attempts: 30
+    delaySeconds: 10
+    backoffLimit: 1
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 300m
+        memory: 256Mi
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Magasin de journaux et de traces (th2pulse) : ce que lit l'écran Journaux.
+# Il partage la base d'apowerb dans un schéma à lui.
+# ─────────────────────────────────────────────────────────────────────────────
+th2pulse:
+  enabled: true
+  schema: th2pulse
+  # Les DEUX jetons sont obligatoires quand le service est activé : il refuse
+  # de démarrer sans eux. `openssl rand -hex 32` chacun.
+  ingestToken: ""
+  # Lu côté serveur par l'interface, jamais envoyé au navigateur.
+  queryToken: ""
+  # Renseigner pour viser un Postgres externe ; vide, la DSN est construite
+  # depuis le Postgres du chart.
+  dsn: ""
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Collecteur OpenTelemetry : le backend lui envoie traces et journaux, il les
+# pousse dans th2pulse. Sans lui, OTEL_EXPORTER_OTLP_ENDPOINT reste vide et
+# l'écran Journaux s'annonce « pas encore configuré ».
+# ─────────────────────────────────────────────────────────────────────────────
+otelCollector:
+  enabled: true
+  serviceName: apowerb
+  metricsExporter: none
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 300m
+      memory: 256Mi
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Disque du backend : fichiers BI importés, uploads, artefacts.
+#
+# Sans ce volume, un CSV importé disparaît au premier redémarrage du pod --
+# et le tableau de bord qui le lit meurt avec lui. Le pool d'agents, lui, est
+# régénéré depuis la base : ce n'est pas ce qu'on protège ici.
+#
+# ⚠️ ReadWriteOnce n'est monté que par un nœud : le backend reste à une
+# réplique tant que la classe de stockage ne fait pas ReadWriteMany.
+# ─────────────────────────────────────────────────────────────────────────────
+persistence:
+  enabled: true
+  size: 10Gi
+  storageClass: ""
+  accessModes:
+    - ReadWriteOnce
+  mountPath: /data

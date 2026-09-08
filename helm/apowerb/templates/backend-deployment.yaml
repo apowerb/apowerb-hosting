@@ -60,6 +60,37 @@ spec:
               value: {{ .Values.backend.env.th2Extensions | quote }}
             - name: WORKING_MODE
               value: {{ .Values.backend.env.workingMode | quote }}
+            {{- if .Values.persistence.enabled }}
+            # Une seule racine pour tout ce que le backend écrit sur disque :
+            # `bi_store`, `uploads`, `artifacts_store` et `agents_pool` en
+            # descendent. Le nom de la variable est RUNTIME_ROOT -- mesuré
+            # contre le paquet, la docstring de `configs/paths.py` annonce
+            # encore TH2AGENT_RUNTIME_ROOT, qui ne sert à rien.
+            - name: RUNTIME_ROOT
+              value: {{ .Values.persistence.mountPath | quote }}
+            {{- end }}
+            {{- if .Values.th2etl.enabled }}
+            - name: TH2ETL_BASE_URL
+              value: "http://{{ include "apowerb.th2etl.fullname" . }}:{{ .Values.service.th2etl.port }}"
+            - name: TH2ETL_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: apowerb-secrets
+                  key: TH2ETL_API_KEY
+            {{- end }}
+            {{- if .Values.otelCollector.enabled }}
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "http://{{ include "apowerb.otel.fullname" . }}:4318"
+            - name: OTEL_SERVICE_NAME
+              value: {{ .Values.otelCollector.serviceName | quote }}
+            - name: OTEL_METRICS_EXPORTER
+              value: {{ .Values.otelCollector.metricsExporter | quote }}
+            {{- end }}
+          {{- if .Values.persistence.enabled }}
+          volumeMounts:
+            - name: data
+              mountPath: {{ .Values.persistence.mountPath | quote }}
+          {{- end }}
           resources:
             requests:
               cpu: {{ .Values.backend.resources.requests.cpu }}
@@ -79,3 +110,9 @@ spec:
               port: 8000
             initialDelaySeconds: 30
             periodSeconds: 15
+      {{- if .Values.persistence.enabled }}
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ include "apowerb.data.fullname" . }}
+      {{- end }}

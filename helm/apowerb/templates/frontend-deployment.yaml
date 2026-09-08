@@ -29,6 +29,18 @@ spec:
               value: "http://{{ include "apowerb.backend.fullname" . }}:{{ .Values.service.backend.port }}"
             - name: NEXT_PUBLIC_API_URL
               value: {{ .Values.backend.env.publicApiUrl | quote }}
+            {{- if .Values.th2pulse.enabled }}
+            # Lu par les route handlers, jamais par le navigateur : sans lui
+            # l'interface interroge sa propre boucle locale et l'écran Journaux
+            # annonce « magasin injoignable ».
+            - name: PULSE_API_URL
+              value: "http://{{ include "apowerb.th2pulse.fullname" . }}:{{ .Values.service.th2pulse.port }}"
+            - name: PULSE_QUERY_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: apowerb-secrets
+                  key: TH2PULSE_QUERY_TOKEN
+            {{- end }}
           resources:
             requests:
               cpu: {{ .Values.frontend.resources.requests.cpu }}

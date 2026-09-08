@@ -1,0 +1,49 @@
+{{- include "apowerb.validate" . }}
+apowerb {{ .Values.image.backend.tag }} / interface {{ .Values.image.frontend.tag }} est installé dans {{ include "apowerb.namespace" . }}.
+
+Ce que la release contient :
+  backend, interface, PostgreSQL
+{{- if .Values.th2etl.enabled }}
+  th2etl {{ .Values.image.th2etl.tag }}{{ if .Values.th2etl.seed.enabled }} (+ le Job qui pose les pipelines par défaut){{ end }}
+{{- end }}
+{{- if .Values.th2pulse.enabled }}
+  th2pulse {{ .Values.image.th2pulse.tag }}
+{{- end }}
+{{- if .Values.otelCollector.enabled }}
+  collecteur OpenTelemetry {{ .Values.image.otelCollector.tag }}
+{{- end }}
+{{- if .Values.persistence.enabled }}
+  un volume de {{ .Values.persistence.size }} monté sur {{ .Values.persistence.mountPath }} (fichiers BI importés, uploads, artefacts)
+{{- else }}
+
+  ⚠️  persistence.enabled=false : un CSV importé disparaîtra au prochain
+      redémarrage du backend, et les tableaux de bord qui le lisent avec lui.
+{{- end }}
+
+Ce qu'il reste à vérifier, dans cet ordre :
+
+  1. Les pods sont prêts :
+       kubectl -n {{ include "apowerb.namespace" . }} get pods
+{{- if and .Values.th2etl.enabled .Values.th2etl.seed.enabled }}
+       kubectl -n {{ include "apowerb.namespace" . }} logs job/{{ include "apowerb.th2etl.fullname" . }}-seed
+{{- end }}
+
+  2. L'interface dit elle-même ce qui n'est pas configuré :
+     connectez-vous en administrateur, puis Admin → Configuration.
+     La pastille de la barre latérale compte ce qui manque encore.
+{{- if not .Values.th2etl.apiKey }}
+
+  ⚠️  th2etl.apiKey est vide : le backend considère l'orchestrateur comme non
+      configuré et l'écran le dira. C'est un état cohérent, pas une panne --
+      posez la clé (openssl rand -hex 32) quand vous voudrez les pipelines.
+{{- end }}
+{{- if not .Values.backend.env.encryptKey }}
+
+  ⚠️  backend.env.encryptKey est vide : les identifiants d'intégration sont
+      chiffrés avec cette clé (openssl rand -base64 32). Sans elle, aucune
+      intégration ne peut être enregistrée.
+{{- end }}
+
+  3. Les capacités qui dépendent d'un fournisseur (Google, Microsoft, S3,
+     SMTP) se posent par `backend.env` et le Secret ; la liste exacte des
+     variables est celle qu'affiche l'écran Configuration.

@@ -1,6 +1,6 @@
 apiVersion: v2
 name: apowerb
-description: Helm chart for deploying apowerb and apowerb-ui with PostgreSQL
-version: 0.1.0
-appVersion: "1.0.0"
+description: apowerb, its interface, PostgreSQL, the th2etl orchestrator, the th2pulse log store and an OpenTelemetry collector
+version: 0.2.0
+appVersion: "0.2.12"
 type: application

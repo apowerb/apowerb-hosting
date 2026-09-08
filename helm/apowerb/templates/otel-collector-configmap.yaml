@@ -1,0 +1,46 @@
+{{- if .Values.otelCollector.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "apowerb.otel.fullname" . }}
+  namespace: {{ include "apowerb.namespace" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "apowerb.name" . }}
+    app.kubernetes.io/component: otel-collector
+data:
+  # Le compose passe cette configuration par une variable d'environnement
+  # (`--config=env:OTEL_CFG`). En Kubernetes elle vit dans un ConfigMap et le
+  # collecteur la lit comme un fichier : même contenu, mais `kubectl edit` la
+  # montre, et le jeton d'ingestion n'a pas à y figurer -- il reste dans le
+  # Secret, injecté à l'exécution par `${env:...}`.
+  config.yaml: |
+    receivers:
+      otlp:
+        protocols:
+          http:
+            endpoint: 0.0.0.0:4318
+          grpc:
+            endpoint: 0.0.0.0:4317
+    processors:
+      memory_limiter:
+        check_interval: 5s
+        limit_percentage: 75
+        spike_limit_percentage: 20
+      batch:
+    exporters:
+      otlphttp/pulse:
+        endpoint: http://{{ include "apowerb.th2pulse.fullname" . }}:{{ .Values.service.th2pulse.port }}
+        encoding: json
+        headers:
+          X-Th2Pulse-Token: ${env:TH2PULSE_INGEST_TOKEN}
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [memory_limiter, batch]
+          exporters: [otlphttp/pulse]
+        logs:
+          receivers: [otlp]
+          processors: [memory_limiter, batch]
+          exporters: [otlphttp/pulse]
+{{- end }}
