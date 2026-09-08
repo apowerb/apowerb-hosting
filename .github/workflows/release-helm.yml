@@ -29,5 +29,13 @@ jobs:
         uses: helm/chart-releaser-action@v1.7.0
         with:
           charts_dir: helm
+          # Sans ceci, TOUT commit qui ne bumpe pas `Chart.yaml` fait échouer
+          # ce workflow :
+          #   error creating GitHub release apowerb-0.4.0: 422 already_exists
+          # c'est-à-dire la plupart des commits. Un rouge permanent finit par
+          # être ignoré -- et c'est exactement ce qui a caché pendant des
+          # semaines la vraie panne, `origin/gh-pages` absente. Le workflow
+          # doit être vert quand il n'y a rien à publier.
+          skip_existing: true
         env:
           CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
