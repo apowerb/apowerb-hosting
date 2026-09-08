@@ -273,6 +273,14 @@ services:
       # Orchestration (the Orchestrator screen, /api/pipelines) is served by
       # th2etl below. The backend answers 503 on every pipeline route until it
       # can reach it; nothing else depends on it.
+      # Naming th2etl's address is not enough: the backend picks its
+      # orchestrator client from ORCHESTRATOR, which defaults to "mage" in the
+      # core. Measured on the demo, 2026-09-08: th2etl was up, its seed had
+      # provisioned the `agents` and `process_pdf` pipelines, and /api/pipelines
+      # still answered 503 -- the backend was asking a MageAI that does not
+      # exist here. Unlike the self-hosted stack, where th2etl sits behind a
+      # profile and the default stays "mage", this file always starts it.
+      ORCHESTRATOR: ${ORCHESTRATOR:-th2etl}
       TH2ETL_BASE_URL: ${TH2ETL_BASE_URL:-http://th2etl:8000}
       TH2ETL_API_KEY: ${TH2ETL_API_KEY:-}
       # Log timestamps in a zone people read. Servers run on UTC; unset, every
