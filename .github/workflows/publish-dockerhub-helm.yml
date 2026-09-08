@@ -24,8 +24,21 @@ jobs:
       - name: Derive release version
         id: release
         run: |
+          # Deux formes de tag arrivent ici, et une seule était traitée :
+          #   - "v0.0.3"        : les tags historiques du dépôt ;
+          #   - "apowerb-0.2.0" : ceux que chart-releaser pose sur un push main.
+          # Avec l'ancien `${TAG_NAME#v}`, le second donnait
+          # `helm package --version apowerb-0.2.0` → « Invalid Semantic
+          # Version », donc AUCUNE publication n'a jamais abouti par ce chemin.
           TAG_NAME="${GITHUB_REF_NAME}"
-          VERSION="${TAG_NAME#v}"
+          VERSION="${TAG_NAME#apowerb-}"
+          VERSION="${VERSION#v}"
+          # Un tag qui ne porte pas de version : le chart dit la sienne, plutôt
+          # que de casser le paquet.
+          if ! printf '%s' "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+'; then
+            VERSION="$(helm show chart ./helm/apowerb | awk '/^version:/{print $2}')"
+            echo "Tag '$TAG_NAME' sans version : on prend celle de Chart.yaml ($VERSION)."
+          fi
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Lint chart
