@@ -304,10 +304,15 @@ services:
   #     condition on th2pulse failed the entire deployment, the platform's
   #     rollback collided on port 3000 and the demo answered 502 everywhere.
   #     An optional service must never be able to take the essential ones down.
-  # Mind the namespace: the image is th2farid/th2etl (apowerb/th2etl is 404 on
-  # Docker Hub). 0.0.12 is a FLOOR: every earlier tag exits 1 on `docker run`.
+  # Namespace: apowerb/th2etl, matching the GitHub repository and th2pulse.
+  # It used to be th2farid/, a personal namespace; David settled that on
+  # 2026-09-08 and apowerb/th2etl now carries 0.0.11, 0.0.12 and latest, built
+  # for amd64 and arm64. th2farid/ still exists but is no longer fed.
+  #
+  # 0.0.12 is a FLOOR under either namespace: every earlier tag exits 1 on
+  # `docker run`. Under apowerb/ the floor is moot -- nothing older is there.
   th2etl:
-    image: ${TH2ETL_IMAGE:-th2farid/th2etl}:${TH2ETL_TAG:-0.0.12}
+    image: ${TH2ETL_IMAGE:-apowerb/th2etl}:${TH2ETL_TAG:-0.0.12}
     environment:
       DATABASE_HOST: ${DB_HOST}
       DATABASE_PORT: ${DB_PORT:-5432}
@@ -348,7 +353,7 @@ services:
   # by itself: up to 30 attempts, 10 s apart, then gives up with the seed's
   # own error. Order-only `depends_on` keeps th2etl starting first.
   th2etl-seed:
-    image: ${TH2ETL_IMAGE:-th2farid/th2etl}:${TH2ETL_TAG:-0.0.12}
+    image: ${TH2ETL_IMAGE:-apowerb/th2etl}:${TH2ETL_TAG:-0.0.12}
     command: ["sh", "-c", "for i in $$(seq 1 30); do python -m th2etl.seeds.default_pipelines && exit 0; echo \"seed: attempt $$i failed, th2etl not ready yet\"; sleep 10; done; exit 1"]
     environment:
       DATABASE_HOST: ${DB_HOST}

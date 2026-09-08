@@ -264,31 +264,32 @@ services:
     # apowerb/th2etl REPOSITORY, together with the smoke test that would
     # have caught it.
     #
-    # Mind the two namespaces, they do not match and both are correct:
-    # the image is th2farid/th2etl (apowerb/th2etl on Docker Hub is 404)
-    # while th2pulse below is apowerb/th2pulse (th2farid/th2pulse is 404).
-    # Checked against Docker Hub on 2026-09-04.
+    # Both images now live under apowerb/, matching their repositories.
+    # th2etl used to be published to th2farid/, a personal namespace, which
+    # is why this file said the two did not match. David settled it on
+    # 2026-09-08; apowerb/th2etl carries 0.0.11, 0.0.12 and latest, amd64 and
+    # arm64. th2farid/th2etl still exists, frozen at its 07/09 tags, and is no
+    # longer fed by the release chain.
     #
-    # ⚠️⚠️ 0.0.12 IS NOT PUBLISHED YET. Docker Hub carries latest and 0.0.7
-    # to 0.0.11; the release that produces 0.0.12 is PR #15 of the th2etl
-    # repository. Until it lands, `COMPOSE_PROFILES=etl` fails at `up` with
-    # "not found": `pull_policy: always` makes the missing image abort the
-    # whole run, and it does so even on a host where the tag exists locally,
-    # because the policy skips the local cache.
+    # 0.0.12 IS published now, under apowerb/, since 2026-09-08. This file
+    # used to warn that it was not: the profile then failed at `up` with
+    # "not found", and deliberately so, because every tag that did exist
+    # exited 1 on `docker run` and would have produced a container reported
+    # as `running` while it restarted forever.
     #
-    # Measured in both starting states, because they differ. From nothing:
-    # `up` exits 1 and creates NO container, not even the three base ones.
-    # With the base stack already up: `up` exits 1 and the three keep
-    # running untouched -- nothing is torn down, nothing advances.
+    # That trade-off is gone. apowerb/th2etl:0.0.12 was pulled from Docker Hub
+    # and started against a virgin Postgres on 2026-09-08: /openapi.json 200,
+    # 401 without the API key and 200 with it, its 6 etl_* tables created, the
+    # container still `running`. It is also the first image built by the
+    # release chain rewritten in apowerb/th2etl#18 -- installed from the PyPI
+    # wheel of that tag, and smoke-tested on both architectures before it was
+    # published.
     #
-    # That is deliberate, and it is the least bad of three bad options. The
-    # profile is off by default, so nothing changes for anyone who does not
-    # ask for it (measured: profile off, `up` exits 0). Pointing this at
-    # 0.0.11 or latest instead would start a container that `docker compose
-    # ps` reports as `running` while it restarts forever -- every published
-    # tag exits 1 on `docker run`. A loud failure that names its cause beats
-    # a container that lies about being up.
-    image: ${TH2ETL_IMAGE:-th2farid/th2etl}:${TH2ETL_TAG:-0.0.12}
+    # `pull_policy: always` still means a missing tag aborts the ENTIRE `up`,
+    # base services included, and it skips the local cache -- so a tag that
+    # exists on the host does not save it. Keep that in mind before bumping
+    # TH2ETL_TAG to something unpublished.
+    image: ${TH2ETL_IMAGE:-apowerb/th2etl}:${TH2ETL_TAG:-0.0.12}
     pull_policy: always
     environment:
       DATABASE_HOST: postgres
@@ -335,7 +336,7 @@ services:
   # concurrently with itself, which this one is explicitly not safe for.
   th2etl-seed:
     profiles: [etl]
-    image: ${TH2ETL_IMAGE:-th2farid/th2etl}:${TH2ETL_TAG:-0.0.12}
+    image: ${TH2ETL_IMAGE:-apowerb/th2etl}:${TH2ETL_TAG:-0.0.12}
     pull_policy: always
     command: ["python", "-m", "th2etl.seeds.default_pipelines"]
     environment:
