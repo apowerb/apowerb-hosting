@@ -46,7 +46,7 @@ Le chart est publié sur **Docker Hub**, dans l'organisation d'où sortent déj�
 les images du produit :
 
 ```bash
-helm install apowerb oci://registry-1.docker.io/apowerb/apowerb --version 0.2.0
+helm install apowerb oci://registry-1.docker.io/apowerb/apowerb --version 0.4.0
 ```
 
 > GHCR a été retiré le 08/09/26. Le push y réussissait, mais un paquet naît
