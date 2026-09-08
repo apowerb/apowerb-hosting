@@ -1,3 +1,15 @@
 apiVersion: v1
-entries: {}
-generated: "1970-01-01T00:00:00Z"
+entries:
+  apowerb:
+  - apiVersion: v2
+    appVersion: 0.2.12
+    created: "2026-09-08T13:16:29.434040928Z"
+    description: apowerb, its interface, PostgreSQL, the th2etl orchestrator, the
+      th2pulse log store and an OpenTelemetry collector
+    digest: 0f5f598b4a136178ebeb4819eb574b410c164ce128648dbcfcd911d50c5fe554
+    name: apowerb
+    type: application
+    urls:
+    - https://github.com/apowerb/apowerb-hosting/releases/download/apowerb-0.2.0/apowerb-0.2.0.tgz
+    version: 0.2.0
+generated: "2026-09-08T13:16:29.434046202Z"
