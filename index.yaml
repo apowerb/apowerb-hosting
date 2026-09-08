@@ -3,6 +3,17 @@ entries:
   apowerb:
   - apiVersion: v2
     appVersion: 0.2.12
+    created: "2026-09-08T14:17:04.668979053Z"
+    description: apowerb, its interface, PostgreSQL, the th2etl orchestrator, the
+      th2pulse log store and an OpenTelemetry collector
+    digest: 858928403b7da01b42199377ae0f49e61924f25aef48f09ecab1f67e1493e411
+    name: apowerb
+    type: application
+    urls:
+    - https://github.com/apowerb/apowerb-hosting/releases/download/apowerb-0.4.0/apowerb-0.4.0.tgz
+    version: 0.4.0
+  - apiVersion: v2
+    appVersion: 0.2.12
     created: "2026-09-08T14:11:25.1144881Z"
     description: apowerb, its interface, PostgreSQL, the th2etl orchestrator, the
       th2pulse log store and an OpenTelemetry collector
@@ -23,4 +34,4 @@ entries:
     urls:
     - https://github.com/apowerb/apowerb-hosting/releases/download/apowerb-0.2.0/apowerb-0.2.0.tgz
     version: 0.2.0
-generated: "2026-09-08T14:11:25.114508308Z"
+generated: "2026-09-08T14:17:04.668991276Z"
