@@ -282,40 +282,17 @@ services:
       GOOGLE_WEBHOOK_AUDIENCE: ${GOOGLE_WEBHOOK_AUDIENCE:-}
     restart: unless-stopped
 
-  # --- Observability: logs and agent traces ---------------------------------
-  # Ported from docker-compose/docker-compose.yml, with two differences that
-  # this platform imposes:
-  #   - no profile: App Platform reads this file and nothing else, and whether
-  #     it honours Compose profiles is not documented. On a demo, always-on is
-  #     the point anyway.
-  #   - no Postgres service: th2pulse stores its traces in its own schema of
-  #     the managed cluster, connecting as the same role the application uses.
-  #     The connection is unencrypted like the application's own (see above),
-  #     so the cluster's PRIVATE address matters here too.
-  # Orchestration: th2etl runs the pipelines the Orchestrator screen schedules.
-  # Ported from docker-compose/docker-compose.yml with three differences that
-  # are Hostman's, measured on 2026-09-07:
-  #   - no `profiles`: this platform's support for Compose profiles is not
-  #     documented, and an always-on service is what a demo wants;
-  #   - no `pull_policy: always`: the platform drops it ("Sanitizing docker
-  #     compose"), and on a host that honours it a missing tag aborts the
-  #     whole `up` before a single container exists;
-  #   - no `condition: service_healthy` anywhere: on 2026-09-07 that single
-  #     condition on th2pulse failed the entire deployment, the platform's
-  #     rollback collided on port 3000 and the demo answered 502 everywhere.
-  #     An optional service must never be able to take the essential ones down.
-  # The image is apowerb/th2etl, published 2026-09-08 -- the namespace this
-  # product ships under, like apowerb/th2pulse and apowerb/apowerb. It carried
-  # th2farid/th2etl:0.0.12 until then, because apowerb/th2etl did not exist yet.
+  # The image is apowerb/th2etl -- the namespace this product ships under, like
+  # apowerb/th2pulse and apowerb/apowerb. It carried th2farid/th2etl until
+  # 2026-09-08, because apowerb/th2etl did not exist yet.
   #
-  # 0.0.11 there is NOT the old 0.0.11 of the other namespace: different digest,
-  # and it already carries the fix that 0.0.12 was cut for (the CMD is
-  # `python -m th2etl --serve-api`, not `uv run`, so the container no longer
-  # re-resolves its environment from PyPI at every start). Measured side by side
-  # against a throwaway Postgres on 2026-09-08: both start, both answer 200 on
-  # /openapi.json, both carry th2etl.seeds.default_pipelines.
+  # 0.0.12 is what `latest` points at, and what was measured on 2026-09-08
+  # against a throwaway Postgres: the service answers 200 on /openapi.json, and
+  # `python -m th2etl.seeds.default_pipelines` provisions blocs agents_runner,
+  # pdf_extract, pdf_agent and pipelines agents, process_pdf -- the two the
+  # backend expects from an orchestrator.
   th2etl:
-    image: ${TH2ETL_IMAGE:-apowerb/th2etl}:${TH2ETL_TAG:-0.0.11}
+    image: ${TH2ETL_IMAGE:-apowerb/th2etl}:${TH2ETL_TAG:-0.0.12}
     environment:
       DATABASE_HOST: ${DB_HOST}
       DATABASE_PORT: ${DB_PORT:-5432}
@@ -356,7 +333,7 @@ services:
   # by itself: up to 30 attempts, 10 s apart, then gives up with the seed's
   # own error. Order-only `depends_on` keeps th2etl starting first.
   th2etl-seed:
-    image: ${TH2ETL_IMAGE:-apowerb/th2etl}:${TH2ETL_TAG:-0.0.11}
+    image: ${TH2ETL_IMAGE:-apowerb/th2etl}:${TH2ETL_TAG:-0.0.12}
     command: ["sh", "-c", "for i in $$(seq 1 30); do python -m th2etl.seeds.default_pipelines && exit 0; echo \"seed: attempt $$i failed, th2etl not ready yet\"; sleep 10; done; exit 1"]
     environment:
       DATABASE_HOST: ${DB_HOST}

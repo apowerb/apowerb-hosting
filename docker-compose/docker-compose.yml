@@ -254,19 +254,15 @@ services:
   # ───────────────────────────────────────────────────────────────────────────
   th2etl:
     profiles: [etl]
-    # Pinned, like everything else here. The image is apowerb/th2etl, published
-    # 2026-09-08: the namespace this product ships under, alongside
-    # apowerb/th2pulse and apowerb/apowerb. Until then this pointed at
-    # th2farid/th2etl:0.0.12, because apowerb/th2etl did not exist.
+    # Pinned, like everything else here. The image is apowerb/th2etl -- the
+    # namespace this product ships under, alongside apowerb/th2pulse and
+    # apowerb/apowerb. It carried th2farid/th2etl until 2026-09-08.
     #
-    # 0.0.11 in this namespace is not the old 0.0.11 of the other one -- the
-    # digests differ and this one already carries what 0.0.12 was cut for: the
-    # CMD is `python -m th2etl --serve-api`, so the container no longer
-    # re-resolves its environment from PyPI at every start (which needed PyPI
-    # reachable from inside the container and made every earlier tag exit 1).
-    # Measured against a throwaway Postgres on 2026-09-08: starts, answers 200
-    # on /openapi.json, carries th2etl.seeds.default_pipelines.
-    image: ${TH2ETL_IMAGE:-apowerb/th2etl}:${TH2ETL_TAG:-0.0.11}
+    # 0.0.12 is what `latest` points at. Measured on 2026-09-08 against a
+    # throwaway Postgres: answers 200 on /openapi.json, and the seed module
+    # provisions blocs agents_runner, pdf_extract, pdf_agent and pipelines
+    # agents, process_pdf.
+    image: ${TH2ETL_IMAGE:-apowerb/th2etl}:${TH2ETL_TAG:-0.0.12}
     pull_policy: always
     environment:
       DATABASE_HOST: postgres
@@ -313,7 +309,7 @@ services:
   # concurrently with itself, which this one is explicitly not safe for.
   th2etl-seed:
     profiles: [etl]
-    image: ${TH2ETL_IMAGE:-apowerb/th2etl}:${TH2ETL_TAG:-0.0.11}
+    image: ${TH2ETL_IMAGE:-apowerb/th2etl}:${TH2ETL_TAG:-0.0.12}
     pull_policy: always
     command: ["python", "-m", "th2etl.seeds.default_pipelines"]
     environment:
