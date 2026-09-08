@@ -10,6 +10,16 @@ metadata:
 {{- end }}
 spec:
   ingressClassName: {{ .Values.ingress.className | default "" }}
+  {{- if .Values.ingress.tlsEnabled }}
+  # `tlsEnabled` et `tlsSecretName` vivaient dans values.yaml sans que ce
+  # template les lise : les activer ne produisait rien, et l'interface
+  # restait servie en clair. Le nom du secret est déduit quand il n'est pas
+  # donné -- cert-manager le crée à partir de l'annotation `cluster-issuer`.
+  tls:
+    - hosts:
+        - {{ .Values.ingress.host | quote }}
+      secretName: {{ .Values.ingress.tlsSecretName | default (printf "%s-tls" (include "apowerb.name" .)) | quote }}
+  {{- end }}
   rules:
     - host: {{ .Values.ingress.host }}
       http:
