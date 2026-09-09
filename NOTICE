@@ -1,0 +1,11 @@
+apowerb-hosting
+Copyright 2025-2026 thaink²
+
+This product includes software developed at thaink² (https://www.thaink2.com).
+
+apowerb-hosting holds the deployment assets of the apowerb platform:
+Docker Compose stacks, Kubernetes manifests and the Helm chart.
+
+"apowerb" and "thaink²" are trademarks of thaink². Use of the Apache
+License 2.0 does not grant permission to use these marks. See
+https://github.com/apowerb/apowerb/blob/main/TRADEMARK.md.

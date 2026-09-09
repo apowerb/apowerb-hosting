@@ -114,3 +114,11 @@ Every assertion carries a witness, positive and negative, so a host answering
 - `ENCRYPT_KEY` is required for startup and must be preserved.
 - `scripts/generate-secrets.sh` creates the local secret values needed by the stack.
 - The service ports are configured through `.env`.
+
+## License
+
+apowerb-hosting is distributed under the [Apache License 2.0](./LICENSE).
+Copyright 2025-2026 thaink².
+
+"apowerb" and "thaink²" are trademarks of thaink². The licence covers the code,
+not the marks — see [TRADEMARK.md](https://github.com/apowerb/apowerb/blob/main/TRADEMARK.md).
