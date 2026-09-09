@@ -99,6 +99,25 @@ Seven objects instead of sixteen. The interface then says which features are
 not configured rather than failing on them — that is the point of
 `GET /api/config/setup` and of the **Admin → Configuration** screen.
 
+## HTTPS : le certificat ne ferme pas le port 80
+
+`ingress.tlsEnabled` ajoute la section TLS ; il ne redirige pas. Mesuré le
+09/09/26 sur une installation réelle : `http://` répondait **200**, pas 308 —
+un visiteur qui tape l'adresse sans `https://` saisit ses identifiants en
+clair.
+
+Avec Traefik, la redirection tient en un Middleware, livré dans
+`k8s/traefik/redirect-https.yaml`, et une annotation sur l'Ingress :
+
+```bash
+kubectl apply -f k8s/traefik/redirect-https.yaml   # namespace de la release
+helm upgrade ... \
+  --set ingress.annotations."traefik\.ingress\.kubernetes\.io/router\.middlewares"=<namespace>-redirect-https@kubernetescrd
+```
+
+Avec ingress-nginx, rien à faire : `ssl-redirect` est actif dès qu'un TLS est
+déclaré.
+
 ## Storage
 
 `persistence.enabled=true` mounts one volume on `persistence.mountPath`

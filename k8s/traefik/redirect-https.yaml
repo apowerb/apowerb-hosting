@@ -1,0 +1,18 @@
+# Redirection du trafic en clair vers HTTPS.
+#
+# Sans elle, Traefik sert la même page sur le port 80 : `ingress.tlsEnabled`
+# ajoute le certificat, il ne ferme pas l'entrée en clair. Mesuré le 09/09/26
+# sur k8s.apowerb.com — `http://` répondait 200, pas 308, et un visiteur qui
+# tape l'adresse sans `https://` saisit ses identifiants en clair.
+#
+# Le nom à référencer depuis l'Ingress porte le namespace et le fournisseur :
+#   traefik.ingress.kubernetes.io/router.middlewares: apowerb-redirect-https@kubernetescrd
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: redirect-https
+  namespace: apowerb
+spec:
+  redirectScheme:
+    scheme: https
+    permanent: true
