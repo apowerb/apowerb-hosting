@@ -1,0 +1,147 @@
+# What this file is
+#
+# `test_compose_contract.py` asks that every setting the core can read be
+# declared in the root compose file, because a variable the file does not name
+# is a variable the platform's panel cannot set: Compose passes a container
+# only what the service declares. Three outages of 2026-09-08 came from that
+# single fact (hosting#23, #24, #25).
+#
+# Every name below is a setting the core reads and this file does NOT pass on
+# purpose. The reason is the point: it is what a reviewer weighs when the same
+# name comes up again, and what makes the difference between a decision and an
+# oversight. A new core setting matches nothing here, so the test turns red
+# until somebody writes down which of the two it is.
+
+settings_not_declared:
+
+  - reason: >-
+      Dead. Measured at the pinned tag: zero call site anywhere outside
+      configs/settings.py. These are the previous generation of OAuth
+      settings -- superseded by the *_INTEGRATION_* ones this file does
+      declare -- and they still default to the 'tbd' placeholder. Declaring
+      them would dress dead configuration up as a feature.
+    names:
+      - GITHUB_CLIENT_ID
+      - GITHUB_CLIENT_SECRET
+      - GITHUB_REDIRECT_URI
+      - GOOGLE_CLIENT_ID
+      - GOOGLE_CLIENT_SECRET
+      - GOOGLE_REDIRECT_URI
+      - MICROSOFT_CLIENT_ID
+      - MICROSOFT_CLIENT_SECRET
+      - MICROSOFT_TENANT_ID
+      - LINKEDIN_CLIENT_ID
+      - LINKEDIN_CLIENT_SECRET
+      - MAGE_PIPELINE_UUID
+      - CREDIT_TOKEN_VALUE
+      - NOTIFICATION_EMAIL_PROVIDER
+
+  - reason: >-
+      Mage. This file selects th2etl (ORCHESTRATOR above) and starts it as a
+      service; these three address a MageAI that does not exist here. Naming
+      them would also break `orchestrator_is_configured`, which reads
+      `model_fields_set`: a declared API_KEY makes the core believe a Mage was
+      configured, and a genuine absence then stops reading as one.
+    names:
+      - API_KEY
+      - OAUTH_TOKEN
+      - BASE_URL
+
+  - reason: >-
+      Deduced by the core from APP_PUBLIC_URL, which this file does pass.
+      Declaring them is precisely how hosting#25 happened: pydantic-settings
+      counts a declared-but-empty variable as provided, so `${X:-}` suppresses
+      the deduction instead of falling back to it. Left absent, each one is
+      filled in from this deployment's own origin.
+    names:
+      - FRONTEND_URLS
+      - CORS_ALLOWED_ORIGINS
+      - GITHUB_INTEGRATION_REDIRECT_URI
+
+  - reason: >-
+      Commercial bricks. TH2_EXTENSIONS is empty in this image, so the code
+      that reads these is not installed and a value set here would reach
+      nothing.
+    names:
+      - STRIPE_SECRET_KEY
+      - STRIPE_PUBLISHABLE_KEY
+      - STRIPE_WEBHOOK_SECRET
+      - ORG_DOMAIN_SLUGS
+      - EVALUATION_ENABLED
+      - EVALUATION_JUDGE_API_KEY
+      - EVALUATION_JUDGE_MODEL
+      - EVALUATION_MIN_RERUN_INTERVAL_SECONDS
+      - EVALUATION_PASS_THRESHOLD_COHERENCE
+      - EVALUATION_PASS_THRESHOLD_COMPLETENESS
+      - EVALUATION_PASS_THRESHOLD_HALLUCINATION
+      - EVALUATION_PASS_THRESHOLD_TASK_COMPLETION
+      - EVALUATION_TOOL_USAGE_TOKENS_PER_CALL_SOFT_CAP
+
+  - reason: >-
+      Directories inside the container. A redeploy throws the filesystem away,
+      so moving them buys nothing that STORAGE_MODE=S3 -- which this file does
+      declare -- does not buy properly.
+    names:
+      - RUNTIME_ROOT
+      - AGENTS_POOL_DIR
+      - ARTIFACTS_STORE_DIR
+      - BI_STORE_DIR
+      - UPLOADS_DIR
+      - TOOLBOX_DIR
+
+  - reason: >-
+      Development escape hatches. Each one weakens a guard, and production
+      already refuses two of them outright; a deployment panel is the last
+      place they should be one click away.
+    names:
+      - WEBHOOK_DEV_SKIP_SIG
+      - ENCRYPT_LEGACY_ON_BOOT
+      - TEST_TOKEN
+
+  - reason: >-
+      Internal tuning with a working default. No deployment has had to change
+      them, and each would need a reason of its own to be worth a line in a
+      panel an administrator reads top to bottom.
+    names:
+      - ACCESS_TOKEN_EXPIRE_MINUTES
+      - EMAIL_VERIFY_TOKEN_EXPIRE_HOURS
+      - ALGORITHM
+      - ECHO_SQL
+      - DB_TYPE
+      - DB_AGENT_STORE_TABLE_NAME
+      - PROJECT_NAME
+
+  - reason: >-
+      Live in the core, but named by no screen: `setup_status.capabilities()`
+      -- the checklist GET /api/config/setup serves -- does not mention them,
+      so nothing ever tells an administrator to set them. Left out for that
+      reason and no other. Exposing any of them is a product decision, not a
+      fix, which is why they are listed here rather than quietly declared.
+    names:
+      - ROOT_PATH
+      - AUTH_BASIC_ENABLED
+      - AUTH_REGISTER_ENABLED
+      - AUTH_EMAIL_VERIFICATION_ENABLED
+      - SCHEDULER_ENABLED
+      - SUPER_ADMIN_EMAIL
+      - NOTIFICATION_EMAIL
+      - NOTIFICATION_INTEGRATION_OWNER
+      - ETL_ALERT_RECIPIENTS
+      - GMAIL_PUBSUB_PROJECT_ID
+      - GMAIL_PUBSUB_TOPIC
+      - DEFAULT_LLM_MONTHLY_TOKEN_QUOTA
+      - DEFAULT_LLM_PLAN_QUOTAS
+
+# The other direction: variables this file declares that are NOT Settings
+# fields. Something still has to read them, or the platform collects a value
+# nobody consults -- the same failure as an undeclared variable, seen from the
+# other side. The test proves the core's source mentions each of these; the
+# ones below are read by a library in the image instead, so no apowerb source
+# line names them and the proof has to be written down here.
+read_by_a_library_not_by_apowerb:
+  - name: OTEL_METRICS_EXPORTER
+    reason: >-
+      Read by the OpenTelemetry SDK itself, not by apowerb. Set to `none`
+      because the collector beside this service has no metrics pipeline: the
+      SDK's periodic export answered 404 every minute in the 2026-09-08 demo
+      logs.

@@ -333,6 +333,16 @@ services:
       GOOGLE_INTEGRATION_CLIENT_ID: ${GOOGLE_INTEGRATION_CLIENT_ID:-}
       GOOGLE_INTEGRATION_CLIENT_SECRET: ${GOOGLE_INTEGRATION_CLIENT_SECRET:-}
       GOOGLE_INTEGRATION_REDIRECT_URI: ${GOOGLE_INTEGRATION_REDIRECT_URI:-${APP_PUBLIC_URL:-http://localhost:3000}/integrations/google/callback}
+      # GitHub: the repository integration. `integrations/github.py` reads
+      # both of these to open the OAuth dance, and this file named neither
+      # -- the same hole as the Microsoft and Google families above, one
+      # provider later. Nothing on screen would have said so either:
+      # `GET /api/config/setup` has no github capability, so the checklist
+      # an administrator reads does not mention them at all.
+      # GITHUB_INTEGRATION_REDIRECT_URI is left out on purpose: the core
+      # deduces it from APP_PUBLIC_URL, which this file always passes.
+      GITHUB_INTEGRATION_CLIENT_ID: ${GITHUB_INTEGRATION_CLIENT_ID:-}
+      GITHUB_INTEGRATION_CLIENT_SECRET: ${GITHUB_INTEGRATION_CLIENT_SECRET:-}
       # Object storage. Unset, uploads land in a local directory inside the
       # container -- which a redeploy throws away. Set all five to keep them.
       STORAGE_MODE: ${STORAGE_MODE:-local}
