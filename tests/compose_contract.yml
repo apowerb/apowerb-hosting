@@ -117,12 +117,16 @@ settings_not_declared:
       so nothing ever tells an administrator to set them. Left out for that
       reason and no other. Exposing any of them is a product decision, not a
       fix, which is why they are listed here rather than quietly declared.
+
+      Four names left this list on 2026-09-09 -- AUTH_BASIC_ENABLED,
+      AUTH_REGISTER_ENABLED, AUTH_EMAIL_VERIFICATION_ENABLED and
+      SCHEDULER_ENABLED, now declared. They were the exception to the
+      sentence above: leaving them out did not withhold a feature, it
+      withheld the ability to CLOSE one. Measured that day, the demo
+      answered 422 to an anonymous POST /api/users -- self-registration
+      open, accounts verified on creation, and no knob anywhere to stop it.
     names:
       - ROOT_PATH
-      - AUTH_BASIC_ENABLED
-      - AUTH_REGISTER_ENABLED
-      - AUTH_EMAIL_VERIFICATION_ENABLED
-      - SCHEDULER_ENABLED
       - SUPER_ADMIN_EMAIL
       - NOTIFICATION_EMAIL
       - NOTIFICATION_INTEGRATION_OWNER
