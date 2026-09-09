@@ -1,0 +1,4 @@
+# Tout ce dont ce contrat a besoin. Aucune dépendance du cœur : la sonde
+# s'exécute DANS l'image épinglée, où elles sont déjà installées.
+pytest==8.3.4
+PyYAML==6.0.2

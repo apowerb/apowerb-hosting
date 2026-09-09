@@ -1,0 +1,67 @@
+name: Contrat compose
+
+# Compose ne transmet à un conteneur que ce que le service DÉCLARE. Une valeur
+# saisie dans le panneau de la plateforme, une variable exportée sur l'hôte :
+# tout le reste s'arrête au mur du conteneur, sans bruit, et l'application
+# démarre en ayant l'air configurée.
+#
+# Les trois pannes du 08/09/2026 sont cette phrase :
+#   * hosting#23 — ORCHESTRATOR non déclarée : le backend interrogeait un Mage
+#     inexistant pendant qu'un th2etl sain tournait à côté ;
+#   * hosting#24 — 19 variables d'intégration non déclarées : les identifiants
+#     Azure étaient posés dans le panneau et Outlook refusait toujours ;
+#   * hosting#25 — `OUTLOOK_MAIL_REDIRECT_URI: ${OUTLOOK_MAIL_REDIRECT_URI:-}` :
+#     une variable déclarée VIDE n'est pas une variable absente. pydantic la
+#     compte comme fournie, elle écrase la valeur que le cœur aurait déduite,
+#     et Microsoft a reçu "" — AADSTS90102 en production.
+#
+# Chacune est une comparaison entre deux listes que personne ne faisait. Ce
+# garde la fait, contre l'IMAGE que ce fichier épingle : `tests/probe_core.py`
+# s'exécute dedans, donc ce qui est mesuré est l'artefact déployé et non une
+# copie des sources à côté.
+#
+# Il ÉCHOUE, il n'avertit pas. Ce dépôt déploie `main` tout seul : un
+# avertissement sur une PR arriverait après la mise en ligne de ce qu'il
+# décrit. Compter ~1 min de tirage d'image la première fois.
+
+on:
+  pull_request:
+    paths:
+      - docker-compose.yml
+      - tests/**
+      - .github/workflows/compose-contract.yml
+  push:
+    branches: [main]
+    paths:
+      - docker-compose.yml
+      - tests/**
+      - .github/workflows/compose-contract.yml
+  # Le cœur bouge sans que ce dépôt bouge : un réglage neuf en 0.2.13 ne
+  # déclenchera aucun des deux événements ci-dessus. À lancer à la main quand
+  # on relève APOWERB_BACKEND_TAG, et disponible pour un contrôle ponctuel.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    name: Le compose passe-t-il ce que le cœur sait lire ?
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      # pytest et PyYAML, rien d'autre : la sonde tourne dans l'image, donc
+      # aucune des 51 dépendances du cœur n'a à être installée ici.
+      - name: Dépendances du test
+        run: pip install -r tests/requirements.txt
+
+      # APOWERB_CORE_SRC n'est jamais posée ici : ce qui est mesuré doit être
+      # l'image épinglée, jamais une copie de travail.
+      - name: pytest
+        working-directory: tests
+        run: python -m pytest
