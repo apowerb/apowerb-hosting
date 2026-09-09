@@ -37,6 +37,17 @@ settings_not_declared:
       - NOTIFICATION_EMAIL_PROVIDER
 
   - reason: >-
+      Dead, and mis-filed until now. Both were listed as "live but named by
+      no screen"; measured inside the published image apowerb/apowerb:0.2.13,
+      each has ZERO call site outside configs/settings.py. The real ceiling
+      arrived in 0.2.13 under other names -- DEFAULT_LLM_USER_TOKEN_CAP and
+      DEFAULT_LLM_GLOBAL_TOKEN_CAP, both declared above -- so declaring these
+      two would dress a dead setting up as the knob that caps the shared key.
+    names:
+      - DEFAULT_LLM_MONTHLY_TOKEN_QUOTA
+      - DEFAULT_LLM_PLAN_QUOTAS
+
+  - reason: >-
       Mage. This file selects th2etl (ORCHESTRATOR above) and starts it as a
       service; these three address a MageAI that does not exist here. Naming
       them would also break `orchestrator_is_configured`, which reads
@@ -133,8 +144,6 @@ settings_not_declared:
       - ETL_ALERT_RECIPIENTS
       - GMAIL_PUBSUB_PROJECT_ID
       - GMAIL_PUBSUB_TOPIC
-      - DEFAULT_LLM_MONTHLY_TOKEN_QUOTA
-      - DEFAULT_LLM_PLAN_QUOTAS
 
 # The other direction: variables this file declares that are NOT Settings
 # fields. Something still has to read them, or the platform collects a value

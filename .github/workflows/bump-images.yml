@@ -1,0 +1,70 @@
+name: Proposer le bump des images
+
+# Le tag doit rester explicite sur cette plateforme -- `latest` y ment, mesure
+# le 04/09 et re-verifie le 09/09. Mais le changer A LA MAIN dans le panneau
+# n'est pas une fatalite : ce workflow ouvre la PR, un humain la relit.
+#
+# Il ne merge rien et ne deploie rien. La revue reste le moment ou le garde du
+# contrat compose se prononce sur les reglages qu'une version neuve du coeur
+# apporte -- exactement ce qui s'est passe pour 0.2.13 et ses trois plafonds.
+
+on:
+  schedule:
+    # Une fois par jour ouvre, le matin, heure de Paris.
+    - cron: '15 6 * * 1-5'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  proposer:
+    name: Une image plus recente est-elle publiee ?
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      # Une PR de bump deja ouverte suffit : en rouvrir une chaque matin
+      # transformerait un signal en bruit, et le bruit ne se lit pas.
+      - name: Une PR de bump est-elle deja ouverte ?
+        id: deja
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          n=$(gh pr list --state open --head chore/bump-images --json number --jq 'length')
+          echo "ouverte=$n" >> "$GITHUB_OUTPUT"
+          [ "$n" = "0" ] || echo "Une PR de bump est deja ouverte : rien a faire."
+
+      - name: Comparer les defauts aux releases publiees
+        if: steps.deja.outputs.ouverte == '0'
+        id: comparer
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python .github/scripts/propose_bump.py | tee sortie.txt
+          if git diff --quiet -- docker-compose.yml; then
+            echo "change=non" >> "$GITHUB_OUTPUT"
+          else
+            echo "change=oui" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Ouvrir la PR
+        if: steps.deja.outputs.ouverte == '0' && steps.comparer.outputs.change == 'oui'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b chore/bump-images
+          git add docker-compose.yml
+          git commit -m "chore(images): epingler les dernieres versions publiees"
+          git push -u origin chore/bump-images
+          gh pr create \
+            --base main --head chore/bump-images \
+            --title "chore(images): epingler les dernieres versions publiees" \
+            --body-file bump-body.md
