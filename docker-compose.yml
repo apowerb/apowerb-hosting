@@ -358,6 +358,24 @@ services:
       SMTP_FROM: ${SMTP_FROM:-}
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      # Deployment posture. Every value below is the core's own default, so
+      # this block changes nothing on its own -- it exists so the platform's
+      # panel can reach these at all. Undeclared, they were unreachable:
+      # measured on the demo, `POST /api/users` answers 422 to an anonymous
+      # caller, which is to say self-registration is open, and closing it
+      # required editing this file rather than turning a knob.
+      #
+      # AUTH_REGISTER_ENABLED=false keeps login open and closes
+      # self-registration; AUTH_BASIC_ENABLED=false closes e-mail/password
+      # entirely, OAuth excepted. With verification off, a new account is
+      # marked verified on creation -- turn it on only once SMTP above works,
+      # or nobody can confirm and nobody can log in.
+      AUTH_BASIC_ENABLED: ${AUTH_BASIC_ENABLED:-true}
+      AUTH_REGISTER_ENABLED: ${AUTH_REGISTER_ENABLED:-true}
+      AUTH_EMAIL_VERIFICATION_ENABLED: ${AUTH_EMAIL_VERIFICATION_ENABLED:-false}
+      # The scheduler runs agents on a timer. Off, a deployment answers
+      # requests and starts nothing by itself.
+      SCHEDULER_ENABLED: ${SCHEDULER_ENABLED:-true}
     restart: unless-stopped
 
   # Orchestration: th2etl runs the pipelines the Orchestrator screen schedules.
