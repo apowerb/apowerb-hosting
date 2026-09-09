@@ -105,7 +105,11 @@ services:
     # served to anyone typing its URL.
     #
     # Override both tags together when you move, never one alone.
-    image: ${APOWERB_FRONTEND_IMAGE:-apowerb/apowerb-ui}:${APOWERB_FRONTEND_TAG:-0.1.18}
+    # 0.1.21 (lot du 09/09) : un graphique a source agent peut enfin dire ce
+    # qu'il attend -- le champ « Que doit renvoyer l'agent ? » --, la regle
+    # `no-undef` tourne en CI, et le parcours du chat est joue par Playwright
+    # a chaque passage. Rien qui change le code servi hors du champ ajoute.
+    image: ${APOWERB_FRONTEND_IMAGE:-apowerb/apowerb-ui}:${APOWERB_FRONTEND_TAG:-0.1.21}
     pull_policy: always
     environment:
       # Server-side only, read at runtime by the route handlers.
@@ -170,7 +174,13 @@ services:
     # this reversible: a database migrated by 0.2.8 (22 tables) served by a
     # 0.2.6 backend starts clean, signs the same account in, reads the same
     # agent back, and logs no error. Pinning forward is not a one-way door.
-    image: ${APOWERB_BACKEND_IMAGE:-apowerb/apowerb}:${APOWERB_BACKEND_TAG:-0.2.12}
+    # 0.2.13 (lot du 09/09) : le modele mutualise est PLAFONNE par defaut --
+    # voir les trois reglages plus bas --, un graphique a source agent ne
+    # prend plus le raisonnement du modele pour ses donnees, et un
+    # orchestrateur absent rend le code que l'interface sait lire au lieu
+    # d'une phrase nue. Verifie DANS l'image publiee et non sur le numero :
+    # plafonds 1000000/20000000/24 et `_core_token_cap` present.
+    image: ${APOWERB_BACKEND_IMAGE:-apowerb/apowerb}:${APOWERB_BACKEND_TAG:-0.2.13}
     pull_policy: always
     environment:
       # ── Managed cluster (Hostman > Databases), not a service of this stack ──
@@ -376,6 +386,17 @@ services:
       # The scheduler runs agents on a timer. Off, a deployment answers
       # requests and starts nothing by itself.
       SCHEDULER_ENABLED: ${SCHEDULER_ENABLED:-true}
+      # Plafond du modele mutualise, applique par le coeur depuis 0.2.13 sur
+      # la seule consommation de la cle partagee -- une cle API personnelle
+      # est payee par son proprietaire. Les valeurs ci-dessous sont celles du
+      # coeur : ce bloc ne change rien, il rend les trois atteignables depuis
+      # le panneau. La fenetre GLISSE : une remise a zero calendaire
+      # laisserait prendre un plein a 23h59 et un autre a 00h01. Le plafond
+      # du deploiement existe parce que celui par utilisateur ne vaut que si
+      # le nombre de comptes est borne. `0` desactive celui qu'on met a zero.
+      DEFAULT_LLM_USER_TOKEN_CAP: ${DEFAULT_LLM_USER_TOKEN_CAP:-1000000}
+      DEFAULT_LLM_GLOBAL_TOKEN_CAP: ${DEFAULT_LLM_GLOBAL_TOKEN_CAP:-20000000}
+      DEFAULT_LLM_CAP_WINDOW_HOURS: ${DEFAULT_LLM_CAP_WINDOW_HOURS:-24}
     restart: unless-stopped
 
   # Orchestration: th2etl runs the pipelines the Orchestrator screen schedules.
