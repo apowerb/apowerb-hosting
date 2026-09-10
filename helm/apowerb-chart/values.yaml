@@ -7,11 +7,15 @@ image:
   backend:
     repository: apowerb/apowerb
     # Paired with the frontend tag below -- move both or neither.
-    tag: 0.2.12
+    # 0.2.14 : la jauge de consommation et l'ecran de configuration. L'ecran
+    # vit dans l'interface 0.1.22 et s'appuie sur l'API de ce coeur-ci : les
+    # deplacer separement donne un backend qui accepte l'ecriture sans ecran
+    # pour l'offrir, ou l'inverse.
+    tag: 0.2.14
     pullPolicy: IfNotPresent
   frontend:
     repository: apowerb/apowerb-ui
-    tag: 0.1.20
+    tag: 0.1.22
     pullPolicy: IfNotPresent
   postgres:
     repository: postgres
