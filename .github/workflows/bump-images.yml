@@ -47,7 +47,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           python .github/scripts/propose_bump.py | tee sortie.txt
-          if git diff --quiet -- docker-compose.yml; then
+          # Les DEUX fichiers, sinon un chart en retard tout seul ne
+          # declencherait aucune PR -- c est ce qui l a laisse deux versions
+          # derriere l interface jusqu au 10/09/26.
+          if git diff --quiet -- docker-compose.yml helm/apowerb-chart/; then
             echo "change=non" >> "$GITHUB_OUTPUT"
           else
             echo "change=oui" >> "$GITHUB_OUTPUT"
@@ -61,8 +64,8 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -b chore/bump-images
-          git add docker-compose.yml
-          git commit -m "chore(images): epingler les dernieres versions publiees"
+          git add docker-compose.yml helm/apowerb-chart/
+          git commit -m "chore(images): epingler les dernieres versions publiees"  # compose et chart
           git push -u origin chore/bump-images
           gh pr create \
             --base main --head chore/bump-images \
