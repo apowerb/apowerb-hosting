@@ -57,11 +57,11 @@ Le chart est publié sur **Docker Hub**, dans l'organisation d'où sortent déj�
 les images du produit — mais dans un dépôt à lui, `apowerb/apowerb-chart` :
 
 ```bash
-helm install apowerb oci://registry-1.docker.io/apowerb/apowerb-chart --version 0.4.1
+helm install apowerb oci://registry-1.docker.io/apowerb/apowerb-chart --version 0.4.2
 ```
 
 > GHCR a été retiré le 08/09/26. Le push y réussissait, mais un paquet naît
-> **privé** dans une organisation GitHub : `helm pull oci://ghcr.io/apowerb/apowerb`
+> **privé** dans une organisation GitHub : `helm pull oci://ghcr.io/apowerb/apowerb` <!-- docs-in-sync: ignore -->
 > répondait `403 Forbidden` en anonyme. Publier là où personne ne peut tirer
 > n'est pas publier.
 
@@ -80,7 +80,7 @@ helm install apowerb oci://registry-1.docker.io/apowerb/apowerb-chart --version 
 > quoi il sert, faire cohabiter deux releases dans un namespace.
 >
 > Les versions publiées avant le renommage restent sous
-> `oci://registry-1.docker.io/apowerb/apowerb` (0.2.0 et 0.4.0) : elles n'ont
+> `oci://registry-1.docker.io/apowerb/apowerb` (0.2.0 et 0.4.0) : elles n'ont <!-- docs-in-sync: ignore -->
 > pas été déplacées.
 
 ## A smaller stack

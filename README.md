@@ -15,8 +15,11 @@ and it is designed to run from published images or from a Kubernetes/Helm chart.
 
 ### Helm chart OCI registries
 
-- Docker Hub chart: [oci://registry-1.docker.io/apowerb/apowerb](https://hub.docker.com/r/apowerb/apowerb)
-- GitHub Container Registry chart: [oci://ghcr.io/apowerb/apowerb](https://github.com/orgs/apowerb/packages)
+- Docker Hub chart: [oci://registry-1.docker.io/apowerb/apowerb-chart](https://hub.docker.com/r/apowerb/apowerb-chart)
+
+> GHCR was dropped on 2026-09-08: the push succeeded, but a package is born
+> **private** in a GitHub organisation and `helm pull` answered `403` to an
+> anonymous caller. Publishing where nobody can pull is not publishing.
 
 > The `docker-compose.yml` at the repository root is **not** the self-hosted stack:
 > it targets [Hostman App Platform](https://hostman.com), which reads a Compose file

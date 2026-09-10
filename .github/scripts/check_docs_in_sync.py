@@ -25,6 +25,7 @@ from __future__ import annotations
 import io
 import json
 import os
+import pathlib
 import re
 import sys
 import tarfile
@@ -111,6 +112,22 @@ def mdx_sources(ref: str) -> dict[str, str]:
     return out
 
 
+def _commande(lines: list[str], n: int) -> str:
+    """La ligne n et ses continuations `\\`, recollees.
+
+    Une commande helm lisible tient sur plusieurs lignes ; la version y est
+    alors sur sa propre ligne. En lisant ligne a ligne, le controle de version
+    ne voyait que les commandes ecrites d'un seul tenant -- c'est-a-dire
+    exactement celles qu'une documentation soignee n'ecrit pas.
+    """
+    bloc = [lines[n - 1]]
+    i = n - 1
+    while i < len(lines) and lines[i - 1].rstrip().endswith("\\"):
+        bloc.append(lines[i])
+        i += 1
+    return "\n".join(bloc)
+
+
 def offences(sources: dict[str, str], name: str, version: str, chart_dir: str
              ) -> list[str]:
     """Chaque mention qui contredit ce depot, avec son fichier et sa ligne."""
@@ -130,10 +147,11 @@ def offences(sources: dict[str, str], name: str, version: str, chart_dir: str
                 if repo != want_repo:
                     found.append(f"{path}:{n} — adresse OCI `{repo}`, "
                                  f"attendu `{want_repo}`")
-                for v in VERSION_RE.findall(line):
+                # La commande entiere, continuations comprises.
+                for v in VERSION_RE.findall(_commande(lines, n)):
                     if v != version:
                         found.append(f"{path}:{n} — `--version {v}` sur une "
-                                     f"ligne OCI, chart en {version}")
+                                     f"commande OCI, chart en {version}")
             for dead in GHCR_RE.findall(line):
                 found.append(f"{path}:{n} — `{dead}` : GHCR a été retiré, "
                              f"le paquet y est privé et `helm pull` rend 403")
@@ -149,9 +167,36 @@ def open_doc_prs() -> list[tuple[int, str, str]]:
     return [(p["number"], p["title"], p["head"]["sha"]) for p in prs]
 
 
+def local_sources() -> dict[str, str]:
+    """Les README de CE depot.
+
+    Ils décrivent l'installation du chart qu'ils accompagnent, donc ils
+    peuvent le contredire exactement comme la doc en ligne -- et pendant que
+    le garde ne regardait qu'ailleurs, `helm/apowerb-chart/README.md` a servi
+    `--version 0.4.1` pendant que le chart était en 0.4.2.
+    """
+    out: dict[str, str] = {}
+    for chemin in [pathlib.Path("README.md"), *pathlib.Path(".").glob("helm/*/README.md")]:
+        if chemin.is_file():
+            out[str(chemin)] = chemin.read_text(encoding="utf-8")
+    return out
+
+
 def main() -> int:
     name, version = chart_facts(CHART_DIR)
     print(f"Ce dépôt déploie : chart {name} {version} ({CHART_DIR})")
+
+    # D'abord chez soi : une commande fausse ici n'a besoin de la PR de
+    # personne pour être corrigée, donc elle ne bénéficie d'aucun sursis.
+    chez_soi = offences(local_sources(), name, version, CHART_DIR)
+    if chez_soi:
+        print("\nLes README de ce dépôt le contredisent :")
+        for line in chez_soi:
+            print(f"  {line}")
+        print("\nCorrigez-les dans cette PR : elles décrivent le chart "
+              "qu'elles accompagnent, et une commande périmée s'installe "
+              "sans erreur.")
+        return 1
 
     bad = offences(mdx_sources("main"), name, version, CHART_DIR)
     if not bad:
