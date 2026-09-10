@@ -42,6 +42,22 @@ empty strings. A `values-secrets.yaml` outside version control, passed with
 
 ## Install from a published release
 
+The chart is published as an OCI artifact on Docker Hub under the repository
+`apowerb/apowerb-chart`.
+
+```bash
+helm upgrade --install apowerb \
+  oci://registry-1.docker.io/apowerb/apowerb-chart \
+  --version 0.4.1 \
+  --namespace apowerb \
+  --create-namespace \
+  --values values-secrets.yaml
+```
+
+This is the same packaged chart as the one in this repository, published from
+`Chart.yaml` with the chart version used in the release. The artifact is meant to
+be installed directly from Docker Hub without cloning or building locally.
+
 ## Versions
 
 La série courante est **0.4.x** (David, 08/09/26) : les correctifs et les

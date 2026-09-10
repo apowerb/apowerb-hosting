@@ -15,8 +15,20 @@ and it is designed to run from published images or from a Kubernetes/Helm chart.
 
 ### Helm chart OCI registries
 
-- Docker Hub chart: [oci://registry-1.docker.io/apowerb/apowerb](https://hub.docker.com/r/apowerb/apowerb)
+- Docker Hub chart: [oci://registry-1.docker.io/apowerb/apowerb-chart](https://hub.docker.com/r/apowerb/apowerb-chart)
 - GitHub Container Registry chart: [oci://ghcr.io/apowerb/apowerb](https://github.com/orgs/apowerb/packages)
+
+The published chart is the packaged Helm release for the full stack, published on
+Docker Hub as an OCI artifact. It can be installed directly with Helm without a
+local chart checkout:
+
+```bash
+helm upgrade --install apowerb \
+  oci://registry-1.docker.io/apowerb/apowerb-chart \
+  --version 0.4.1 \
+  --namespace apowerb \
+  --create-namespace
+```
 
 > The `docker-compose.yml` at the repository root is **not** the self-hosted stack:
 > it targets [Hostman App Platform](https://hostman.com), which reads a Compose file
