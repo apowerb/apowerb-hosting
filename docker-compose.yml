@@ -109,7 +109,13 @@ services:
     # qu'il attend -- le champ « Que doit renvoyer l'agent ? » --, la regle
     # `no-undef` tourne en CI, et le parcours du chat est joue par Playwright
     # a chaque passage. Rien qui change le code servi hors du champ ajoute.
-    image: ${APOWERB_FRONTEND_IMAGE:-apowerb/apowerb-ui}:${APOWERB_FRONTEND_TAG:-0.1.22}
+    # 0.1.23 (lot du 11/09) : l'ecran de connexion ne nomme plus les
+    # conditions d'utilisation d'un tiers. Jusqu'a 0.1.22 inclus il liait
+    # `agent-dev.thaink2.fr/legal` en dur -- mesure le 11/09 dans le bundle
+    # servi : toute installation renvoyait ses visiteurs vers les conditions
+    # de quelqu'un d'autre. Le noyau n'affiche desormais rien, sauf si une
+    # brique remplit l'emplacement `auth.legal`.
+    image: ${APOWERB_FRONTEND_IMAGE:-apowerb/apowerb-ui}:${APOWERB_FRONTEND_TAG:-0.1.23}
     pull_policy: always
     environment:
       # Server-side only, read at runtime by the route handlers.
@@ -180,7 +186,7 @@ services:
     # orchestrateur absent rend le code que l'interface sait lire au lieu
     # d'une phrase nue. Verifie DANS l'image publiee et non sur le numero :
     # plafonds 1000000/20000000/24 et `_core_token_cap` present.
-    image: ${APOWERB_BACKEND_IMAGE:-apowerb/apowerb}:${APOWERB_BACKEND_TAG:-0.2.14}
+    image: ${APOWERB_BACKEND_IMAGE:-apowerb/apowerb}:${APOWERB_BACKEND_TAG:-0.2.16}
     pull_policy: always
     environment:
       # ── Managed cluster (Hostman > Databases), not a service of this stack ──
