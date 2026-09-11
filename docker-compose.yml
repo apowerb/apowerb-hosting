@@ -115,7 +115,13 @@ services:
     # servi : toute installation renvoyait ses visiteurs vers les conditions
     # de quelqu'un d'autre. Le noyau n'affiche desormais rien, sauf si une
     # brique remplit l'emplacement `auth.legal`.
-    image: ${APOWERB_FRONTEND_IMAGE:-apowerb/apowerb-ui}:${APOWERB_FRONTEND_TAG:-0.1.23}
+    # 0.1.24 (lot du 11/09, second) : la reponse de l'agent ne s'affiche plus
+    # deux fois -- les fragments de streaming etaient re-emis un par un et
+    # passaient sous les seuils de deduplication, si bien que le tour entier
+    # etait ajoute une seconde fois. Et la page `/legal` quitte le noyau : elle
+    # servait les mentions legales completes de l'editeur -- RCS, siege,
+    # juridiction -- depuis le domaine de celui qui installe.
+    image: ${APOWERB_FRONTEND_IMAGE:-apowerb/apowerb-ui}:${APOWERB_FRONTEND_TAG:-0.1.24}
     pull_policy: always
     environment:
       # Server-side only, read at runtime by the route handlers.
