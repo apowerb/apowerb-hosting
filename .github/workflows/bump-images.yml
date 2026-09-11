@@ -36,7 +36,11 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          n=$(gh pr list --state open --head chore/bump-images --json number --jq 'length')
+          # Par PREFIXE : depuis que chaque proposition porte sa propre branche
+          # (voir l'etape d'ouverture), `--head chore/bump-images` ne trouverait
+          # plus rien et le workflow rouvrirait une PR chaque matin.
+          n=$(gh pr list --state open --json headRefName \
+                --jq '[.[] | select(.headRefName | startswith("chore/bump-images"))] | length')
           echo "ouverte=$n" >> "$GITHUB_OUTPUT"
           [ "$n" = "0" ] || echo "Une PR de bump est deja ouverte : rien a faire."
 
@@ -63,11 +67,20 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git checkout -b chore/bump-images
+          # Une branche PAR proposition. Le nom fixe d'avant echouait des qu'une
+          # branche du meme nom restait sur le remote : le 11/09/26, le push a
+          # ete rejete en `fetch first` parce que `chore/bump-images` survivait
+          # a la PR #44, mergee. Le garde ci-dessus ne regarde que les PR
+          # OUVERTES -- une PR fermee ne prouve pas que la branche est libre,
+          # exactement comme une release absente ne prouve pas qu'un tag l'est.
+          # Un suffixe unique evite la collision sans recourir au force-push,
+          # qu'on ne veut pas dans un workflow automatique.
+          branche="chore/bump-images-$(date -u +%Y%m%d)-${{ github.run_number }}"
+          git checkout -b "$branche"
           git add docker-compose.yml helm/apowerb-chart/
           git commit -m "chore(images): epingler les dernieres versions publiees"  # compose et chart
-          git push -u origin chore/bump-images
+          git push -u origin "$branche"
           gh pr create \
-            --base main --head chore/bump-images \
+            --base main --head "$branche" \
             --title "chore(images): epingler les dernieres versions publiees" \
             --body-file bump-body.md
