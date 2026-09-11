@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: apowerb-ui
-          image: apowerb/apowerb-ui:0.1.23
+          image: apowerb/apowerb-ui:0.1.24
           ports:
             - containerPort: 3000
           env:
