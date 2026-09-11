@@ -403,6 +403,17 @@ services:
       DEFAULT_LLM_USER_TOKEN_CAP: ${DEFAULT_LLM_USER_TOKEN_CAP:-1000000}
       DEFAULT_LLM_GLOBAL_TOKEN_CAP: ${DEFAULT_LLM_GLOBAL_TOKEN_CAP:-20000000}
       DEFAULT_LLM_CAP_WINDOW_HOURS: ${DEFAULT_LLM_CAP_WINDOW_HOURS:-24}
+      # Signalement de bug, coeur 0.2.16. L'ecran « signaler un probleme » de
+      # l'interface 0.1.23 ecrit dans l'application ; ces trois-la decident si
+      # le signalement part AUSSI en issue GitHub. Valeurs du coeur : sans
+      # depot ni jeton, la sortie GitHub n'est pas offerte et le signalement
+      # reste dans l'ecran d'administration -- pas d'erreur, pas de perte.
+      # Le depot s'ecrit « organisation/depot ». `ALLOW_PUBLIC` doit etre pose
+      # a la main pour viser un depot PUBLIC : un signalement porte des traces
+      # d'execution, et le defaut refuse de les publier sans decision.
+      BUG_REPORT_GITHUB_REPO: ${BUG_REPORT_GITHUB_REPO:-}
+      BUG_REPORT_GITHUB_TOKEN: ${BUG_REPORT_GITHUB_TOKEN:-}
+      BUG_REPORT_GITHUB_ALLOW_PUBLIC: ${BUG_REPORT_GITHUB_ALLOW_PUBLIC:-false}
     restart: unless-stopped
 
   # Orchestration: th2etl runs the pipelines the Orchestrator screen schedules.
