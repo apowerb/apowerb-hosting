@@ -121,7 +121,7 @@ services:
     # etait ajoute une seconde fois. Et la page `/legal` quitte le noyau : elle
     # servait les mentions legales completes de l'editeur -- RCS, siege,
     # juridiction -- depuis le domaine de celui qui installe.
-    image: ${APOWERB_FRONTEND_IMAGE:-apowerb/apowerb-ui}:${APOWERB_FRONTEND_TAG:-0.1.24}
+    image: ${APOWERB_FRONTEND_IMAGE:-apowerb/apowerb-ui}:${APOWERB_FRONTEND_TAG:-0.1.25}
     pull_policy: always
     environment:
       # Server-side only, read at runtime by the route handlers.
@@ -192,7 +192,7 @@ services:
     # orchestrateur absent rend le code que l'interface sait lire au lieu
     # d'une phrase nue. Verifie DANS l'image publiee et non sur le numero :
     # plafonds 1000000/20000000/24 et `_core_token_cap` present.
-    image: ${APOWERB_BACKEND_IMAGE:-apowerb/apowerb}:${APOWERB_BACKEND_TAG:-0.2.16}
+    image: ${APOWERB_BACKEND_IMAGE:-apowerb/apowerb}:${APOWERB_BACKEND_TAG:-0.2.18}
     pull_policy: always
     environment:
       # ── Managed cluster (Hostman > Databases), not a service of this stack ──
@@ -419,6 +419,10 @@ services:
       # d'execution, et le defaut refuse de les publier sans decision.
       BUG_REPORT_GITHUB_REPO: ${BUG_REPORT_GITHUB_REPO:-}
       BUG_REPORT_GITHUB_TOKEN: ${BUG_REPORT_GITHUB_TOKEN:-}
+      # Coeur 0.2.17 : le numero d un GitHub Project v2 ou verser chaque ticket
+      # cree. Un Project automatise le statut d une carte, pas son entree :
+      # vide (le defaut du coeur), le ticket existe mais reste hors du tableau.
+      BUG_REPORT_GITHUB_PROJECT: ${BUG_REPORT_GITHUB_PROJECT:-}
       BUG_REPORT_GITHUB_ALLOW_PUBLIC: ${BUG_REPORT_GITHUB_ALLOW_PUBLIC:-false}
     restart: unless-stopped
 
