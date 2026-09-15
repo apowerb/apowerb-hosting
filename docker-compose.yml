@@ -192,7 +192,7 @@ services:
     # orchestrateur absent rend le code que l'interface sait lire au lieu
     # d'une phrase nue. Verifie DANS l'image publiee et non sur le numero :
     # plafonds 1000000/20000000/24 et `_core_token_cap` present.
-    image: ${APOWERB_BACKEND_IMAGE:-apowerb/apowerb}:${APOWERB_BACKEND_TAG:-0.2.20}
+    image: ${APOWERB_BACKEND_IMAGE:-apowerb/apowerb}:${APOWERB_BACKEND_TAG:-0.2.22}
     pull_policy: always
     environment:
       # ── Managed cluster (Hostman > Databases), not a service of this stack ──
@@ -424,6 +424,11 @@ services:
       # vide (le defaut du coeur), le ticket existe mais reste hors du tableau.
       BUG_REPORT_GITHUB_PROJECT: ${BUG_REPORT_GITHUB_PROJECT:-}
       BUG_REPORT_GITHUB_ALLOW_PUBLIC: ${BUG_REPORT_GITHUB_ALLOW_PUBLIC:-false}
+      # Coeur 0.2.22 : identifiants de modeles retires du selecteur « Create
+      # Agent », separes par des virgules (ex. image_creator,audio_assistant).
+      # Un agent deja cree depuis un modele masque continue de fonctionner.
+      # Vide (le defaut du coeur) : tous les modeles sont proposes.
+      SUPERAGENT_HIDDEN_TEMPLATES: ${SUPERAGENT_HIDDEN_TEMPLATES:-}
     restart: unless-stopped
 
   # Orchestration: th2etl runs the pipelines the Orchestrator screen schedules.
