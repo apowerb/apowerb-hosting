@@ -8,6 +8,9 @@ le pod redémarre en boucle, et l'écran Journaux dit « magasin injoignable »
 sans que rien ne nomme la cause.
 */}}
 {{- define "apowerb.validate" -}}
+{{- if not .Values.postgres.password }}
+{{- fail "postgres.password est vide : Postgres refuse de s'initialiser sans lui, et le backend ne pourrait pas s'y connecter. Posez-le (--set postgres.password=\"$(openssl rand -hex 16)\"). Il n'a pas de valeur par défaut à dessein : un mot de passe livré dans un dépôt public n'en est plus un." -}}
+{{- end }}
 {{- if .Values.th2pulse.enabled }}
 {{- if not .Values.th2pulse.ingestToken }}
 {{- fail "th2pulse.ingestToken est vide : th2pulse refuse de démarrer sans lui. Posez-le (openssl rand -hex 32) ou mettez th2pulse.enabled=false." -}}
