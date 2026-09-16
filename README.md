@@ -1,4 +1,28 @@
+<div align="center">
+
+<img src="https://avatars.githubusercontent.com/u/310538280?v=4&s=160" alt="apowerb" width="96" />
+
 # apowerb-hosting
+
+**Deployment assets for the open-source apowerb stack — Docker Compose, Kubernetes manifests and a Helm chart.**
+
+[![Documentation](https://img.shields.io/badge/docs-apowerb.com-blue?style=for-the-badge&logo=googledocs&logoColor=white)](https://docs.apowerb.com/)
+[![Docker](https://img.shields.io/docker/v/apowerb/apowerb?style=for-the-badge&logo=docker&logoColor=white&label=image)](https://hub.docker.com/r/apowerb/apowerb)
+[![Helm](https://img.shields.io/badge/Helm-chart-0F1689?style=for-the-badge&logo=helm&logoColor=white)](https://github.com/apowerb/apowerb-hosting/tree/main/helm)
+[![License](https://img.shields.io/badge/License-Apache_2.0-green.svg?style=for-the-badge)](LICENSE)
+[![Discord](https://img.shields.io/badge/Community-Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.com/channels/1470717940075597896)
+
+<p align="center">
+  <a href="https://docs.apowerb.com/">Documentation</a> •
+  <a href="https://docs.apowerb.com/quickstart">Quickstart</a> •
+  <a href="https://docs.apowerb.com/api-reference/introduction">API Reference</a> •
+  <a href="https://docs.apowerb.com/deployment/dockercompose">Deployment</a> •
+  <a href="https://thaink2.com">thaink2</a>
+</p>
+
+</div>
+
+---
 
 This repository contains the deployment assets for the open-source **apowerb** stack.
 It includes the service definitions for the FastAPI backend and the Next.js frontend,
