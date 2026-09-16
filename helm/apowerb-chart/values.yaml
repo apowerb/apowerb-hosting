@@ -68,8 +68,11 @@ service:
 postgres:
   database: th2agent
   user: th2agent
-  # À remplacer : un mot de passe livré par défaut est un mot de passe publié.
-  password: change-me
+  # Vide à dessein : un mot de passe livré par défaut est un mot de passe
+  # publié, et celui-ci l'a été. `helm install` refuse de partir tant qu'il
+  # n'est pas posé -- voir _validate.tpl.
+  #   --set postgres.password="$(openssl rand -hex 16)"
+  password: ""
   storage: 8Gi
   storageClass: ""
   resources:

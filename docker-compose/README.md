@@ -20,7 +20,9 @@ Use this option to run the stack from the published container images.
 ## Quick start
 
 1. Copy the environment template.
-2. Optional but recommended: run the bootstrap helper to populate missing secret values in `.env`.
+2. Run the bootstrap helper to fill the empty credentials in `.env`. This step
+   is required: the template ships them empty, because a value committed to a
+   public repository is no longer a secret.
 3. Start the stack.
 
 Run these from the repository root. The Compose file lives in this folder, so

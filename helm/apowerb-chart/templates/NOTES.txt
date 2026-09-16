@@ -65,8 +65,9 @@ Ce qu'il reste à vérifier, dans cet ordre :
 
 {{- if eq .Values.postgres.password "change-me" }}
 
-  ⚠️  postgres.password vaut encore `change-me`, la valeur livrée. Un mot de
-      passe publié dans un dépôt public n'en est plus un.
+  ⚠️  postgres.password vaut `change-me`. Le chart ne le livre plus, mais
+      cette valeur traîne dans les anciens guides : elle est connue de tous,
+      et n'est donc pas un mot de passe.
 {{- end }}
 
   4. Les capacités qui dépendent d'un fournisseur (Google, Microsoft, S3,

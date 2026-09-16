@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
-# Fills ENCRYPT_KEY in `.env` when it is empty.
+# Fills the empty credentials in `.env` with random values.
 #
-# NEVER replaces a value that is already set: regenerating ENCRYPT_KEY would
-# make every integration token already encrypted in the database unreadable.
+# NEVER replaces a value that is already set, and that rule is what makes this
+# script safe to re-run: regenerating ENCRYPT_KEY would make every integration
+# token already encrypted in the database unreadable, and regenerating
+# DB_PASSWORD would leave the API unable to reach a Postgres that keeps the
+# password it was initialised with.
 
 set -euo pipefail
 
@@ -43,6 +46,11 @@ fill_if_empty() {
 }
 
 echo "Generating the missing secrets in .env"
+# Hex on purpose: this one is also read as the password inside a connection
+# URL (`postgresql://user:PASSWORD@postgres:5432/db`, see th2pulse and th2etl
+# in the compose file), where `@`, `/` and `:` would have to be percent-encoded
+# to survive. A hex string needs no encoding anywhere it is used.
+fill_if_empty DB_PASSWORD "$(openssl rand -hex 24)"
 fill_if_empty ENCRYPT_KEY "$(generate_fernet_key)"
 # Filled whether or not the optional profiles are used: an empty value stops
 # the service it belongs to from serving, and having them ready costs nothing.
