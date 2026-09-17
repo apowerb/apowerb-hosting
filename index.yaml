@@ -36,6 +36,17 @@ entries:
     version: 0.2.0
   apowerb-chart:
   - apiVersion: v2
+    appVersion: 0.2.24
+    created: "2026-09-17T13:37:00.985360131Z"
+    description: apowerb, its interface, PostgreSQL, the th2etl orchestrator, the
+      th2pulse log store and an OpenTelemetry collector
+    digest: 12bbc50a96bb40275d5f1b02ba2414392adc80d36ffdb5957bd0208e97afa68b
+    name: apowerb-chart
+    type: application
+    urls:
+    - https://github.com/apowerb/apowerb-hosting/releases/download/apowerb-chart-0.4.10/apowerb-chart-0.4.10.tgz
+    version: 0.4.10
+  - apiVersion: v2
     appVersion: 0.2.22
     created: "2026-09-16T11:54:45.488626212Z"
     description: apowerb, its interface, PostgreSQL, the th2etl orchestrator, the
@@ -134,4 +145,4 @@ entries:
     urls:
     - https://github.com/apowerb/apowerb-hosting/releases/download/apowerb-chart-0.4.1/apowerb-chart-0.4.1.tgz
     version: 0.4.1
-generated: "2026-09-16T11:54:45.488654341Z"
+generated: "2026-09-17T13:37:00.985408721Z"
