@@ -54,7 +54,7 @@ jobs:
           # Les DEUX fichiers, sinon un chart en retard tout seul ne
           # declencherait aucune PR -- c est ce qui l a laisse deux versions
           # derriere l interface jusqu au 10/09/26.
-          if git diff --quiet -- docker-compose.yml helm/apowerb-chart/; then
+          if git diff --quiet -- docker-compose.yml docker-compose/ .env.example k8s/ helm/apowerb-chart/; then
             echo "change=non" >> "$GITHUB_OUTPUT"
           else
             echo "change=oui" >> "$GITHUB_OUTPUT"
@@ -95,8 +95,8 @@ jobs:
           # qu'on ne veut pas dans un workflow automatique.
           branche="chore/bump-images-$(date -u +%Y%m%d)-${{ github.run_number }}"
           git checkout -b "$branche"
-          git add docker-compose.yml helm/apowerb-chart/
-          git commit -m "chore(images): epingler les dernieres versions publiees"  # compose et chart
+          git add docker-compose.yml docker-compose/ .env.example k8s/ helm/apowerb-chart/
+          git commit -m "chore(images): epingler les dernieres versions publiees"  # tous les chemins d installation
           git push -u origin "$branche"
           gh pr create \
             --base main --head "$branche" \
