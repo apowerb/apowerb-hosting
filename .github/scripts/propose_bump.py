@@ -257,11 +257,12 @@ def main() -> int:
         "le contredise.\n\n"
         "L'image a ete verifiee presente sur Docker Hub, avec de vraies "
         "architectures, avant que cette PR soit ouverte.\n\n"
-        "> **A faire par le relecteur.** Une PR ouverte par le jeton du workflow "
-        "ne declenche pas les autres workflows (anti-boucle GitHub) : lancez "
-        "**Contrat compose** en `workflow_dispatch` sur cette branche avant de "
-        "merger. C'est lui qui dira si la nouvelle version du coeur apporte des "
-        "reglages que ce fichier ne declare pas encore.\n"
+        "> **A verifier par le relecteur.** **Contrat compose** doit figurer "
+        "parmi les checks de cette PR avant le merge : c'est lui qui dira si la "
+        "nouvelle version du coeur apporte des reglages que ce fichier ne "
+        "declare pas encore. Ouverte par `BUMP_TOKEN`, la PR le declenche "
+        "d'elle-meme ; s'il manque, lancez-le en `workflow_dispatch` sur cette "
+        "branche.\n"
     )
     if dry:
         print("\n--- corps de PR qui serait ecrit ---")
