@@ -42,7 +42,7 @@ services:
     # (sign-up, sign-in, an agent created and read back, the control panel API
     # answering). Override BOTH tags in `.env` when you move, never one alone:
     # the frontend and the backend cap each other in both directions.
-    image: ${APOWERB_BACKEND_IMAGE:-apowerb/apowerb}:${APOWERB_BACKEND_TAG:-0.2.25}
+    image: ${APOWERB_BACKEND_IMAGE:-apowerb/apowerb}:${APOWERB_BACKEND_TAG:-0.2.27}
     pull_policy: always
     environment:
       DB_HOST: postgres
