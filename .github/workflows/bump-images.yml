@@ -63,8 +63,26 @@ jobs:
       - name: Ouvrir la PR
         if: steps.deja.outputs.ouverte == '0' && steps.comparer.outputs.change == 'oui'
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # PAS le GITHUB_TOKEN : la politique de l'organisation interdit a
+          # GitHub Actions de creer des PR (`createPullRequest` refuse), et ce
+          # workflow n'en a donc JAMAIS ouvert une -- les six PR de bump
+          # jusqu'au 18/09/26 ont toutes ete ouvertes a la main. Les jours
+          # "verts" etaient ceux ou il n'y avait rien a proposer.
+          #
+          # Lever la politique aurait aussi permis aux workflows d'APPROUVER
+          # des PR, dans une organisation ou apowerb/apowerb exige une revue.
+          # BUMP_TOKEN est un jeton fine-grained limite a ce depot (Pull
+          # requests en ecriture, Contents en lecture) : il ouvre la PR, rien
+          # d'autre. Il expire -- a l'expiration, cette etape echoue de nouveau.
+          #
+          # Effet de bord voulu : une PR ouverte par un jeton personnel
+          # declenche les autres workflows, que le GITHUB_TOKEN laissait muets.
+          GH_TOKEN: ${{ secrets.BUMP_TOKEN }}
         run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::error::Secret BUMP_TOKEN absent : le GITHUB_TOKEN ne peut pas ouvrir de PR dans cette organisation."
+            exit 1
+          fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           # Une branche PAR proposition. Le nom fixe d'avant echouait des qu'une
