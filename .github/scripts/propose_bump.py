@@ -13,13 +13,20 @@ et rend le nouveau contenu du fichier. Ouvrir la PR est le travail du workflow
 qui l'appelle ; relire et merger reste celui d'un humain -- et c'est la que le
 garde du contrat compose se prononce.
 
-Deux fichiers epinglent des images, et les DEUX sont surveilles :
+Chaque chemin d'installation lit SA ligne, et toutes sont surveillees :
   * `docker-compose.yml` -- ce que Hostman deploie ;
   * `helm/apowerb-chart/values.yaml` -- ce qu'une installation Kubernetes
     obtient. Il a longtemps echappe a ce script : le 10/09/26 le chart servait
     encore le coeur 0.2.12 et l'interface 0.1.20, deux versions derriere, sans
     que rien ne le signale. Une surveillance qui ne couvre qu'un fichier sur
-    deux laisse croire que les deux sont surveilles.
+    deux laisse croire que les deux sont surveilles ;
+  * `docker-compose/docker-compose.yml` -- le quickstart auto-heberge ;
+  * `.env.example` -- ce qu'on recopie pour commencer ;
+  * `k8s/*.yaml` -- les manifestes bruts ;
+  * la commande `helm install` du README du chart, qui cite sa version.
+Les quatre derniers ont echappe a ce script jusqu'au 18/09/26 : la premiere PR
+qu'il a reussi a ouvrir (#61) passait Hostman et le chart en 0.2.26 et laissait
+le quickstart -- ce qu'installe un nouveau venu -- sur l'image precedente.
 
 Deux refus deliberes :
   * on ne propose RIEN tant que l'image n'est pas sur Docker Hub. Une release
@@ -45,6 +52,10 @@ import urllib.request
 COMPOSE = pathlib.Path("docker-compose.yml")
 CHART_VALUES = pathlib.Path("helm/apowerb-chart/values.yaml")
 CHART_YAML = pathlib.Path("helm/apowerb-chart/Chart.yaml")
+CHART_README = pathlib.Path("helm/apowerb-chart/README.md")
+QUICKSTART = pathlib.Path("docker-compose/docker-compose.yml")
+ENV_EXAMPLE = pathlib.Path(".env.example")
+K8S_DIR = pathlib.Path("k8s")
 
 # (variable du compose, depot GitHub, depot Docker Hub)
 IMAGES = [
@@ -89,6 +100,19 @@ def image_publiee(depot: str, tag: str) -> bool:
 
 def defaut_actuel(texte: str, variable: str) -> str | None:
     m = re.search(r"\$\{" + variable + r":-([^}]+)\}", texte)
+    return m.group(1) if m else None
+
+
+def valeur_env(texte: str, variable: str) -> str | None:
+    """La valeur de ``VARIABLE=...`` dans un .env, ligne entiere."""
+    m = re.search(r"^" + variable + r"=(\S+)[ \t]*$", texte, re.M)
+    return m.group(1) if m else None
+
+
+def tag_k8s(texte: str, depot: str) -> str | None:
+    """Le tag de ``image: <depot>:<tag>``. Le ``:`` qui suit le depot est ce
+    qui distingue `apowerb/apowerb:` de `apowerb/apowerb-ui:`."""
+    m = re.search(r"image:[ \t]*" + re.escape(depot) + r":(\S+)", texte)
     return m.group(1) if m else None
 
 
@@ -157,6 +181,9 @@ def main() -> int:
     change = False
     change_chart = False
     tag_backend_publie = None
+    publies: list[tuple[str, str, str]] = []
+    # Fichiers suiveurs reecrits : chemin -> nouveau contenu.
+    suiveurs: dict[pathlib.Path, str] = {}
 
     for variable, repo, depot in IMAGES:
         publie = derniere_release(repo, token)
@@ -172,6 +199,8 @@ def main() -> int:
                 f"{depot}:{publie} n est pas (encore) publiee -- on attend"
             )
             continue
+
+        publies.append((variable, depot, publie))
 
         # --- le compose -----------------------------------------------------
         actuel = defaut_actuel(texte, variable)
@@ -209,11 +238,53 @@ def main() -> int:
             tag_backend_publie = publie
         print(f"  chart {depot} : {actuel_chart} -> {publie}")
 
+    # --- les suiveurs --------------------------------------------------------
+    # Chacun lu pour lui-meme, comme le chart : un fichier reste en retard
+    # tout seul exactement quand on suppose qu'il suit les autres.
+    def suivre(chemin: pathlib.Path, lire, poser, cle: str) -> None:
+        nonlocal change
+        if not chemin.exists():
+            return
+        texte_s = suiveurs.get(chemin, chemin.read_text())
+        for variable, depot, publie in publies:
+            actuel_s = lire(texte_s, variable, depot)
+            if actuel_s is None or not plus_recent(publie, actuel_s):
+                continue
+            texte_s = poser(texte_s, variable, depot, actuel_s, publie)
+            lignes.append(f"| {cle} | `{depot}` | `{actuel_s}` | `{publie}` |")
+            change = True
+            print(f"  {chemin} {depot} : {actuel_s} -> {publie}")
+        if texte_s != chemin.read_text():
+            suiveurs[chemin] = texte_s
+
+    suivre(
+        QUICKSTART,
+        lambda t, v, d: defaut_actuel(t, v),
+        lambda t, v, d, a, n: t.replace("${" + v + ":-" + a + "}", "${" + v + ":-" + n + "}", 1),
+        "quickstart",
+    )
+    suivre(
+        ENV_EXAMPLE,
+        lambda t, v, d: valeur_env(t, v),
+        lambda t, v, d, a, n: re.sub(
+            r"^" + v + r"=" + re.escape(a) + r"([ \t]*)$", v + "=" + n + r"\1", t, count=1, flags=re.M
+        ),
+        ".env.example",
+    )
+    for manifeste in sorted(K8S_DIR.glob("*.yaml")) if K8S_DIR.is_dir() else []:
+        suivre(
+            manifeste,
+            lambda t, v, d: tag_k8s(t, d),
+            lambda t, v, d, a, n: t.replace(f"{d}:{a}", f"{d}:{n}"),
+            f"k8s/{manifeste.name}",
+        )
+
     if not change:
         print("Rien a proposer.")
         return 0
 
     chart_yaml = None
+    version_chart_changee: tuple[str, str] | None = None
     if change_chart and CHART_YAML.exists():
         chart_yaml = CHART_YAML.read_text()
         m = re.search(r"^version:[ \t]*(\S+)[ \t]*$", chart_yaml, re.M)
@@ -222,6 +293,16 @@ def main() -> int:
             chart_yaml = chart_yaml[:m.start(1)] + neuve + chart_yaml[m.end(1):]
             lignes.append(f"| chart | `version` | `{m.group(1)}` | `{neuve}` |")
             print(f"  chart version : {m.group(1)} -> {neuve}")
+            version_chart_changee = (m.group(1), neuve)
+            if CHART_README.exists():
+                readme = CHART_README.read_text()
+                ancienne = f"apowerb-chart --version {m.group(1)}"
+                if ancienne in readme:
+                    suiveurs[CHART_README] = readme.replace(
+                        ancienne, f"apowerb-chart --version {neuve}"
+                    )
+                    lignes.append(f"| README du chart | `--version` | `{m.group(1)}` | `{neuve}` |")
+                    print(f"  README du chart : --version {m.group(1)} -> {neuve}")
         # appVersion dit quelle version du PRODUIT ce chart installe, pas
         # quelle version le chart a. Elle suit donc le coeur.
         if tag_backend_publie:
@@ -243,6 +324,8 @@ def main() -> int:
             CHART_VALUES.write_text(chart)
             if chart_yaml is not None:
                 CHART_YAML.write_text(chart_yaml)
+        for chemin, contenu_s in suiveurs.items():
+            chemin.write_text(contenu_s)
 
     corps = pathlib.Path("bump-body.md")
     contenu = (
@@ -264,6 +347,17 @@ def main() -> int:
         "d'elle-meme ; s'il manque, lancez-le en `workflow_dispatch` sur cette "
         "branche.\n"
     )
+    if version_chart_changee:
+        avant, apres = version_chart_changee
+        contenu += (
+            "\n> **PR de doc compagnon a ouvrir.** `apowerb/apowerb-docs` cite la "
+            f"version du chart dans ses commandes `helm` : `--version {avant}` doit "
+            f"devenir `--version {apres}` (`deployment/helmchart.mdx`, "
+            "`deployment/kubernetes.mdx`). Le check **La doc dit-elle ce que ce "
+            "depot deploie ?** echoue tant qu'aucune PR de doc ouverte ne le "
+            "corrige, et `BUMP_TOKEN` n'a pas acces a ce depot. A merger apres "
+            "la publication OCI du chart, pas avant.\n"
+        )
     if dry:
         print("\n--- corps de PR qui serait ecrit ---")
         print(contenu)
