@@ -121,7 +121,7 @@ services:
     # etait ajoute une seconde fois. Et la page `/legal` quitte le noyau : elle
     # servait les mentions legales completes de l'editeur -- RCS, siege,
     # juridiction -- depuis le domaine de celui qui installe.
-    image: ${APOWERB_FRONTEND_IMAGE:-apowerb/apowerb-ui}:${APOWERB_FRONTEND_TAG:-0.1.27}
+    image: ${APOWERB_FRONTEND_IMAGE:-apowerb/apowerb-ui}:${APOWERB_FRONTEND_TAG:-0.1.30}
     pull_policy: always
     environment:
       # Server-side only, read at runtime by the route handlers.
@@ -192,7 +192,7 @@ services:
     # orchestrateur absent rend le code que l'interface sait lire au lieu
     # d'une phrase nue. Verifie DANS l'image publiee et non sur le numero :
     # plafonds 1000000/20000000/24 et `_core_token_cap` present.
-    image: ${APOWERB_BACKEND_IMAGE:-apowerb/apowerb}:${APOWERB_BACKEND_TAG:-0.2.30}
+    image: ${APOWERB_BACKEND_IMAGE:-apowerb/apowerb}:${APOWERB_BACKEND_TAG:-0.2.32}
     pull_policy: always
     environment:
       # ── Managed cluster (Hostman > Databases), not a service of this stack ──
