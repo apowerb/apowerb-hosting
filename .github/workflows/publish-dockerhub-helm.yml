@@ -30,8 +30,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      # Un dispatch tourne sur la ref choisie (main) : sans cette ref, un
+      # `tag=apowerb-chart-0.4.14` emballait le contenu de main sous la version
+      # du tag (relevé le 23/09/26). Un tag inexistant casse ici au lieu de
+      # publier autre chose.
+      - name: Checkout the tag to publish
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag && format('refs/tags/{0}', inputs.tag) || github.ref }}
 
       - name: Setup Helm
         uses: azure/setup-helm@v4
@@ -66,11 +72,19 @@ jobs:
       - name: Lint chart
         run: helm lint ./helm/apowerb-chart
 
-      - name: Package chart with release version
+      - name: Package chart and check its version
         env:
           VERSION: ${{ steps.release.outputs.version }}
         run: |
-          helm package ./helm/apowerb-chart --version "$VERSION"
+          # Plus de `--version` : il réécrivait Chart.yaml et maquillait un
+          # contenu d'une autre version. Le paquet porte la version du chart
+          # extrait, et elle doit être celle du tag.
+          CHART_TGZ="$(helm package ./helm/apowerb-chart | sed -n 's/^Successfully packaged chart and saved it to: //p')"
+          PACKAGED="$(helm show chart "$CHART_TGZ" | awk '/^version:/{print $2}')"
+          if [ "$PACKAGED" != "$VERSION" ]; then
+            echo "Le chart extrait est en version '$PACKAGED', le tag demande '$VERSION' : rien n'est publié."
+            exit 1
+          fi
 
       - name: Login to Docker Hub OCI registry
         env:
