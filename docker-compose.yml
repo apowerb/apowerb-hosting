@@ -409,6 +409,14 @@ services:
       DEFAULT_LLM_USER_TOKEN_CAP: ${DEFAULT_LLM_USER_TOKEN_CAP:-1000000}
       DEFAULT_LLM_GLOBAL_TOKEN_CAP: ${DEFAULT_LLM_GLOBAL_TOKEN_CAP:-20000000}
       DEFAULT_LLM_CAP_WINDOW_HOURS: ${DEFAULT_LLM_CAP_WINDOW_HOURS:-24}
+      # Noeud suivant propose par un modele (Workflow Studio), coeur 0.2.38.
+      # Valeurs du coeur : eteint, car chaque appel consomme le modele
+      # mutualise sous le meme plafond que les runs. Un modele vide reprend
+      # DEFAULT_LLM_MODEL, servi par la meme cle ; le delai est court parce
+      # que l'editeur attend la reponse et garde ses regles au-dela.
+      WORKFLOW_SUGGEST_ENABLED: ${WORKFLOW_SUGGEST_ENABLED:-false}
+      WORKFLOW_SUGGEST_MODEL: ${WORKFLOW_SUGGEST_MODEL:-}
+      WORKFLOW_SUGGEST_TIMEOUT_S: ${WORKFLOW_SUGGEST_TIMEOUT_S:-4.0}
       # Signalement de bug, coeur 0.2.16. L'ecran « signaler un probleme » de
       # l'interface 0.1.23 ecrit dans l'application ; ces trois-la decident si
       # le signalement part AUSSI en issue GitHub. Valeurs du coeur : sans

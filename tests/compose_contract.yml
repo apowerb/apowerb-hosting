@@ -145,6 +145,18 @@ settings_not_declared:
       - GMAIL_PUBSUB_PROJECT_ID
       - GMAIL_PUBSUB_TOPIC
 
+  - reason: >-
+      th2forecast, core 0.2.38 (apowerb#225). The forecast tool relays to an
+      external R API that this stack neither ships nor starts. With
+      TH2FORECAST_URL empty the client raises Th2forecastNotConfigured and
+      the forecast route answers 503. Declaring the three would put knobs in
+      the panel that point at nothing; exposing forecasting is a product
+      decision, taken when a th2forecast service joins this file.
+    names:
+      - TH2FORECAST_URL
+      - TH2FORECAST_API_TOKEN
+      - TH2FORECAST_TIMEOUT_S
+
 # The other direction: variables this file declares that are NOT Settings
 # fields. Something still has to read them, or the platform collects a value
 # nobody consults -- the same failure as an undeclared variable, seen from the
