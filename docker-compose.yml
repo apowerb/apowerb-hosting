@@ -417,6 +417,15 @@ services:
       WORKFLOW_SUGGEST_ENABLED: ${WORKFLOW_SUGGEST_ENABLED:-false}
       WORKFLOW_SUGGEST_MODEL: ${WORKFLOW_SUGGEST_MODEL:-}
       WORKFLOW_SUGGEST_TIMEOUT_S: ${WORKFLOW_SUGGEST_TIMEOUT_S:-4.0}
+      # Decision Agent (Jev) et outils jev.*, coeur 0.2.39. Valeurs du coeur :
+      # sans cle, les outils Jev repondent « non configure » et rien ne part.
+      # La cle est celle d'OpenRouter (transport par defaut) ou de TypeSafe
+      # (JEV_TRANSPORT=typesafe) ; un modele vide prend celui du transport.
+      JEV_API_KEY: ${JEV_API_KEY:-}
+      JEV_TRANSPORT: ${JEV_TRANSPORT:-openrouter}
+      JEV_MODEL: ${JEV_MODEL:-}
+      JEV_TIMEOUT_S: ${JEV_TIMEOUT_S:-30}
+      JEV_MAX_ITEMS: ${JEV_MAX_ITEMS:-200}
       # Signalement de bug, coeur 0.2.16. L'ecran « signaler un probleme » de
       # l'interface 0.1.23 ecrit dans l'application ; ces trois-la decident si
       # le signalement part AUSSI en issue GitHub. Valeurs du coeur : sans
