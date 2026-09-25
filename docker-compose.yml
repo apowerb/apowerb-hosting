@@ -192,7 +192,7 @@ services:
     # orchestrateur absent rend le code que l'interface sait lire au lieu
     # d'une phrase nue. Verifie DANS l'image publiee et non sur le numero :
     # plafonds 1000000/20000000/24 et `_core_token_cap` present.
-    image: ${APOWERB_BACKEND_IMAGE:-apowerb/apowerb}:${APOWERB_BACKEND_TAG:-0.2.42}
+    image: ${APOWERB_BACKEND_IMAGE:-apowerb/apowerb}:${APOWERB_BACKEND_TAG:-0.2.43}
     pull_policy: always
     environment:
       # ── Managed cluster (Hostman > Databases), not a service of this stack ──
