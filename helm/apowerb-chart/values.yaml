@@ -11,11 +11,11 @@ image:
     # configurable. Le bouton « signaler » vit dans l'interface 0.1.23 et
     # appelle cette API : deplacer l'interface seule donne un bouton sans
     # route derriere, le coeur seul une route que rien n'appelle.
-    tag: 0.2.41
+    tag: 0.2.42
     pullPolicy: IfNotPresent
   frontend:
     repository: apowerb/apowerb-ui
-    tag: 0.1.32
+    tag: 0.1.33
     pullPolicy: IfNotPresent
   postgres:
     repository: postgres
