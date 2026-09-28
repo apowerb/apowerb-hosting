@@ -8,7 +8,7 @@ metadata:
     app.kubernetes.io/name: {{ include "apowerb.name" . }}
     app.kubernetes.io/component: th2forecast
 spec:
-  # Un seul job a la fois par pod (ThreadPoolExecutor en memoire, pas de file
+  # Les jobs vivent dans la memoire du pod (ThreadPoolExecutor, pas de file
   # partagee) : deux repliques ne partageraient pas leurs jobs en cours, donc
   # une requete de suivi (GET /v1/jobs/{id}) qui retombe sur l'autre pod
   # repondrait "introuvable". Le HPA n'est pas une option tant que ca reste

@@ -326,9 +326,9 @@ th2forecast:
   # Mesure du 28/09/26, image locale, un seul job a la fois (TH2FORECAST_WORKERS
   # par defaut = 2 threads, meme processus) : 316 MiB au repos une fois
   # Chronos-2 charge, pic a 404 MiB pendant un `auto` sur 20 series
-  # mensuelles x 24 points. Marge x1.6 sur la requete, x1.3 sur la limite --
-  # torch CPU reste le poste dominant, et deux threads concurrents peuvent
-  # faire monter le pic au-dela de ce qu'un seul job a montre ici.
+  # mensuelles x 24 points. Requete = repos x1.6 ; limite = pic x3.8, parce
+  # que deux jobs concurrents (2 workers) n'ont pas ete mesures et que torch
+  # CPU reste le poste dominant.
   resources:
     requests:
       cpu: 250m
