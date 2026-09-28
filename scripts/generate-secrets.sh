@@ -57,6 +57,7 @@ fill_if_empty ENCRYPT_KEY "$(generate_fernet_key)"
 fill_if_empty TH2PULSE_INGEST_TOKEN "$(openssl rand -hex 32)"
 fill_if_empty TH2PULSE_QUERY_TOKEN "$(openssl rand -hex 32)"
 fill_if_empty TH2ETL_API_KEY "$(openssl rand -hex 32)"
+fill_if_empty TH2FORECAST_API_TOKEN "$(openssl rand -hex 32)"
 
 echo
 echo "Ready. Start with:  docker compose -f docker-compose/docker-compose.yml --env-file .env up -d"
