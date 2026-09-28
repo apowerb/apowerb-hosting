@@ -95,6 +95,23 @@ spec:
             - name: OTEL_METRICS_EXPORTER
               value: {{ .Values.otelCollector.metricsExporter | quote }}
             {{- end }}
+            {{- if .Values.th2forecast.enabled }}
+            # Empty TH2FORECAST_URL is a working state: th2forecast_client
+            # raises Th2forecastNotConfigured and POST /api/v1/forecast
+            # answers 503 rather than calling nowhere. Only emitted when the
+            # engine is actually deployed, so the default install carries
+            # neither knob nor a URL pointing at a service that is not there.
+            - name: TH2FORECAST_URL
+              value: "http://{{ include "apowerb.th2forecast.fullname" . }}:{{ .Values.service.th2forecast.port }}"
+            - name: TH2FORECAST_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "apowerb.secretName" . }}
+                  key: TH2FORECAST_API_TOKEN
+                  optional: true
+            - name: TH2FORECAST_TIMEOUT_S
+              value: {{ .Values.th2forecast.timeoutS | quote }}
+            {{- end }}
             {{- if .Values.backend.env.dbSchema }}
             - name: DB_SCHEMA
               value: {{ .Values.backend.env.dbSchema | quote }}

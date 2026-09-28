@@ -37,6 +37,10 @@ objet serait devenu `apowerb-chart-backend`, `apowerb-chart-secrets`... et un
 {{- printf "%s-th2pulse" (include "apowerb.name" .) -}}
 {{- end -}}
 
+{{- define "apowerb.th2forecast.fullname" -}}
+{{- printf "%s-th2forecast" (include "apowerb.name" .) -}}
+{{- end -}}
+
 {{- define "apowerb.otel.fullname" -}}
 {{- printf "%s-otel-collector" (include "apowerb.name" .) -}}
 {{- end -}}
@@ -82,6 +86,49 @@ prendre le risque qu'un seed écrive ailleurs que là où l'orchestrateur lit.
     secretKeyRef:
       name: {{ include "apowerb.secretName" . }}
       key: ENCRYPT_KEY
+{{- end -}}
+
+{{/*
+L'environnement du moteur th2forecast. TH2FORECAST_API_TOKEN n'existe dans
+le Secret que si un token est pose (voir secret.yaml) -- `optional: true`
+laisse le pod demarrer, mais un moteur sans token accepte tout appelant sur
+le reseau du cluster, ce que _validate.tpl refuse des que enabled=true.
+*/}}
+{{- define "apowerb.th2forecast.env" -}}
+- name: TH2FORECAST_API_TOKEN
+  valueFrom:
+    secretKeyRef:
+      name: {{ include "apowerb.secretName" . }}
+      key: TH2FORECAST_API_TOKEN
+      optional: true
+{{- if .Values.th2forecast.engine.workers }}
+- name: TH2FORECAST_WORKERS
+  value: {{ .Values.th2forecast.engine.workers | quote }}
+{{- end }}
+{{- if .Values.th2forecast.engine.preload }}
+- name: TH2FORECAST_PRELOAD
+  value: {{ .Values.th2forecast.engine.preload | quote }}
+{{- end }}
+{{- if .Values.th2forecast.engine.maxRows }}
+- name: TH2FORECAST_MAX_ROWS
+  value: {{ .Values.th2forecast.engine.maxRows | quote }}
+{{- end }}
+{{- if .Values.th2forecast.engine.maxSeries }}
+- name: TH2FORECAST_MAX_SERIES
+  value: {{ .Values.th2forecast.engine.maxSeries | quote }}
+{{- end }}
+{{- if .Values.th2forecast.engine.maxHorizon }}
+- name: TH2FORECAST_MAX_HORIZON
+  value: {{ .Values.th2forecast.engine.maxHorizon | quote }}
+{{- end }}
+{{- if .Values.th2forecast.engine.sfJobs }}
+- name: TH2FORECAST_SF_JOBS
+  value: {{ .Values.th2forecast.engine.sfJobs | quote }}
+{{- end }}
+{{- if .Values.th2forecast.engine.torchThreads }}
+- name: TH2FORECAST_TORCH_THREADS
+  value: {{ .Values.th2forecast.engine.torchThreads | quote }}
+{{- end }}
 {{- end -}}
 
 {{/*

@@ -1,0 +1,21 @@
+{{- if .Values.th2forecast.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "apowerb.th2forecast.fullname" . }}
+  namespace: {{ include "apowerb.namespace" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "apowerb.name" . }}
+    app.kubernetes.io/component: th2forecast
+spec:
+  # Jamais expose au dehors : seul le backend l'appelle, avec son jeton.
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: {{ include "apowerb.name" . }}
+    app.kubernetes.io/component: th2forecast
+  ports:
+    - name: http
+      port: {{ .Values.service.th2forecast.port }}
+      targetPort: 8000
+      protocol: TCP
+{{- end }}

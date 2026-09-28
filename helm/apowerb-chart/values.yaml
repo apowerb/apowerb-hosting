@@ -32,6 +32,15 @@ image:
     repository: apowerb/th2pulse
     tag: 0.1.4
     pullPolicy: IfNotPresent
+  # Moteur de prevision (Chronos-2 + statsforecast). Aucune image publiee sur
+  # Docker Hub a ce jour : ni tag semver coupe cote depot du moteur, ni push
+  # apowerb/th2forecast-py. Le tag reste donc VIDE plutot que d'inventer un
+  # numero -- voir th2forecast.enabled et _validate.tpl, qui refuse
+  # l'installation si enabled sans tag.
+  th2forecast:
+    repository: apowerb/th2forecast-py
+    tag: ""
+    pullPolicy: IfNotPresent
   otelCollector:
     repository: otel/opentelemetry-collector-contrib
     tag: 0.159.0
@@ -59,6 +68,9 @@ service:
   th2pulse:
     type: ClusterIP
     port: 4319
+  th2forecast:
+    type: ClusterIP
+    port: 8000
 
 # PostgreSQL vit DANS le cluster, délibérément (David, 08/09/26) : le chart
 # doit s'installer à l'identique ailleurs que chez un hébergeur qui propose
@@ -282,6 +294,48 @@ th2pulse:
     limits:
       cpu: 500m
       memory: 512Mi
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Moteur de prevision (th2forecast) : ce qu'appelle POST /api/v1/forecast.
+# DESACTIVE par defaut, a la difference de th2etl et th2pulse ci-dessus :
+# aucune image apowerb/th2forecast-py n'est publiee a ce jour. L'activer sans
+# poser image.th2forecast.tag est refuse a l'installation (_validate.tpl).
+# ─────────────────────────────────────────────────────────────────────────────
+th2forecast:
+  enabled: false
+  # `openssl rand -hex 32`. Pas obligatoire pour demarrer le moteur -- vide,
+  # il accepte les requetes non authentifiees, joignables seulement depuis le
+  # reseau interne du cluster -- mais _validate.tpl le rend obligatoire des
+  # que enabled=true : le backend et le moteur doivent porter la meme valeur,
+  # et un token absent des deux cotes se lit trop facilement comme un oubli.
+  apiToken: ""
+  # Delai global cote backend (th2forecast_client), secondes.
+  timeoutS: 300
+  # Reglages du moteur, tous optionnels -- vides, les defauts de l'image
+  # s'appliquent (2 workers, poids preleves au demarrage, plafonds 100000
+  # lignes / 200 series / 366 jours, 1 job statsforecast, un thread par
+  # coeur).
+  engine:
+    workers: ""
+    preload: ""
+    maxRows: ""
+    maxSeries: ""
+    maxHorizon: ""
+    sfJobs: ""
+    torchThreads: ""
+  # Mesure du 28/09/26, image locale, un seul job a la fois (TH2FORECAST_WORKERS
+  # par defaut = 2 threads, meme processus) : 316 MiB au repos une fois
+  # Chronos-2 charge, pic a 404 MiB pendant un `auto` sur 20 series
+  # mensuelles x 24 points. Marge x1.6 sur la requete, x1.3 sur la limite --
+  # torch CPU reste le poste dominant, et deux threads concurrents peuvent
+  # faire monter le pic au-dela de ce qu'un seul job a montre ici.
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: "2"
+      memory: 1536Mi
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Collecteur OpenTelemetry : le backend lui envoie traces et journaux, il les

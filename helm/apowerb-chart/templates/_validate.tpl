@@ -25,4 +25,12 @@ sans que rien ne nomme la cause.
 {{- if and .Values.th2etl.enabled .Values.th2etl.seed.enabled (lt (int .Values.th2etl.seed.attempts) 1) }}
 {{- fail "th2etl.seed.attempts doit valoir au moins 1." -}}
 {{- end }}
+{{- if .Values.th2forecast.enabled }}
+{{- if not .Values.image.th2forecast.tag }}
+{{- fail "th2forecast.enabled=true sans image.th2forecast.tag : aucune image apowerb/th2forecast-py n'est publiee a ce jour, un defaut inventerait un numero de version qui n'existe pas. Posez le tag d'une image que vous avez publiee ou construite vous-meme, ou remettez th2forecast.enabled=false." -}}
+{{- end }}
+{{- if not .Values.th2forecast.apiToken }}
+{{- fail "th2forecast.enabled=true sans th2forecast.apiToken : posez-le (openssl rand -hex 32) ou mettez th2forecast.enabled=false. Sans lui le moteur accepterait tout appelant joignant le reseau du cluster." -}}
+{{- end }}
+{{- end }}
 {{- end -}}
