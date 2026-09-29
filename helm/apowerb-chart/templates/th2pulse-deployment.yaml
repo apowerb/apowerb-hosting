@@ -19,6 +19,8 @@ spec:
         app.kubernetes.io/name: {{ include "apowerb.name" . }}
         app.kubernetes.io/component: th2pulse
     spec:
+      initContainers:
+        {{- include "apowerb.waitForPostgres" . | nindent 8 }}
       containers:
         - name: th2pulse
           image: "{{ .Values.image.th2pulse.repository }}:{{ .Values.image.th2pulse.tag }}"
