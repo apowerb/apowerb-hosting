@@ -105,22 +105,21 @@ services:
     # served to anyone typing its URL.
     #
     # Override both tags together when you move, never one alone.
-    # 0.1.21 (lot du 09/09) : un graphique a source agent peut enfin dire ce
-    # qu'il attend -- le champ « Que doit renvoyer l'agent ? » --, la regle
-    # `no-undef` tourne en CI, et le parcours du chat est joue par Playwright
-    # a chaque passage. Rien qui change le code servi hors du champ ajoute.
-    # 0.1.23 (lot du 11/09) : l'ecran de connexion ne nomme plus les
-    # conditions d'utilisation d'un tiers. Jusqu'a 0.1.22 inclus il liait
-    # `agent-dev.thaink2.fr/legal` en dur -- mesure le 11/09 dans le bundle
-    # servi : toute installation renvoyait ses visiteurs vers les conditions
-    # de quelqu'un d'autre. Le noyau n'affiche desormais rien, sauf si une
-    # brique remplit l'emplacement `auth.legal`.
-    # 0.1.24 (lot du 11/09, second) : la reponse de l'agent ne s'affiche plus
-    # deux fois -- les fragments de streaming etaient re-emis un par un et
-    # passaient sous les seuils de deduplication, si bien que le tour entier
-    # etait ajoute une seconde fois. Et la page `/legal` quitte le noyau : elle
-    # servait les mentions legales completes de l'editeur -- RCS, siege,
-    # juridiction -- depuis le domaine de celui qui installe.
+    # 0.1.21 (batch of 09/09): an agent-sourced chart can finally say what it
+    # expects -- the "What should the agent return?" field --, the `no-undef`
+    # rule runs in CI, and the chat flow is played by Playwright on every
+    # run. Nothing that changes the served code outside the added field.
+    # 0.1.23 (batch of 11/09): the login screen no longer names a third
+    # party's terms of use. Up to and including 0.1.22 it hard-linked
+    # `agent-dev.thaink2.fr/legal` -- measured on 11/09 in the served bundle:
+    # every installation sent its visitors to somebody else's terms. The core
+    # now displays nothing, unless a brick fills the `auth.legal` slot.
+    # 0.1.24 (batch of 11/09, second): the agent's reply is no longer displayed
+    # twice -- streaming fragments were re-emitted one by one and slipped under
+    # the deduplication thresholds, so the whole turn was appended a second
+    # time. And the `/legal` page leaves the core: it served the publisher's
+    # full legal notice -- company registration, head office,
+    # jurisdiction -- from the domain of whoever installs.
     image: ${APOWERB_FRONTEND_IMAGE:-apowerb/apowerb-ui}:${APOWERB_FRONTEND_TAG:-0.1.33}
     pull_policy: always
     environment:
@@ -186,12 +185,12 @@ services:
     # this reversible: a database migrated by 0.2.8 (22 tables) served by a
     # 0.2.6 backend starts clean, signs the same account in, reads the same
     # agent back, and logs no error. Pinning forward is not a one-way door.
-    # 0.2.13 (lot du 09/09) : le modele mutualise est PLAFONNE par defaut --
-    # voir les trois reglages plus bas --, un graphique a source agent ne
-    # prend plus le raisonnement du modele pour ses donnees, et un
-    # orchestrateur absent rend le code que l'interface sait lire au lieu
-    # d'une phrase nue. Verifie DANS l'image publiee et non sur le numero :
-    # plafonds 1000000/20000000/24 et `_core_token_cap` present.
+    # 0.2.13 (batch of 09/09): the shared model is CAPPED by default --
+    # see the three settings further down --, an agent-sourced chart no longer
+    # takes the model's reasoning for its data, and a missing orchestrator
+    # returns the code the interface can read instead of a bare sentence.
+    # Verified INSIDE the published image and not from the version number:
+    # caps 1000000/20000000/24 and `_core_token_cap` present.
     image: ${APOWERB_BACKEND_IMAGE:-apowerb/apowerb}:${APOWERB_BACKEND_TAG:-0.2.43}
     pull_policy: always
     environment:
@@ -398,53 +397,53 @@ services:
       # The scheduler runs agents on a timer. Off, a deployment answers
       # requests and starts nothing by itself.
       SCHEDULER_ENABLED: ${SCHEDULER_ENABLED:-true}
-      # Plafond du modele mutualise, applique par le coeur depuis 0.2.13 sur
-      # la seule consommation de la cle partagee -- une cle API personnelle
-      # est payee par son proprietaire. Les valeurs ci-dessous sont celles du
-      # coeur : ce bloc ne change rien, il rend les trois atteignables depuis
-      # le panneau. La fenetre GLISSE : une remise a zero calendaire
-      # laisserait prendre un plein a 23h59 et un autre a 00h01. Le plafond
-      # du deploiement existe parce que celui par utilisateur ne vaut que si
-      # le nombre de comptes est borne. `0` desactive celui qu'on met a zero.
+      # Cap on the shared model, applied by the core since 0.2.13 to the
+      # shared key's consumption only -- a personal API key is paid for by
+      # its owner. The values below are the core's own: this block changes
+      # nothing, it makes the three reachable from the panel. The window
+      # SLIDES: a calendar reset would let someone take a full allowance at
+      # 23:59 and another at 00:01. The deployment-wide cap exists because
+      # the per-user one only holds if the number of accounts is bounded. `0`
+      # disables whichever one is set to zero.
       DEFAULT_LLM_USER_TOKEN_CAP: ${DEFAULT_LLM_USER_TOKEN_CAP:-1000000}
       DEFAULT_LLM_GLOBAL_TOKEN_CAP: ${DEFAULT_LLM_GLOBAL_TOKEN_CAP:-20000000}
       DEFAULT_LLM_CAP_WINDOW_HOURS: ${DEFAULT_LLM_CAP_WINDOW_HOURS:-24}
-      # Noeud suivant propose par un modele (Workflow Studio), coeur 0.2.38.
-      # Valeurs du coeur : eteint, car chaque appel consomme le modele
-      # mutualise sous le meme plafond que les runs. Un modele vide reprend
-      # DEFAULT_LLM_MODEL, servi par la meme cle ; le delai est court parce
-      # que l'editeur attend la reponse et garde ses regles au-dela.
+      # Next node suggested by a model (Workflow Studio), core 0.2.38.
+      # The core's values: off, because each call consumes the shared model
+      # under the same cap as runs. An empty model falls back to
+      # DEFAULT_LLM_MODEL, served by the same key; the timeout is short
+      # because the editor waits for the answer and keeps its rules beyond it.
       WORKFLOW_SUGGEST_ENABLED: ${WORKFLOW_SUGGEST_ENABLED:-false}
       WORKFLOW_SUGGEST_MODEL: ${WORKFLOW_SUGGEST_MODEL:-}
       WORKFLOW_SUGGEST_TIMEOUT_S: ${WORKFLOW_SUGGEST_TIMEOUT_S:-4.0}
-      # Decision Agent (Jev) et outils jev.*, coeur 0.2.39. Valeurs du coeur :
-      # sans cle, les outils Jev repondent « non configure » et rien ne part.
-      # La cle est celle d'OpenRouter (transport par defaut) ou de TypeSafe
-      # (JEV_TRANSPORT=typesafe) ; un modele vide prend celui du transport.
+      # Decision Agent (Jev) and jev.* tools, core 0.2.39. The core's values:
+      # without a key, the Jev tools answer "not configured" and nothing is sent.
+      # The key is OpenRouter's (default transport) or TypeSafe's
+      # (JEV_TRANSPORT=typesafe); an empty model takes the transport's own.
       JEV_API_KEY: ${JEV_API_KEY:-}
       JEV_TRANSPORT: ${JEV_TRANSPORT:-openrouter}
       JEV_MODEL: ${JEV_MODEL:-}
       JEV_TIMEOUT_S: ${JEV_TIMEOUT_S:-30}
       JEV_MAX_ITEMS: ${JEV_MAX_ITEMS:-200}
-      # Signalement de bug, coeur 0.2.16. L'ecran « signaler un probleme » de
-      # l'interface 0.1.23 ecrit dans l'application ; ces trois-la decident si
-      # le signalement part AUSSI en issue GitHub. Valeurs du coeur : sans
-      # depot ni jeton, la sortie GitHub n'est pas offerte et le signalement
-      # reste dans l'ecran d'administration -- pas d'erreur, pas de perte.
-      # Le depot s'ecrit « organisation/depot ». `ALLOW_PUBLIC` doit etre pose
-      # a la main pour viser un depot PUBLIC : un signalement porte des traces
-      # d'execution, et le defaut refuse de les publier sans decision.
+      # Bug report, core 0.2.16. The "report a problem" screen of interface
+      # 0.1.23 writes into the application; these three decide whether the
+      # report ALSO goes out as a GitHub issue. The core's values: without a
+      # repository or a token, the GitHub output is not offered and the report
+      # stays in the administration screen -- no error, no loss.
+      # The repository is written "organization/repository". `ALLOW_PUBLIC` must
+      # be set by hand to target a PUBLIC repository: a report carries
+      # execution traces, and the default refuses to publish them without a decision.
       BUG_REPORT_GITHUB_REPO: ${BUG_REPORT_GITHUB_REPO:-}
       BUG_REPORT_GITHUB_TOKEN: ${BUG_REPORT_GITHUB_TOKEN:-}
-      # Coeur 0.2.17 : le numero d un GitHub Project v2 ou verser chaque ticket
-      # cree. Un Project automatise le statut d une carte, pas son entree :
-      # vide (le defaut du coeur), le ticket existe mais reste hors du tableau.
+      # Core 0.2.17: the number of a GitHub Project v2 into which to put each
+      # ticket created. A Project automates a card's status, not its entry:
+      # empty (the core's default), the ticket exists but stays off the board.
       BUG_REPORT_GITHUB_PROJECT: ${BUG_REPORT_GITHUB_PROJECT:-}
       BUG_REPORT_GITHUB_ALLOW_PUBLIC: ${BUG_REPORT_GITHUB_ALLOW_PUBLIC:-false}
-      # Coeur 0.2.22 : identifiants de modeles retires du selecteur « Create
-      # Agent », separes par des virgules (ex. image_creator,audio_assistant).
-      # Un agent deja cree depuis un modele masque continue de fonctionner.
-      # Vide (le defaut du coeur) : tous les modeles sont proposes.
+      # Core 0.2.22: identifiers of templates removed from the "Create Agent"
+      # selector, comma-separated (e.g. image_creator,audio_assistant).
+      # An agent already created from a hidden template keeps working.
+      # Empty (the core's default): all templates are offered.
       SUPERAGENT_HIDDEN_TEMPLATES: ${SUPERAGENT_HIDDEN_TEMPLATES:-}
     restart: unless-stopped
 

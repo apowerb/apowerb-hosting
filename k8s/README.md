@@ -1,42 +1,42 @@
 # Kubernetes
 
-Le déploiement se fait par le **chart Helm** — [`helm/apowerb-chart`](../helm/apowerb-chart/README.md),
-publié sur `oci://registry-1.docker.io/apowerb/apowerb-chart`. Il couvre le
-backend, l'interface, PostgreSQL, th2etl et son seed, th2pulse, le collecteur
-OpenTelemetry, le volume de données et l'Ingress.
+Deployment is done with the **Helm chart** — [`helm/apowerb-chart`](../helm/apowerb-chart/README.md),
+published at `oci://registry-1.docker.io/apowerb/apowerb-chart`. It covers the
+backend, the interface, PostgreSQL, th2etl and its seed, th2pulse, the
+OpenTelemetry collector, the data volume and the Ingress.
 
-Ce dossier ne contient plus que ce qui vit **à côté** d'une release : des
-objets à l'échelle du cluster, que le chart d'une application n'a pas à créer.
+This folder now contains only what lives **alongside** a release: cluster-scoped
+objects that an application's chart should not create.
 
 ## `cert-manager/`
 
-L'émetteur Let's Encrypt. cert-manager installé ne délivre rien tant qu'aucun
-`ClusterIssuer` n'existe.
+The Let's Encrypt issuer. An installed cert-manager issues nothing until a
+`ClusterIssuer` exists.
 
 ```bash
 kubectl apply -f k8s/cert-manager/cluster-issuer-letsencrypt.yaml
-kubectl get clusterissuer            # READY=True attendu
+kubectl get clusterissuer            # expect READY=True
 ```
 
-Puis l'Ingress du chart s'y raccroche :
+Then the chart's Ingress hooks into it:
 
 ```bash
 --set ingress.enabled=true \
 --set ingress.className=traefik \
---set ingress.host=<le nom public> \
+--set ingress.host=<the public name> \
 --set ingress.tlsEnabled=true \
 --set ingress.annotations."cert-manager\.io/cluster-issuer"=letsencrypt-prod
 ```
 
-Éprouver la chaîne avec `letsencrypt-staging` d'abord : ses certificats ne sont
-pas reconnus par les navigateurs, mais ses quotas sont larges. La production
-bloque pour une semaine après cinq échecs dans l'heure.
+Test the chain with `letsencrypt-staging` first: its certificates are not
+trusted by browsers, but its quotas are generous. Production blocks for a week
+after five failures within an hour.
 
-## Les anciens manifestes
+## The old manifests
 
-`00-namespace.yaml` … `05-ingress.yaml` décrivaient un déploiement antérieur au
-chart : ni th2etl, ni th2pulse, ni collecteur, ni volume pour les fichiers
-importés, un Ingress en `ingressClassName: nginx` sur `apowerb.local`, et des
-secrets à remplir à la main. `kubectl apply -f k8s/` installerait donc une
-pile incomplète qui *ressemble* à la bonne. Ils sont conservés le temps de
-vérifier que personne ne s'en sert ; utilisez le chart.
+`00-namespace.yaml` … `05-ingress.yaml` described a deployment that predates the
+chart: no th2etl, no th2pulse, no collector, no volume for imported files, an
+Ingress with `ingressClassName: nginx` on `apowerb.local`, and secrets to fill
+in by hand. `kubectl apply -f k8s/` would therefore install an incomplete
+stack that *looks like* the right one. They are kept while we check that nobody
+uses them; use the chart.

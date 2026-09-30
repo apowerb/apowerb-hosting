@@ -1,4 +1,4 @@
-# Tout ce dont ce contrat a besoin. Aucune dépendance du cœur : la sonde
-# s'exécute DANS l'image épinglée, où elles sont déjà installées.
+# Everything this contract needs. No core dependencies: the probe
+# runs INSIDE the pinned image, where they are already installed.
 pytest==8.3.4
 PyYAML==6.0.2

@@ -1,20 +1,21 @@
-# Émetteur Let's Encrypt pour cert-manager.
+# Let's Encrypt issuer for cert-manager.
 #
-# cert-manager installé ne délivre aucun certificat : il attend un émetteur.
-# Celui-ci est *cluster-scoped* (utilisable depuis n'importe quel namespace),
-# d'où `ClusterIssuer` et non `Issuer` — le chart applicatif ne le crée pas :
-# un émetteur pour tout le cluster n'appartient pas à une release.
+# An installed cert-manager issues no certificate: it waits for an issuer.
+# This one is *cluster-scoped* (usable from any namespace), hence
+# `ClusterIssuer` and not `Issuer` — the application chart does not create it:
+# a cluster-wide issuer does not belong to a release.
 #
-# Le défi HTTP-01 passe par l'Ingress : cert-manager crée un Ingress temporaire
-# sur `/.well-known/acme-challenge/…`, que Let's Encrypt vient lire. Il faut
-# donc que le nom public pointe DÉJÀ sur l'IP de l'ingress controller, et que
-# le port 80 soit joignable — sinon la commande réussit et le certificat reste
-# en `False`, ce qui se lit dans `kubectl describe certificate`.
+# The HTTP-01 challenge goes through the Ingress: cert-manager creates a
+# temporary Ingress on `/.well-known/acme-challenge/…`, which Let's Encrypt
+# comes to read. The public name must therefore ALREADY point to the ingress
+# controller's IP, and port 80 must be reachable — otherwise the command
+# succeeds and the certificate stays at `False`, which shows up in
+# `kubectl describe certificate`.
 #
 #   kubectl apply -f cluster-issuer-letsencrypt.yaml
-#   kubectl get clusterissuer letsencrypt-prod -o wide     # READY=True attendu
+#   kubectl get clusterissuer letsencrypt-prod -o wide     # expect READY=True
 #
-# L'Ingress du chart s'y raccroche par une annotation :
+# The chart's Ingress hooks into it through an annotation:
 #   --set ingress.tlsEnabled=true \
 #   --set ingress.annotations."cert-manager\.io/cluster-issuer"=letsencrypt-prod
 apiVersion: cert-manager.io/v1
@@ -24,26 +25,26 @@ metadata:
 spec:
   acme:
     server: https://acme-v02.api.letsencrypt.org/directory
-    # Let's Encrypt y envoie les avis d'expiration : une boîte réellement lue.
+    # Let's Encrypt sends expiry notices here: use a mailbox that is actually read.
     email: david.gnaglo@thaink2.com
     privateKeySecretRef:
-      # Créé par cert-manager : la clé de compte ACME, pas un certificat.
+      # Created by cert-manager: the ACME account key, not a certificate.
       name: letsencrypt-prod-account-key
     solvers:
       - http01:
           ingress:
-            # `ingressClassName`, pas `class` : ce dernier passe par l'ancienne
-            # annotation `kubernetes.io/ingress.class` et n'est plus recommandé
-            # que pour ingress-gce. Avec `class`, l'Ingress temporaire du défi
-            # naît sans classe reconnue, Traefik ne le route pas, et le
-            # certificat reste `Ready: False` sans que rien n'ait échoué
-            # bruyamment.
+            # `ingressClassName`, not `class`: the latter goes through the old
+            # `kubernetes.io/ingress.class` annotation and is no longer
+            # recommended except for ingress-gce. With `class`, the challenge's
+            # temporary Ingress is born without a recognized class, Traefik does
+            # not route it, and the certificate stays `Ready: False` without
+            # anything having failed loudly.
             ingressClassName: traefik
 ---
-# Le même, contre l'environnement de test de Let's Encrypt. Ses certificats ne
-# sont pas reconnus par les navigateurs, mais ses quotas sont larges : c'est
-# par lui qu'on éprouve la chaîne (DNS, port 80, ingress) sans consommer les
-# 5 échecs/heure de la production, qui bloquent ensuite pour une semaine.
+# The same, against Let's Encrypt's staging environment. Its certificates are
+# not trusted by browsers, but its quotas are generous: it is the one used to
+# test the chain (DNS, port 80, ingress) without consuming production's
+# 5 failures/hour, which then block for a week.
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
 metadata:
@@ -57,10 +58,10 @@ spec:
     solvers:
       - http01:
           ingress:
-            # `ingressClassName`, pas `class` : ce dernier passe par l'ancienne
-            # annotation `kubernetes.io/ingress.class` et n'est plus recommandé
-            # que pour ingress-gce. Avec `class`, l'Ingress temporaire du défi
-            # naît sans classe reconnue, Traefik ne le route pas, et le
-            # certificat reste `Ready: False` sans que rien n'ait échoué
-            # bruyamment.
+            # `ingressClassName`, not `class`: the latter goes through the old
+            # `kubernetes.io/ingress.class` annotation and is no longer
+            # recommended except for ingress-gce. With `class`, the challenge's
+            # temporary Ingress is born without a recognized class, Traefik does
+            # not route it, and the certificate stays `Ready: False` without
+            # anything having failed loudly.
             ingressClassName: traefik

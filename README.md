@@ -57,18 +57,18 @@ and it is designed to run from published images or from a Kubernetes/Helm chart.
 - [Kubernetes](k8s/README.md)
 - [Helm](helm/apowerb-chart/README.md)
 
-> **La doc passe avant le déploiement.** Une PR qui déplace le chart — son nom,
-> sa version, son chemin — échoue tant que
-> [`apowerb-docs`](https://github.com/apowerb/apowerb-docs) la contredit. Une PR
-> de doc **ouverte** suffit à passer le garde : préparer les deux ensemble est le
-> geste attendu, pas une entorse. Une ligne qui cite volontairement l'ancien état
-> se marque `docs-in-sync: ignore`.
+> **Docs come before deployment.** A PR that moves the chart — its name,
+> its version, its path — fails as long as
+> [`apowerb-docs`](https://github.com/apowerb/apowerb-docs) contradicts it. An
+> **open** docs PR is enough to pass the guard: preparing both together is the
+> expected practice, not a workaround. A line that deliberately cites the old
+> state is marked `docs-in-sync: ignore`.
 >
-> Le 8 septembre 2026, le site a servi pendant une heure une commande
-> d'installation périmée. Elle **fonctionnait** — l'ancien chart est toujours
-> tirable — et installait la pile d'avant th2etl, th2pulse et le volume
-> persistant. Aucune erreur, aucun rouge : c'est ce silence que
-> `.github/workflows/docs-in-sync.yml` supprime.
+> On 8 September 2026, the site served a stale install command for an hour. It
+> **worked** — the old chart can still be pulled — and installed the stack as it
+> was before th2etl, th2pulse and the persistent volume. No error, no red
+> check: it is this silence that
+> `.github/workflows/docs-in-sync.yml` removes.
 - [Single VM / HTTPS with Traefik](traefik/README.md)
 
 ### 1. Docker Compose

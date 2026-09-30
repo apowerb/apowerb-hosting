@@ -1,74 +1,74 @@
-# Le contrat entre ce compose et le cœur qu'il déploie
+# The contract between this compose file and the core it deploys
 
-Compose ne transmet à un conteneur que ce que le service **déclare**. Une
-valeur saisie dans le panneau de la plateforme, une variable exportée sur
-l'hôte : tout le reste s'arrête au mur du conteneur, sans bruit, et
-l'application démarre en ayant l'air configurée.
+Compose passes a container only what the service **declares**. A value entered
+in the platform's panel, a variable exported on the host: everything else stops
+at the container wall, silently, and the application starts looking configured.
 
-Les trois pannes du 08/09/2026 sont cette phrase, trois fois :
+The three outages of 08/09/2026 are that sentence, three times:
 
-| | ce qui manquait | ce qu'on voyait |
+| | what was missing | what you saw |
 |---|---|---|
-| hosting#23 | `ORCHESTRATOR` non déclarée | écran Orchestrateur vide, 503, devant un th2etl sain |
-| hosting#24 | 19 variables d'intégration non déclarées | identifiants Azure posés dans le panneau, Outlook refuse quand même |
-| hosting#25 | `OUTLOOK_MAIL_REDIRECT_URI: ${OUTLOOK_MAIL_REDIRECT_URI:-}` | `AADSTS90102` en production |
+| hosting#23 | `ORCHESTRATOR` not declared | empty Orchestrator screen, 503, in front of a healthy th2etl |
+| hosting#24 | 19 integration variables not declared | Azure credentials set in the panel, Outlook still refuses |
+| hosting#25 | `OUTLOOK_MAIL_REDIRECT_URI: ${OUTLOOK_MAIL_REDIRECT_URI:-}` | `AADSTS90102` in production |
 
-La troisième est la plus chère et la moins visible : **une variable déclarée
-vide n'est pas une variable absente**. `pydantic-settings` la compte comme
-*fournie* (`model_fields_set`), donc elle **écrase** la valeur que le cœur
-aurait déduite de `APP_PUBLIC_URL` au lieu de s'y effacer.
+The third is the most expensive and the least visible: **a variable declared
+empty is not an absent variable**. `pydantic-settings` counts it as
+*provided* (`model_fields_set`), so it **overrides** the value the core would
+have derived from `APP_PUBLIC_URL` instead of yielding to it.
 
-Chacune est une comparaison entre deux listes que personne ne faisait.
+Each one is a comparison between two lists that nobody was making.
 
-## Ce qui est comparé
+## What is compared
 
-Les deux côtés sont lus tels que le déploiement les lit.
+Both sides are read the way the deployment reads them.
 
-- **Le compose** passe par `docker compose config`, avec un environnement
-  vide et `--env-file /dev/null` : une valeur est donc ce que le conteneur
-  recevrait vraiment, replis imbriqués résolus et `${X:-}` rendu comme la
-  chaîne vide qu'il est.
-- **Le cœur** est lu en exécutant `probe_core.py` **dans l'image épinglée**
-  (`docker run --entrypoint python`). Pas un `git clone` du même tag à côté :
-  atteindre `setup_status` depuis les sources demande `google-adk`, `boto3`,
-  `asyncpg` et quarante autres paquets, et resterait une bonne approximation
-  de l'artefact. L'image *est* l'artefact.
+- **The compose file** goes through `docker compose config`, with an empty
+  environment and `--env-file /dev/null`: a value is therefore what the
+  container would really receive, nested fallbacks resolved and `${X:-}`
+  rendered as the empty string it is.
+- **The core** is read by running `probe_core.py` **inside the pinned image**
+  (`docker run --entrypoint python`). Not a `git clone` of the same tag
+  alongside: reaching `setup_status` from the sources requires `google-adk`,
+  `boto3`, `asyncpg` and forty other packages, and would still only be a good
+  approximation of the artifact. The image *is* the artifact.
 
-## Les sept contrôles
+## The seven checks
 
-1. **Tout nom que la checklist du produit donne à un administrateur est
-   déclaré.** `GET /api/config/setup` rend les *noms* des variables encore
-   manquantes et l'interface les affiche. Sans liste d'exclusion : nommer une
-   variable à l'écran puis la laisser tomber au mur du conteneur n'a pas de
+1. **Every name the product's checklist gives to an administrator is
+   declared.** `GET /api/config/setup` returns the *names* of the variables
+   still missing and the interface displays them. No exclusion list: naming a
+   variable on screen and then dropping it at the container wall has no
    justification.
-2. **Tout réglage du cœur est déclaré, ou écarté par écrit** dans
-   `compose_contract.yml`. Un réglage neuf ne correspond ni à l'un ni à
-   l'autre : le test rougit à la prochaine modification de ce fichier.
-3. **Aucune entrée périmée** dans ce fichier d'exclusions.
-4. **Aucune URL déduite déclarée vide** — hosting#25.
-5. **Une URL déduite qui EST déclarée reproduit la déduction du cœur** : rendue
-   contre une origine réelle, elle vaut cette origine plus le chemin exact que
-   le cœur ajoute.
-6. **`APP_PUBLIC_URL` et `PUBLIC_BASE_URL` ne sont jamais vides** : la première
-   éteint les cinq déductions d'un coup, la seconde a envoyé Graph sur
+2. **Every core setting is declared, or excluded in writing** in
+   `compose_contract.yml`. A new setting matches neither: the test goes red
+   the next time that file is modified.
+3. **No stale entry** in that exclusions file.
+4. **No derived URL declared empty** — hosting#25.
+5. **A derived URL that IS declared reproduces the core's derivation**:
+   rendered against a real origin, it equals that origin plus the exact path
+   the core appends.
+6. **`APP_PUBLIC_URL` and `PUBLIC_BASE_URL` are never empty**: the first
+   switches off all five derivations at once, the second sent Graph to
    `http://localhost:8000`.
-7. **Rien n'est déclaré que personne ne lit** : une variable ni réglage du cœur
-   ni citée dans ses sources est une valeur que la plateforme collecte et que
-   personne ne recueille à l'autre bout. Une faute de frappe atterrit ici.
+7. **Nothing is declared that nobody reads**: a variable that is neither a
+   core setting nor cited in its sources is a value the platform collects and
+   that nobody picks up at the other end. A typo lands here.
 
-## Le lancer
+## Running it
 
 ```bash
 pip install -r tests/requirements.txt
 cd tests && python -m pytest
 ```
 
-Il faut Docker (`docker compose config` et l'image épinglée) ; l'image est
-tirée toute seule au premier passage.
+Docker is required (`docker compose config` and the pinned image); the image is
+pulled automatically on the first run.
 
-## Ce qu'il ne couvre pas
+## What it does not cover
 
-Il compare des **noms**, jamais des valeurs. Un `MICROSOFT_INTEGRATION_CLIENT_ID`
-bien déclaré et rempli avec l'identifiant d'une autre application passe ici et
-échoue chez Microsoft. Il ne dit rien non plus des services `apowerb-ui`,
-`th2etl` et `th2pulse`, dont la configuration ne passe pas par `Settings`.
+It compares **names**, never values. A `MICROSOFT_INTEGRATION_CLIENT_ID`
+properly declared and filled in with the identifier of another application
+passes here and fails at Microsoft. It also says nothing about the `apowerb-ui`,
+`th2etl` and `th2pulse` services, whose configuration does not go through
+`Settings`.

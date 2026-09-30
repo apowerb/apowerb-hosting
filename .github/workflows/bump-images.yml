@@ -1,16 +1,16 @@
-name: Proposer le bump des images
+name: Propose image bump
 
-# Le tag doit rester explicite sur cette plateforme -- `latest` y ment, mesure
-# le 04/09 et re-verifie le 09/09. Mais le changer A LA MAIN dans le panneau
-# n'est pas une fatalite : ce workflow ouvre la PR, un humain la relit.
+# The tag must stay explicit on this platform -- `latest` lies here, measured
+# on 04/09 and re-verified on 09/09. But changing it BY HAND in the panel
+# is not inevitable: this workflow opens the PR, a human reviews it.
 #
-# Il ne merge rien et ne deploie rien. La revue reste le moment ou le garde du
-# contrat compose se prononce sur les reglages qu'une version neuve du coeur
-# apporte -- exactement ce qui s'est passe pour 0.2.13 et ses trois plafonds.
+# It merges nothing and deploys nothing. The review remains the moment when
+# the compose contract guard weighs in on the settings a new core version
+# brings -- exactly what happened with 0.2.13 and its three caps.
 
 on:
   schedule:
-    # Une fois par jour ouvre, le matin, heure de Paris.
+    # Once per working day, in the morning, Paris time.
     - cron: '15 6 * * 1-5'
   workflow_dispatch:
 
@@ -20,7 +20,7 @@ permissions:
 
 jobs:
   proposer:
-    name: Une image plus recente est-elle publiee ?
+    name: Is a newer image published?
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -29,76 +29,76 @@ jobs:
         with:
           python-version: '3.12'
 
-      # Une PR de bump deja ouverte suffit : en rouvrir une chaque matin
-      # transformerait un signal en bruit, et le bruit ne se lit pas.
-      - name: Une PR de bump est-elle deja ouverte ?
+      # An already-open bump PR is enough: opening a new one every morning
+      # would turn a signal into noise, and noise does not get read.
+      - name: Is a bump PR already open?
         id: deja
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Par PREFIXE : depuis que chaque proposition porte sa propre branche
-          # (voir l'etape d'ouverture), `--head chore/bump-images` ne trouverait
-          # plus rien et le workflow rouvrirait une PR chaque matin.
+          # By PREFIX: since each proposal carries its own branch
+          # (see the opening step), `--head chore/bump-images` would find
+          # nothing anymore and the workflow would open a PR every morning.
           n=$(gh pr list --state open --json headRefName \
                 --jq '[.[] | select(.headRefName | startswith("chore/bump-images"))] | length')
           echo "ouverte=$n" >> "$GITHUB_OUTPUT"
-          [ "$n" = "0" ] || echo "Une PR de bump est deja ouverte : rien a faire."
+          [ "$n" = "0" ] || echo "A bump PR is already open: nothing to do."
 
-      - name: Comparer les defauts aux releases publiees
+      - name: Compare the defaults with the published releases
         if: steps.deja.outputs.ouverte == '0'
         id: comparer
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           python .github/scripts/propose_bump.py | tee sortie.txt
-          # Les DEUX fichiers, sinon un chart en retard tout seul ne
-          # declencherait aucune PR -- c est ce qui l a laisse deux versions
-          # derriere l interface jusqu au 10/09/26.
+          # BOTH files, otherwise a chart that is behind on its own would
+          # trigger no PR -- that is what left it two versions behind the
+          # interface until 10/09/26.
           if git diff --quiet -- docker-compose.yml docker-compose/ .env.example k8s/ helm/apowerb-chart/; then
             echo "change=non" >> "$GITHUB_OUTPUT"
           else
             echo "change=oui" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Ouvrir la PR
+      - name: Open the PR
         if: steps.deja.outputs.ouverte == '0' && steps.comparer.outputs.change == 'oui'
         env:
-          # PAS le GITHUB_TOKEN : la politique de l'organisation interdit a
-          # GitHub Actions de creer des PR (`createPullRequest` refuse), et ce
-          # workflow n'en a donc JAMAIS ouvert une -- les six PR de bump
-          # jusqu'au 18/09/26 ont toutes ete ouvertes a la main. Les jours
-          # "verts" etaient ceux ou il n'y avait rien a proposer.
+          # NOT the GITHUB_TOKEN: the organization's policy forbids GitHub
+          # Actions from creating PRs (`createPullRequest` refuses), so this
+          # workflow has NEVER opened one -- the six bump PRs up to 18/09/26
+          # were all opened by hand. The "green" days were the ones when there
+          # was nothing to propose.
           #
-          # Lever la politique aurait aussi permis aux workflows d'APPROUVER
-          # des PR, dans une organisation ou apowerb/apowerb exige une revue.
-          # BUMP_TOKEN est un jeton fine-grained limite a ce depot (Pull
-          # requests en ecriture, Contents en lecture) : il ouvre la PR, rien
-          # d'autre. Il expire -- a l'expiration, cette etape echoue de nouveau.
+          # Lifting the policy would also have allowed workflows to APPROVE
+          # PRs, in an organization where apowerb/apowerb requires a review.
+          # BUMP_TOKEN is a fine-grained token limited to this repository (Pull
+          # requests write, Contents read): it opens the PR, nothing else.
+          # It expires -- on expiry, this step fails again.
           #
-          # Effet de bord voulu : une PR ouverte par un jeton personnel
-          # declenche les autres workflows, que le GITHUB_TOKEN laissait muets.
+          # Intended side effect: a PR opened by a personal token triggers
+          # the other workflows, which the GITHUB_TOKEN left silent.
           GH_TOKEN: ${{ secrets.BUMP_TOKEN }}
         run: |
           if [ -z "$GH_TOKEN" ]; then
-            echo "::error::Secret BUMP_TOKEN absent : le GITHUB_TOKEN ne peut pas ouvrir de PR dans cette organisation."
+            echo "::error::Secret BUMP_TOKEN is missing: the GITHUB_TOKEN cannot open PRs in this organization."
             exit 1
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          # Une branche PAR proposition. Le nom fixe d'avant echouait des qu'une
-          # branche du meme nom restait sur le remote : le 11/09/26, le push a
-          # ete rejete en `fetch first` parce que `chore/bump-images` survivait
-          # a la PR #44, mergee. Le garde ci-dessus ne regarde que les PR
-          # OUVERTES -- une PR fermee ne prouve pas que la branche est libre,
-          # exactement comme une release absente ne prouve pas qu'un tag l'est.
-          # Un suffixe unique evite la collision sans recourir au force-push,
-          # qu'on ne veut pas dans un workflow automatique.
+          # One branch PER proposal. The previous fixed name failed as soon as a
+          # branch of the same name remained on the remote: on 11/09/26, the push
+          # was rejected with `fetch first` because `chore/bump-images` survived
+          # PR #44, which was merged. The guard above only looks at OPEN PRs --
+          # a closed PR does not prove the branch is free, just as a missing
+          # release does not prove a tag is.
+          # A unique suffix avoids the collision without resorting to a
+          # force-push, which we do not want in an automated workflow.
           branche="chore/bump-images-$(date -u +%Y%m%d)-${{ github.run_number }}"
           git checkout -b "$branche"
           git add docker-compose.yml docker-compose/ .env.example k8s/ helm/apowerb-chart/
-          git commit -m "chore(images): epingler les dernieres versions publiees"  # tous les chemins d installation
+          git commit -m "chore(images): pin the latest published versions"  # every installation path
           git push -u origin "$branche"
           gh pr create \
             --base main --head "$branche" \
-            --title "chore(images): epingler les dernieres versions publiees" \
+            --title "chore(images): pin the latest published versions" \
             --body-file bump-body.md
