@@ -1,69 +1,69 @@
 {{- include "apowerb.validate" . }}
-apowerb {{ .Values.image.backend.tag }} / interface {{ .Values.image.frontend.tag }} est installé dans {{ include "apowerb.namespace" . }}.
+apowerb {{ .Values.image.backend.tag }} / interface {{ .Values.image.frontend.tag }} is installed in {{ include "apowerb.namespace" . }}.
 
-Ce que la release contient :
+What the release contains:
   backend, interface, PostgreSQL
 {{- if .Values.th2etl.enabled }}
-  th2etl {{ .Values.image.th2etl.tag }}{{ if .Values.th2etl.seed.enabled }} (+ le Job qui pose les pipelines par défaut){{ end }}
+  th2etl {{ .Values.image.th2etl.tag }}{{ if .Values.th2etl.seed.enabled }} (+ the Job that sets up the default pipelines){{ end }}
 {{- end }}
 {{- if .Values.th2pulse.enabled }}
   th2pulse {{ .Values.image.th2pulse.tag }}
 {{- end }}
 {{- if .Values.otelCollector.enabled }}
-  collecteur OpenTelemetry {{ .Values.image.otelCollector.tag }}
+  OpenTelemetry collector {{ .Values.image.otelCollector.tag }}
 {{- end }}
 {{- if .Values.persistence.enabled }}
-  un volume de {{ .Values.persistence.size }} monté sur {{ .Values.persistence.mountPath }} (fichiers BI importés, uploads, artefacts)
+  a {{ .Values.persistence.size }} volume mounted on {{ .Values.persistence.mountPath }} (imported BI files, uploads, artifacts)
 {{- else }}
 
-  ⚠️  persistence.enabled=false : un CSV importé disparaîtra au prochain
-      redémarrage du backend, et les tableaux de bord qui le lisent avec lui.
+  ⚠️  persistence.enabled=false: an imported CSV will be gone at the next
+      backend restart, and the dashboards reading it with it.
 {{- end }}
 
-Ce qu'il reste à vérifier, dans cet ordre :
+What is left to check, in this order:
 
-  1. Les pods sont prêts :
+  1. The pods are ready:
        kubectl -n {{ include "apowerb.namespace" . }} get pods
 {{- if and .Values.th2etl.enabled .Values.th2etl.seed.enabled }}
        kubectl -n {{ include "apowerb.namespace" . }} logs job/{{ include "apowerb.th2etl.fullname" . }}-seed
 {{- end }}
 
-  2. Atteindre l'interface :
+  2. Reach the interface:
 {{- if .Values.ingress.enabled }}
        http{{ if .Values.ingress.tlsEnabled }}s{{ end }}://{{ .Values.ingress.host }}
   {{- if not .Values.ingress.tlsEnabled }}
 
-  ⚠️  ingress.tlsEnabled=false : l'interface est servie en clair, et les liens
-      de vérification d'adresse partiront en http://. Activez-le une fois
-      cert-manager en place (annotation `cert-manager.io/cluster-issuer`).
+  ⚠️  ingress.tlsEnabled=false: the interface is served in clear, and the
+      address verification links will go out over http://. Enable it once
+      cert-manager is in place (annotation `cert-manager.io/cluster-issuer`).
   {{- end }}
 {{- else if eq .Values.service.frontend.type "LoadBalancer" }}
        kubectl -n {{ include "apowerb.namespace" . }} get svc {{ include "apowerb.frontend.fullname" . }}
-       (l'adresse externe apparaît quand le fournisseur a attribué l'IP)
+       (the external address shows once the provider has assigned the IP)
 {{- else }}
        kubectl -n {{ include "apowerb.namespace" . }} port-forward svc/{{ include "apowerb.frontend.fullname" . }} 3000:{{ .Values.service.frontend.port }}
 
-       Rien n'est exposé au dehors : activez `ingress.enabled`, ou passez
-       `service.frontend.type` à LoadBalancer.
+       Nothing is exposed outside the cluster: enable `ingress.enabled`, or
+       set `service.frontend.type` to LoadBalancer.
 {{- end }}
 
-  3. L'interface dit elle-même ce qui n'est pas configuré :
-     connectez-vous en administrateur, puis Admin → Configuration.
-     La pastille de la barre latérale compte ce qui manque encore.
+  3. The interface itself says what is not configured:
+     sign in as an administrator, then Admin → Configuration.
+     The badge in the sidebar counts what is still missing.
 {{- if not .Values.th2etl.apiKey }}
 
-  ⚠️  th2etl.apiKey est vide : le backend considère l'orchestrateur comme non
-      configuré et l'écran le dira. C'est un état cohérent, pas une panne --
-      posez la clé (openssl rand -hex 32) quand vous voudrez les pipelines.
+  ⚠️  th2etl.apiKey is empty: the backend treats the orchestrator as not
+      configured and the screen will say so. This is a consistent state, not
+      a failure -- set the key (openssl rand -hex 32) when you want pipelines.
 {{- end }}
 
 {{- if eq (toString .Values.postgres.password) "change-me" }}
 
-  ⚠️  postgres.password vaut `change-me`. Le chart ne le livre plus, mais
-      cette valeur traîne dans les anciens guides : elle est connue de tous,
-      et n'est donc pas un mot de passe.
+  ⚠️  postgres.password is `change-me`. The chart no longer ships it, but
+      that value lingers in old guides: everyone knows it, so it is not a
+      password.
 {{- end }}
 
-  4. Les capacités qui dépendent d'un fournisseur (Google, Microsoft, S3,
-     SMTP) se posent par `backend.env` et le Secret ; la liste exacte des
-     variables est celle qu'affiche l'écran Configuration.
+  4. Capabilities that depend on a provider (Google, Microsoft, S3, SMTP) are
+     set through `backend.env` and the Secret; the exact list of variables is
+     the one the Configuration screen shows.

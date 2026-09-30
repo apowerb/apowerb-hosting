@@ -1,34 +1,34 @@
 {{/*
-Ce qui doit être refusé à l'installation plutôt que découvert en
+What must be refused at install time rather than discovered as a
 CrashLoopBackOff.
 
-th2pulse exige ses deux jetons pour démarrer -- c'est sa règle, pas la nôtre :
-le compose l'écrit déjà avec `${...:?}`. Sans ce garde, `helm install` réussit,
-le pod redémarre en boucle, et l'écran Journaux dit « magasin injoignable »
-sans que rien ne nomme la cause.
+th2pulse needs its two tokens to start -- that is its rule, not ours: the
+compose file already states it with `${...:?}`. Without this guard,
+`helm install` succeeds, the pod restarts in a loop, and the Logging screen
+says "store unreachable" with nothing naming the cause.
 */}}
 {{- define "apowerb.validate" -}}
 {{- if not .Values.postgres.password }}
-{{- fail "postgres.password est vide : Postgres refuse de s'initialiser sans lui, et le backend ne pourrait pas s'y connecter. Posez-le (--set postgres.password=\"$(openssl rand -hex 16)\"). Il n'a pas de valeur par défaut à dessein : un mot de passe livré dans un dépôt public n'en est plus un." -}}
+{{- fail "postgres.password is empty: PostgreSQL will not initialise without it, and the backend could not connect. Set it (--set postgres.password=\"$(openssl rand -hex 16)\"). It has no default on purpose: a password shipped in a public repository is not a password." -}}
 {{- end }}
 {{- if .Values.th2pulse.enabled }}
 {{- if not .Values.th2pulse.ingestToken }}
-{{- fail "th2pulse.ingestToken est vide : th2pulse refuse de démarrer sans lui. Posez-le (openssl rand -hex 32) ou mettez th2pulse.enabled=false." -}}
+{{- fail "th2pulse.ingestToken is empty: th2pulse refuses to start without it. Set it (openssl rand -hex 32) or set th2pulse.enabled=false." -}}
 {{- end }}
 {{- if not .Values.th2pulse.queryToken }}
-{{- fail "th2pulse.queryToken est vide : th2pulse refuse de démarrer sans lui, et l'interface en a besoin pour lire les journaux. Posez-le (openssl rand -hex 32) ou mettez th2pulse.enabled=false." -}}
+{{- fail "th2pulse.queryToken is empty: th2pulse refuses to start without it, and the interface needs it to read the logs. Set it (openssl rand -hex 32) or set th2pulse.enabled=false." -}}
 {{- end }}
 {{- end }}
 {{- if and .Values.otelCollector.enabled (not .Values.th2pulse.enabled) }}
-{{- fail "otelCollector.enabled sans th2pulse.enabled : le collecteur n'aurait nulle part où pousser. Activez th2pulse, ou désactivez le collecteur." -}}
+{{- fail "otelCollector.enabled without th2pulse.enabled: the collector would have nowhere to push. Enable th2pulse, or disable the collector." -}}
 {{- end }}
 {{- if and .Values.th2etl.enabled .Values.th2etl.seed.enabled (lt (int .Values.th2etl.seed.attempts) 1) }}
-{{- fail "th2etl.seed.attempts doit valoir au moins 1." -}}
+{{- fail "th2etl.seed.attempts must be at least 1." -}}
 {{- end }}
 {{- if not .Values.backend.env.encryptKey }}
-{{- fail "backend.env.encryptKey est vide : le backend REFUSE de démarrer (les jetons d'intégration OAuth sont chiffrés au repos avec cette clé Fernet ; sans elle, boot en CrashLoopBackOff, pas un mode dégradé). Posez-la (--set backend.env.encryptKey=\"$(openssl rand -base64 32)\"). Pas de valeur par défaut à dessein : une clé livrée dans un dépôt public n'en est plus une." -}}
+{{- fail "backend.env.encryptKey is empty: the backend REFUSES to start (integration OAuth tokens are encrypted at rest with this Fernet key; without it, the boot ends in CrashLoopBackOff, not a degraded mode). Set it (--set backend.env.encryptKey=\"$(openssl rand -base64 32)\"). It has no default on purpose: a key shipped in a public repository is not a key." -}}
 {{- end }}
 {{- if and (gt (int .Values.replicaCount) 1) .Values.persistence.enabled (has "ReadWriteOnce" .Values.persistence.accessModes) }}
-{{- fail "replicaCount > 1 avec un volume ReadWriteOnce : le PVC ne se monte que sur un seul nœud, la 2e réplique reste bloquée en Multi-Attach. Gardez replicaCount=1, passez persistence.accessModes en ReadWriteMany (classe de stockage compatible), ou persistence.enabled=false." -}}
+{{- fail "replicaCount > 1 with a ReadWriteOnce volume: the PVC mounts on a single node, so the second replica stays stuck on Multi-Attach. Keep replicaCount=1, switch persistence.accessModes to ReadWriteMany (with a compatible storage class), or set persistence.enabled=false." -}}
 {{- end }}
 {{- end -}}

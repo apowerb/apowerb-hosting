@@ -55,7 +55,7 @@ helm upgrade --install apowerb oci://registry-1.docker.io/apowerb/apowerb-chart 
 ```
 
 `values-secrets.yaml` holds the five values above; without it, the install
-stops on `postgres.password est vide`.
+stops on `postgres.password is empty`.
 
 Versions published from 0.4.22 on are signed with cosign, keyless, by the
 publishing workflow. To check that a chart comes from this repository:
