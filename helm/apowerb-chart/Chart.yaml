@@ -1,28 +1,22 @@
 apiVersion: v2
 name: apowerb-chart
 description: apowerb, its interface, PostgreSQL, the th2etl orchestrator, the th2pulse log store, an optional th2forecast forecasting engine and an OpenTelemetry collector
-version: 0.4.22
+version: 0.4.23
 appVersion: "0.2.43"
 type: application
 # Read by Artifact Hub (Changelog): the changes of THIS version only.
 # Rewrite it at each `version:` bump -- the list does not accumulate.
 annotations:
   artifacthub.io/changes: |
-    - kind: changed
-      description: install fails when backend.env.encryptKey is empty -- the backend refuses to start without it
-      links:
-        - name: apowerb-hosting#84
-          url: https://github.com/apowerb/apowerb-hosting/pull/84
-    - kind: changed
-      description: install fails when replicaCount > 1 with a ReadWriteOnce volume (Multi-Attach)
     - kind: added
-      description: charts are signed with cosign (keyless, GitHub OIDC) by the publishing workflow
-    - kind: added
-      description: values.schema.json -- Helm checks the values at install (types, pullPolicy, Service type); unknown keys stay allowed
-    - kind: fixed
-      description: NOTES.txt no longer fails when postgres.password is made of digits only
-    - kind: changed
-      description: README install from OCI with --namespace and the five values, four of them mandatory
+      description: optional th2forecast forecasting engine (th2forecast.enabled, disabled by default), pinned to release 0.1.0
       links:
-        - name: apowerb-hosting#81
-          url: https://github.com/apowerb/apowerb-hosting/pull/81
+        - name: apowerb-hosting#76
+          url: https://github.com/apowerb/apowerb-hosting/pull/76
+    - kind: changed
+      description: install-time error messages, post-install notes, values comments and schema descriptions are now in English
+      links:
+        - name: apowerb-hosting#87
+          url: https://github.com/apowerb/apowerb-hosting/pull/87
+        - name: apowerb-hosting#88
+          url: https://github.com/apowerb/apowerb-hosting/pull/88
