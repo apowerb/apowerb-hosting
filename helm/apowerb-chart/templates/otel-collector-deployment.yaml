@@ -19,10 +19,10 @@ spec:
         app.kubernetes.io/name: {{ include "apowerb.name" . }}
         app.kubernetes.io/component: otel-collector
       annotations:
-        # Une configuration modifiée doit relancer le collecteur : sans cette
-        # empreinte, `helm upgrade` réécrit le ConfigMap et le pod continue
-        # avec l'ancienne -- une configuration sur disque ne prouve pas son
-        # chargement.
+        # A changed configuration must restart the collector: without this
+        # checksum, `helm upgrade` rewrites the ConfigMap and the pod keeps
+        # running with the old one -- a configuration on disk does not prove
+        # it was loaded.
         checksum/config: {{ include (print $.Template.BasePath "/otel-collector-configmap.yaml") . | sha256sum }}
     spec:
       containers:

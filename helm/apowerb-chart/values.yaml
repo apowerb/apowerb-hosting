@@ -1,16 +1,16 @@
 replicaCount: 1
 namespaceOverride: ""
-# Préfixe de tous les objets ; vide, c'est le nom du chart ("apowerb").
+# Prefix of all objects; empty means the chart name ("apowerb").
 nameOverride: ""
 
 image:
   backend:
     repository: apowerb/apowerb
     # Paired with the frontend tag below -- move both or neither.
-    # 0.2.16 : l'API de signalement de bug et le depot de destination
-    # configurable. Le bouton « signaler » vit dans l'interface 0.1.23 et
-    # appelle cette API : deplacer l'interface seule donne un bouton sans
-    # route derriere, le coeur seul une route que rien n'appelle.
+    # 0.2.16: the bug-report API and the configurable destination repository.
+    # The "report" button lives in UI 0.1.23 and calls this API: moving the UI
+    # alone gives a button with no route behind it, the core alone a route
+    # nothing calls.
     tag: 0.2.43
     pullPolicy: IfNotPresent
   frontend:
@@ -21,9 +21,9 @@ image:
     repository: postgres
     tag: 16-alpine
     pullPolicy: IfNotPresent
-  # Orchestrateur des pipelines. 0.0.12 est la version dont l'entrée est
-  # `python -m th2etl --serve-api` ; les images `th2farid/*` d'avant la bascule
-  # de namespace ne sont PAS les mêmes, malgré des numéros identiques.
+  # Pipeline orchestrator. 0.0.12 is the version whose entrypoint is
+  # `python -m th2etl --serve-api`; the `th2farid/*` images from before the
+  # namespace switch are NOT the same, despite identical version numbers.
   th2etl:
     repository: apowerb/th2etl
     tag: 0.0.12
@@ -32,11 +32,11 @@ image:
     repository: apowerb/th2pulse
     tag: 0.1.4
     pullPolicy: IfNotPresent
-  # Moteur de prevision (Chronos-2 + statsforecast). Aucune image publiee sur
-  # Docker Hub a ce jour : ni tag semver coupe cote depot du moteur, ni push
-  # apowerb/th2forecast-py. Le tag reste donc VIDE plutot que d'inventer un
-  # numero -- voir th2forecast.enabled et _validate.tpl, qui refuse
-  # l'installation si enabled sans tag.
+  # Forecasting engine (Chronos-2 + statsforecast). No image is published on
+  # Docker Hub yet: no semver tag cut in the engine repository, no
+  # apowerb/th2forecast-py push. The tag therefore stays EMPTY rather than
+  # inventing a number -- see th2forecast.enabled and _validate.tpl, which
+  # refuses the install when enabled without a tag.
   th2forecast:
     repository: apowerb/th2forecast-py
     tag: ""
@@ -51,12 +51,12 @@ service:
     type: ClusterIP
     port: 8000
   frontend:
-    # ClusterIP par défaut : l'interface s'atteint par l'Ingress ci-dessous.
-    # C'était `LoadBalancer`, ce qui réclame un équilibreur au fournisseur --
-    # une IP publique facturée -- même quand un ingress controller est déjà
-    # là pour ça, et laisse le service `Pending` sans fin sur un cluster qui
-    # n'en propose pas. Mettez `LoadBalancer` si vous n'utilisez pas
-    # d'Ingress ; `kubectl port-forward` suffit pour un essai.
+    # ClusterIP by default: the front end is reached through the Ingress
+    # below. It used to be `LoadBalancer`, which asks the provider for a load
+    # balancer -- a billed public IP -- even when an ingress controller is
+    # already there for that, and leaves the service `Pending` forever on a
+    # cluster that does not offer one. Set `LoadBalancer` if you do not use an
+    # Ingress; `kubectl port-forward` is enough for a trial.
     type: ClusterIP
     port: 3000
   postgres:
@@ -72,17 +72,17 @@ service:
     type: ClusterIP
     port: 8000
 
-# PostgreSQL vit DANS le cluster, délibérément (David, 08/09/26) : le chart
-# doit s'installer à l'identique ailleurs que chez un hébergeur qui propose
-# des bases managées. Une base managée reste possible -- il suffit alors de
-# désactiver ce StatefulSet et de pointer le backend ailleurs -- mais ce n'est
-# pas le défaut, et le chart ne dépend d'aucun fournisseur.
+# PostgreSQL lives INSIDE the cluster, deliberately (David, 08/09/26): the
+# chart must install identically anywhere, not only at a host that offers
+# managed databases. A managed database remains possible -- just disable this
+# StatefulSet and point the backend elsewhere -- but it is not the default,
+# and the chart depends on no provider.
 postgres:
   database: th2agent
   user: th2agent
-  # Vide à dessein : un mot de passe livré par défaut est un mot de passe
-  # publié, et celui-ci l'a été. `helm install` refuse de partir tant qu'il
-  # n'est pas posé -- voir _validate.tpl.
+  # Empty on purpose: a password shipped by default is a published password,
+  # and this one was. `helm install` refuses to proceed until it is set --
+  # see _validate.tpl.
   #   --set postgres.password="$(openssl rand -hex 16)"
   password: ""
   storage: 8Gi
@@ -103,9 +103,9 @@ backend:
     workingMode: development
     encryptKey: ""
     testToken: ""
-    # Schema Postgres, si le votre n'est pas `public`.
+    # Postgres schema, if yours is not `public`.
     dbSchema: ""
-    # Fuseau des horodatages ecrits dans les journaux (ex. Europe/Paris).
+    # Time zone of the timestamps written in the logs (e.g. Europe/Paris).
     logTz: ""
 
   resources:
@@ -117,67 +117,68 @@ backend:
       memory: 512Mi
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Ou cette installation repond, en public.
+# Where this installation answers, publicly.
 #
-# Le coeur deduit de `appPublicUrl` tout ce qu'un navigateur doit atteindre :
-# origines CORS, callbacks GitHub, Google et Outlook Mail. Une seule valeur
-# pour neuf reglages -- a condition qu'elle ne soit PAS vide : une variable
-# posee vide compte comme fournie et remplace le defaut au lieu de s'effacer
-# devant lui. C'est pourquoi rien ici n'est emis tant que la valeur manque.
+# The core deduces from `appPublicUrl` everything a browser must reach: CORS
+# origins, GitHub, Google and Outlook Mail callbacks. One value for nine
+# settings -- provided it is NOT empty: a variable set to empty counts as
+# provided and overrides the default instead of yielding to it. That is why
+# nothing is emitted here while the value is missing.
 #
-# Laisse vide avec un ingress actif, l'URL est deduite de `ingress.host` et de
-# `ingress.tlsEnabled`. Sans ingress ni valeur, le coeur garde ses defauts
-# localhost et l'ecran Configuration le dit.
+# Left empty with an active ingress, the URL is deduced from `ingress.host`
+# and `ingress.tlsEnabled`. With neither an ingress nor a value, the core
+# keeps its localhost defaults and the Configuration screen says so.
 # ─────────────────────────────────────────────────────────────────────────────
 publicUrls:
-  # L'origine du FRONT, sans chemin ni slash final : https://apowerb.example.
+  # The FRONT END origin, no path and no trailing slash: https://apowerb.example.
   appPublicUrl: ""
-  # L'origine de l'API, que les webhooks Microsoft et Google composent. Vide,
-  # elle suit `appPublicUrl` : l'ingress route tout vers le front, qui relaie
-  # `/api`. Le code ajoute `/api/...` lui-meme -- une origine, pas un chemin.
+  # The API origin, which the Microsoft and Google webhooks build on. Empty,
+  # it follows `appPublicUrl`: the ingress routes everything to the front end,
+  # which relays `/api`. The code appends `/api/...` itself -- an origin, not
+  # a path.
   publicBaseUrl: ""
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Modele offert par defaut aux agents, sans que l'utilisateur pose sa cle.
-# Sans lui, chacun doit apporter la sienne pour faire tourner un agent.
+# Model offered to agents by default, without the user supplying a key.
+# Without it, everyone must bring their own to run an agent.
 # ─────────────────────────────────────────────────────────────────────────────
 defaultLlm:
   model: ""
   apiKey: ""
-  # Point d'entree compatible OpenAI, pour un fournisseur tiers ou local.
+  # OpenAI-compatible endpoint, for a third-party or local provider.
   apiBase: ""
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Connexions tierces. Chacune se declare aussi cote fournisseur, et l'URI de
-# redirection doit y correspondre au caractere pres.
+# Third-party connections. Each one must also be declared on the provider
+# side, and the redirect URI must match it character for character.
 #
-# ⚠️ `microsoft.*` ici, ce sont les INTEGRATIONS (Outlook, OneDrive, Teams).
-# La famille MICROSOFT_* sans _INTEGRATION sert a la connexion des
-# utilisateurs : deux jeux d'identifiants distincts, aux noms voisins.
+# ⚠️ `microsoft.*` here means the INTEGRATIONS (Outlook, OneDrive, Teams).
+# The MICROSOFT_* family without _INTEGRATION is used for user sign-in: two
+# distinct sets of credentials, with similar names.
 # ─────────────────────────────────────────────────────────────────────────────
 integrations:
   microsoft:
     clientId: ""
     clientSecret: ""
-    # `common` accepte tous les tenants ; mettez le votre pour le restreindre.
+    # `common` accepts all tenants; set yours to restrict it.
     tenantId: ""
-    # Jamais deduite, volontairement : le coeur laisse ce champ vide plutot
-    # que de pointer ailleurs, pour qu'un vide se lise « pas configure ».
+    # Never deduced, on purpose: the core leaves this field empty rather than
+    # point elsewhere, so that an empty value reads as "not configured".
     redirectUri: ""
-    # Callback d'Outlook Mail, distinct du precedent. Vide, le coeur le deduit
-    # de l'URL publique : `<origine>/emailing/microsoft/callback`.
+    # Outlook Mail callback, distinct from the previous one. Empty, the core
+    # deduces it from the public URL: `<origin>/emailing/microsoft/callback`.
     outlookMailRedirectUri: ""
   google:
     clientId: ""
     clientSecret: ""
-    # Vide, deduit : `<origine>/integrations/google/callback`.
+    # Empty, deduced: `<origin>/integrations/google/callback`.
     redirectUri: ""
-    # Reclamee seulement par les webhooks Google.
+    # Required only by the Google webhooks.
     webhookAudience: ""
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Ou vont les fichiers deposes. `local` ecrit dans le volume du backend ;
-# `S3` exige les cinq champs ci-dessous, sinon le coeur retombe sur le disque.
+# Where uploaded files go. `local` writes to the backend volume; `S3`
+# requires the five fields below, otherwise the core falls back to disk.
 # ─────────────────────────────────────────────────────────────────────────────
 storage:
   mode: local
@@ -189,8 +190,8 @@ storage:
     accessKeySecret: ""
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Courrier systeme : verification d'adresse et reinitialisation de mot de
-# passe. Sans lui, un utilisateur qui perd son mot de passe reste bloque.
+# System mail: address verification and password reset. Without it, a user
+# who loses their password stays locked out.
 # ─────────────────────────────────────────────────────────────────────────────
 mail:
   host: ""
@@ -200,15 +201,15 @@ mail:
   password: ""
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Compte superadministrateur cree au premier demarrage, s'il n'existe pas
-# deja. Les deux champs vont ensemble : l'un sans l'autre ne cree rien.
+# Superadmin account created at first start, if it does not already exist.
+# The two fields go together: one without the other creates nothing.
 # ─────────────────────────────────────────────────────────────────────────────
 superadmin:
   email: ""
   password: ""
 
-# Signature des appels entrants du service RAG. Le coeur porte un defaut
-# public (`th2-webhook-default-secret`) : posez le votre en production.
+# Signature of incoming calls from the RAG service. The core ships a public
+# default (`th2-webhook-default-secret`): set your own in production.
 ragWebhookSecret: ""
 
 frontend:
@@ -225,34 +226,34 @@ secret:
 
 ingress:
   enabled: false
-  # `nginx` ou `traefik` selon l'add-on installé sur le cluster.
+  # `nginx` or `traefik`, depending on the add-on installed on the cluster.
   className: ""
   host: apowerb.local
-  # Avec cert-manager, l'émetteur se déclare ici :
+  # With cert-manager, the issuer is declared here:
   #   cert-manager.io/cluster-issuer: letsencrypt-prod
   annotations: {}
-  # Pose la section `tls` de l'Ingress. Sans elle, l'interface est servie en
-  # clair -- et les liens de vérification d'adresse partiraient en http://.
+  # Sets the `tls` section of the Ingress. Without it, the front end is served
+  # in clear text -- and address-verification links would go out as http://.
   tlsEnabled: false
-  # Vide : le nom est déduit (`<nom du chart>-tls`), ce que cert-manager
-  # remplit tout seul. À renseigner pour réutiliser un secret existant.
+  # Empty: the name is deduced (`<chart name>-tls`), which cert-manager fills
+  # in by itself. Set it to reuse an existing secret.
   tlsSecretName: ""
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Orchestrateur des pipelines (th2etl). Le backend ne l'appelle que s'il a
-# BASE_URL *et* clé : sans la clé, l'écran Orchestrateur dit « pas encore
-# configuré » au lieu d'échouer.
+# Pipeline orchestrator (th2etl). The backend calls it only if it has
+# BASE_URL *and* a key: without the key, the Orchestrator screen says "not
+# configured yet" instead of failing.
 # ─────────────────────────────────────────────────────────────────────────────
 th2etl:
   enabled: true
-  # `openssl rand -hex 32`, la même valeur des deux côtés : le backend la
-  # présente, th2etl la vérifie.
+  # `openssl rand -hex 32`, the same value on both sides: the backend
+  # presents it, th2etl checks it.
   apiKey: ""
   seed:
-    # Pose les pipelines par défaut dans la base. Un Job, pas un service : il
-    # se termine. Rejoué à chaque install et upgrade -- l'opération est
-    # idempotente, elle ne double pas les pipelines déjà là.
+    # Seeds the default pipelines into the database. A Job, not a service: it
+    # terminates. Re-run on every install and upgrade -- the operation is
+    # idempotent, it does not duplicate the pipelines already there.
     enabled: true
     attempts: 30
     delaySeconds: 10
@@ -273,19 +274,19 @@ th2etl:
       memory: 512Mi
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Magasin de journaux et de traces (th2pulse) : ce que lit l'écran Journaux.
-# Il partage la base d'apowerb dans un schéma à lui.
+# Log and trace store (th2pulse): what the Logging screen reads. It shares
+# apowerb's database, in a schema of its own.
 # ─────────────────────────────────────────────────────────────────────────────
 th2pulse:
   enabled: true
   schema: th2pulse
-  # Les DEUX jetons sont obligatoires quand le service est activé : il refuse
-  # de démarrer sans eux. `openssl rand -hex 32` chacun.
+  # BOTH tokens are mandatory when the service is enabled: it refuses to
+  # start without them. `openssl rand -hex 32` for each.
   ingestToken: ""
-  # Lu côté serveur par l'interface, jamais envoyé au navigateur.
+  # Read server-side by the front end, never sent to the browser.
   queryToken: ""
-  # Renseigner pour viser un Postgres externe ; vide, la DSN est construite
-  # depuis le Postgres du chart.
+  # Set it to target an external Postgres; empty, the DSN is built from the
+  # chart's Postgres.
   dsn: ""
   resources:
     requests:
@@ -296,25 +297,24 @@ th2pulse:
       memory: 512Mi
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Moteur de prevision (th2forecast) : ce qu'appelle POST /api/v1/forecast.
-# DESACTIVE par defaut, a la difference de th2etl et th2pulse ci-dessus :
-# aucune image apowerb/th2forecast-py n'est publiee a ce jour. L'activer sans
-# poser image.th2forecast.tag est refuse a l'installation (_validate.tpl).
+# Forecasting engine (th2forecast): what POST /api/v1/forecast calls.
+# DISABLED by default, unlike th2etl and th2pulse above: it is an optional
+# feature and needs an API token shared with the backend. Image:
+# apowerb/th2forecast-py, pinned under image.th2forecast.
 # ─────────────────────────────────────────────────────────────────────────────
 th2forecast:
   enabled: false
-  # `openssl rand -hex 32`. Pas obligatoire pour demarrer le moteur -- vide,
-  # il accepte les requetes non authentifiees, joignables seulement depuis le
-  # reseau interne du cluster -- mais _validate.tpl le rend obligatoire des
-  # que enabled=true : le backend et le moteur doivent porter la meme valeur,
-  # et un token absent des deux cotes se lit trop facilement comme un oubli.
+  # `openssl rand -hex 32`. Not required to start the engine -- empty, it
+  # accepts unauthenticated requests, reachable only from the cluster's
+  # internal network -- but _validate.tpl makes it mandatory as soon as
+  # enabled=true: the backend and the engine must carry the same value, and a
+  # token missing on both sides reads too easily as an oversight.
   apiToken: ""
-  # Delai global cote backend (th2forecast_client), secondes.
+  # Backend-side overall timeout (th2forecast_client), in seconds.
   timeoutS: 300
-  # Reglages du moteur, tous optionnels -- vides, les defauts de l'image
-  # s'appliquent (2 workers, poids preleves au demarrage, plafonds 100000
-  # lignes / 200 series / 366 jours, 1 job statsforecast, un thread par
-  # coeur).
+  # Engine settings, all optional -- empty, the image defaults apply (2
+  # workers, weights loaded at startup, limits of 100000 rows / 200 series /
+  # 366 days, 1 statsforecast job, one thread per core).
   engine:
     workers: ""
     preload: ""
@@ -323,12 +323,11 @@ th2forecast:
     maxHorizon: ""
     sfJobs: ""
     torchThreads: ""
-  # Mesure du 28/09/26, image locale, un seul job a la fois (TH2FORECAST_WORKERS
-  # par defaut = 2 threads, meme processus) : 316 MiB au repos une fois
-  # Chronos-2 charge, pic a 404 MiB pendant un `auto` sur 20 series
-  # mensuelles x 24 points. Requete = repos x1.6 ; limite = pic x3.8, parce
-  # que deux jobs concurrents (2 workers) n'ont pas ete mesures et que torch
-  # CPU reste le poste dominant.
+  # Measured on 28/09/26, local image, one job at a time (TH2FORECAST_WORKERS
+  # default = 2 threads, same process): 316 MiB at rest once Chronos-2 is
+  # loaded, 404 MiB peak during an `auto` run on 20 monthly series x 24
+  # points. Request = rest x1.6; limit = peak x3.8, because two concurrent
+  # jobs (2 workers) were not measured and CPU torch remains the main cost.
   resources:
     requests:
       cpu: 250m
@@ -337,10 +336,9 @@ th2forecast:
       cpu: "2"
       memory: 1536Mi
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Collecteur OpenTelemetry : le backend lui envoie traces et journaux, il les
-# pousse dans th2pulse. Sans lui, OTEL_EXPORTER_OTLP_ENDPOINT reste vide et
-# l'écran Journaux s'annonce « pas encore configuré ».
+# OpenTelemetry collector: the backend sends it traces and logs, and it pushes
+# them into th2pulse. Without it, OTEL_EXPORTER_OTLP_ENDPOINT stays empty and
+# the Logging screen reports "not configured yet".
 # ─────────────────────────────────────────────────────────────────────────────
 otelCollector:
   enabled: true
@@ -355,14 +353,14 @@ otelCollector:
       memory: 256Mi
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Disque du backend : fichiers BI importés, uploads, artefacts.
+# Backend disk: imported BI files, uploads, artifacts.
 #
-# Sans ce volume, un CSV importé disparaît au premier redémarrage du pod --
-# et le tableau de bord qui le lit meurt avec lui. Le pool d'agents, lui, est
-# régénéré depuis la base : ce n'est pas ce qu'on protège ici.
+# Without this volume, an imported CSV disappears at the pod's first restart --
+# and the dashboard that reads it dies with it. The agent pool, on the other
+# hand, is regenerated from the database: that is not what is protected here.
 #
-# ⚠️ ReadWriteOnce n'est monté que par un nœud : le backend reste à une
-# réplique tant que la classe de stockage ne fait pas ReadWriteMany.
+# ⚠️ ReadWriteOnce can be mounted by only one node: the backend stays at one
+# replica until the storage class supports ReadWriteMany.
 # ─────────────────────────────────────────────────────────────────────────────
 persistence:
   enabled: true

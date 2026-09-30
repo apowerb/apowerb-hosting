@@ -136,6 +136,10 @@ Expects `200` and the model's text in the returned events.
 `agents_pool/` sits in no volume, but it is rebuilt from the database at
 startup, so an agent still answers after the container is replaced:
 
+Uploads, artifacts and BI exports are kept on the `apowerb-data` volume
+(the backend writes them under `RUNTIME_ROOT=/app/data`), so they also
+survive the recreate.
+
 ```bash
 docker compose -f docker-compose/docker-compose.yml --env-file .env up -d --force-recreate apowerb
 ```

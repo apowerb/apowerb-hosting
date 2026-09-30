@@ -24,6 +24,10 @@ on:
 
 permissions:
   contents: read
+  # Keyless cosign signing: GitHub hands the job an OIDC token, which Sigstore
+  # exchanges for a short-lived certificate issued to THIS workflow. No key to
+  # store or rotate.
+  id-token: write
 
 jobs:
   publish-helm-oci:
@@ -43,6 +47,12 @@ jobs:
         uses: azure/setup-helm@v4
         with:
           version: v3.16.2
+
+      - name: Setup ORAS
+        uses: oras-project/setup-oras@v1
+
+      - name: Setup cosign
+        uses: sigstore/cosign-installer@v4.1.2
 
       - name: Derive release version
         id: release
@@ -100,6 +110,7 @@ jobs:
             --password-stdin
 
       - name: Push chart to Docker Hub
+        id: push
         env:
           VERSION: ${{ steps.release.outputs.version }}
         run: |
@@ -107,5 +118,45 @@ jobs:
           # le repertoire : un nom ecrit en dur casse au premier renommage.
           CHART_NAME="$(helm show chart ./helm/apowerb-chart | awk '/^name:/{print $2}')"
           CHART_TGZ="${CHART_NAME}-${VERSION}.tgz"
-          helm push "$CHART_TGZ" "oci://registry-1.docker.io/apowerb"
+          helm push "$CHART_TGZ" "oci://registry-1.docker.io/apowerb" 2>&1 | tee push.log
+          # Sign the digest this push just produced, not the tag: a tag can be
+          # republished between the two steps, a digest cannot.
+          DIGEST="$(sed -n 's/^Digest: //p' push.log)"
+          if ! printf '%s' "$DIGEST" | grep -Eq '^sha256:[0-9a-f]{64}$'; then
+            echo "No digest in the helm push output: nothing is signed."
+            exit 1
+          fi
+          echo "ref=registry-1.docker.io/apowerb/${CHART_NAME}@${DIGEST}" >> "$GITHUB_OUTPUT"
+
+      # Artifact Hub shows "Signed" when it finds a cosign signature on the OCI
+      # chart (`.sig` tag or referrers API), read when a NEW version is
+      # indexed: a version already indexed is not re-examined.
+      # The signature is recorded in the public Rekor log, with this
+      # workflow's identity. Verification: see helm/apowerb-chart/README.md.
+      - name: Sign chart with cosign (keyless)
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+          CHART_REF: ${{ steps.push.outputs.ref }}
+        run: |
+          echo "$DOCKERHUB_TOKEN" | cosign login registry-1.docker.io \
+            --username "$DOCKERHUB_USERNAME" \
+            --password-stdin
+          cosign sign --yes "$CHART_REF"
+
+      - name: Push Artifact Hub repository metadata
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          # Identifiants passés au push lui-même, sans `oras login` : le 29/09/26
+          # (run 36572858199, ORAS 1.3.0) le login répondait « Login Succeeded »
+          # puis le push recevait 401 sur auth.docker.io, alors que `helm push`
+          # venait d'écrire dans ce même dépôt avec les mêmes secrets. Le push ne
+          # dépend plus du magasin d'identifiants rempli par le login.
+          echo "$DOCKERHUB_TOKEN" | oras push registry-1.docker.io/apowerb/apowerb-chart:artifacthub.io \
+            --username "$DOCKERHUB_USERNAME" \
+            --password-stdin \
+            --config /dev/null:application/vnd.cncf.artifacthub.config.v1+yaml \
+            artifacthub-repo.yml:application/vnd.cncf.artifacthub.repository-metadata.layer.v1.yaml
 

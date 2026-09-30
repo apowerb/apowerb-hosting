@@ -8,11 +8,11 @@ metadata:
     app.kubernetes.io/name: {{ include "apowerb.name" . }}
     app.kubernetes.io/component: otel-collector
 data:
-  # Le compose passe cette configuration par une variable d'environnement
-  # (`--config=env:OTEL_CFG`). En Kubernetes elle vit dans un ConfigMap et le
-  # collecteur la lit comme un fichier : même contenu, mais `kubectl edit` la
-  # montre, et le jeton d'ingestion n'a pas à y figurer -- il reste dans le
-  # Secret, injecté à l'exécution par `${env:...}`.
+  # The compose file passes this configuration through an environment variable
+  # (`--config=env:OTEL_CFG`). In Kubernetes it lives in a ConfigMap and the
+  # collector reads it as a file: same content, but `kubectl edit` shows it,
+  # and the ingest token does not have to appear in it -- it stays in the
+  # Secret, injected at runtime through `${env:...}`.
   config.yaml: |
     receivers:
       otlp:

@@ -8,8 +8,8 @@ metadata:
     app.kubernetes.io/name: {{ include "apowerb.name" . }}
     app.kubernetes.io/component: th2etl
 spec:
-  # L'orchestrateur tient un ordonnanceur : deux répliques exécuteraient deux
-  # fois la même pipeline planifiée.
+  # The orchestrator runs a scheduler: two replicas would run the same
+  # scheduled pipeline twice.
   replicas: 1
   selector:
     matchLabels:
@@ -21,6 +21,8 @@ spec:
         app.kubernetes.io/name: {{ include "apowerb.name" . }}
         app.kubernetes.io/component: th2etl
     spec:
+      initContainers:
+        {{- include "apowerb.waitForPostgres" . | nindent 8 }}
       containers:
         - name: th2etl
           image: "{{ .Values.image.th2etl.repository }}:{{ .Values.image.th2etl.tag }}"
@@ -31,9 +33,9 @@ spec:
             {{- include "apowerb.th2etl.env" . | nindent 12 }}
           resources:
             {{- toYaml .Values.th2etl.resources | nindent 12 }}
-          # L'image ne sert pas /health : `/openapi.json` est ce que le
-          # healthcheck du compose interroge déjà, et ce que la bascule
-          # 0.0.11/0.0.12 a mesuré des deux côtés.
+          # The image does not serve /health: `/openapi.json` is what the
+          # compose healthcheck already queries, and what the 0.0.11/0.0.12
+          # switch measured on both sides.
           readinessProbe:
             httpGet:
               path: /openapi.json

@@ -1,0 +1,1093 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "apowerb-chart values",
+  "type": "object",
+  "additionalProperties": true,
+  "properties": {
+    "replicaCount": {
+      "type": "integer"
+    },
+    "namespaceOverride": {
+      "type": [
+        "string",
+        "number"
+      ]
+    },
+    "nameOverride": {
+      "type": [
+        "string",
+        "number"
+      ],
+      "description": "Prefix of all objects; empty means the chart name (\"apowerb\")."
+    },
+    "image": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "backend": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "repository": {
+              "type": [
+                "string",
+                "number"
+              ]
+            },
+            "tag": {
+              "type": [
+                "string",
+                "number"
+              ],
+              "description": "Paired with the frontend tag below -- move both or neither. 0.2.16: the bug-report API and the configurable destination repository. The \"report\" button lives in UI 0.1.23 and calls this API: moving the UI alone gives a button with no route behind it, the core alone a route nothing calls."
+            },
+            "pullPolicy": {
+              "type": "string",
+              "enum": [
+                "Always",
+                "IfNotPresent",
+                "Never"
+              ]
+            }
+          }
+        },
+        "frontend": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "repository": {
+              "type": [
+                "string",
+                "number"
+              ]
+            },
+            "tag": {
+              "type": [
+                "string",
+                "number"
+              ]
+            },
+            "pullPolicy": {
+              "type": "string",
+              "enum": [
+                "Always",
+                "IfNotPresent",
+                "Never"
+              ]
+            }
+          }
+        },
+        "postgres": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "repository": {
+              "type": [
+                "string",
+                "number"
+              ]
+            },
+            "tag": {
+              "type": [
+                "string",
+                "number"
+              ]
+            },
+            "pullPolicy": {
+              "type": "string",
+              "enum": [
+                "Always",
+                "IfNotPresent",
+                "Never"
+              ]
+            }
+          }
+        },
+        "th2etl": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "repository": {
+              "type": [
+                "string",
+                "number"
+              ]
+            },
+            "tag": {
+              "type": [
+                "string",
+                "number"
+              ]
+            },
+            "pullPolicy": {
+              "type": "string",
+              "enum": [
+                "Always",
+                "IfNotPresent",
+                "Never"
+              ]
+            }
+          },
+          "description": "Pipeline orchestrator. 0.0.12 is the version whose entrypoint is `python -m th2etl --serve-api`; the `th2farid/*` images from before the namespace switch are NOT the same, despite identical version numbers."
+        },
+        "th2pulse": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "repository": {
+              "type": [
+                "string",
+                "number"
+              ]
+            },
+            "tag": {
+              "type": [
+                "string",
+                "number"
+              ]
+            },
+            "pullPolicy": {
+              "type": "string",
+              "enum": [
+                "Always",
+                "IfNotPresent",
+                "Never"
+              ]
+            }
+          }
+        },
+        "otelCollector": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "repository": {
+              "type": [
+                "string",
+                "number"
+              ]
+            },
+            "tag": {
+              "type": [
+                "string",
+                "number"
+              ]
+            },
+            "pullPolicy": {
+              "type": "string",
+              "enum": [
+                "Always",
+                "IfNotPresent",
+                "Never"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "service": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "backend": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "ClusterIP",
+                "NodePort",
+                "LoadBalancer"
+              ]
+            },
+            "port": {
+              "type": "integer"
+            }
+          }
+        },
+        "frontend": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "ClusterIP",
+                "NodePort",
+                "LoadBalancer"
+              ],
+              "description": "ClusterIP by default: the front end is reached through the Ingress below. It used to be `LoadBalancer`, which asks the provider for a load balancer -- a billed public IP -- even when an ingress controller is already there for that, and leaves the service `Pending` forever on a cluster that does not offer one. Set `LoadBalancer` if you do not use an…"
+            },
+            "port": {
+              "type": "integer"
+            }
+          }
+        },
+        "postgres": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "ClusterIP",
+                "NodePort",
+                "LoadBalancer"
+              ]
+            },
+            "port": {
+              "type": "integer"
+            }
+          }
+        },
+        "th2etl": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "ClusterIP",
+                "NodePort",
+                "LoadBalancer"
+              ]
+            },
+            "port": {
+              "type": "integer"
+            }
+          }
+        },
+        "th2pulse": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "ClusterIP",
+                "NodePort",
+                "LoadBalancer"
+              ]
+            },
+            "port": {
+              "type": "integer"
+            }
+          }
+        }
+      }
+    },
+    "postgres": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "database": {
+          "type": [
+            "string",
+            "number"
+          ]
+        },
+        "user": {
+          "type": [
+            "string",
+            "number"
+          ]
+        },
+        "password": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "description": "Empty on purpose: a password shipped by default is a published password, and this one was. `helm install` refuses to proceed until it is set -- see _validate.tpl. --set postgres.password=\"$(openssl rand -hex 16)\""
+        },
+        "storage": {
+          "type": [
+            "string",
+            "number"
+          ]
+        },
+        "storageClass": {
+          "type": [
+            "string",
+            "number"
+          ]
+        },
+        "resources": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "requests": {
+              "type": "object",
+              "additionalProperties": true,
+              "properties": {
+                "cpu": {
+                  "type": [
+                    "string",
+                    "number"
+                  ]
+                },
+                "memory": {
+                  "type": [
+                    "string",
+                    "number"
+                  ]
+                }
+              }
+            },
+            "limits": {
+              "type": "object",
+              "additionalProperties": true,
+              "properties": {
+                "cpu": {
+                  "type": [
+                    "string",
+                    "number"
+                  ]
+                },
+                "memory": {
+                  "type": [
+                    "string",
+                    "number"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "description": "PostgreSQL lives INSIDE the cluster, deliberately (David, 08/09/26): the chart must install identically anywhere, not only at a host that offers managed databases. A managed database remains possible -- just disable this StatefulSet and point the backend elsewhere -- but it is not the default, and the chart depends on no provider."
+    },
+    "backend": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "env": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "dbSslmode": {
+              "type": [
+                "string",
+                "number"
+              ]
+            },
+            "publicApiUrl": {
+              "type": [
+                "string",
+                "number"
+              ]
+            },
+            "th2Extensions": {
+              "type": [
+                "string",
+                "number"
+              ]
+            },
+            "workingMode": {
+              "type": [
+                "string",
+                "number"
+              ]
+            },
+            "encryptKey": {
+              "type": [
+                "string",
+                "number"
+              ]
+            },
+            "testToken": {
+              "type": [
+                "string",
+                "number"
+              ]
+            },
+            "dbSchema": {
+              "type": [
+                "string",
+                "number"
+              ],
+              "description": "Postgres schema, if yours is not `public`."
+            },
+            "logTz": {
+              "type": [
+                "string",
+                "number"
+              ],
+              "description": "Time zone of the timestamps written in the logs (e.g. Europe/Paris)."
+            }
+          }
+        },
+        "resources": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "requests": {
+              "type": "object",
+              "additionalProperties": true,
+              "properties": {
+                "cpu": {
+                  "type": [
+                    "string",
+                    "number"
+                  ]
+                },
+                "memory": {
+                  "type": [
+                    "string",
+                    "number"
+                  ]
+                }
+              }
+            },
+            "limits": {
+              "type": "object",
+              "additionalProperties": true,
+              "properties": {
+                "cpu": {
+                  "type": [
+                    "string",
+                    "number"
+                  ]
+                },
+                "memory": {
+                  "type": [
+                    "string",
+                    "number"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "publicUrls": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "appPublicUrl": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "description": "The FRONT END origin, no path and no trailing slash: https://apowerb.example."
+        },
+        "publicBaseUrl": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "description": "The API origin, which the Microsoft and Google webhooks build on. Empty, it follows `appPublicUrl`: the ingress routes everything to the front end, which relays `/api`. The code appends `/api/...` itself -- an origin, not a path."
+        }
+      },
+      "description": "Where this installation answers, publicly. The core deduces from `appPublicUrl` everything a browser must reach: CORS origins, GitHub, Google and Outlook Mail callbacks. One value for nine settings -- provided it is NOT empty: a variable set to empty counts as provided and overrides the default instead of yielding to it. That is why nothing is emitted here while the…"
+    },
+    "defaultLlm": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "model": {
+          "type": [
+            "string",
+            "number"
+          ]
+        },
+        "apiKey": {
+          "type": [
+            "string",
+            "number"
+          ]
+        },
+        "apiBase": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "description": "OpenAI-compatible endpoint, for a third-party or local provider."
+        }
+      },
+      "description": "Model offered to agents by default, without the user supplying a key. Without it, everyone must bring their own to run an agent."
+    },
+    "integrations": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "microsoft": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "clientId": {
+              "type": [
+                "string",
+                "number"
+              ]
+            },
+            "clientSecret": {
+              "type": [
+                "string",
+                "number"
+              ]
+            },
+            "tenantId": {
+              "type": [
+                "string",
+                "number"
+              ],
+              "description": "`common` accepts all tenants; set yours to restrict it."
+            },
+            "redirectUri": {
+              "type": [
+                "string",
+                "number"
+              ],
+              "description": "Never deduced, on purpose: the core leaves this field empty rather than point elsewhere, so that an empty value reads as \"not configured\"."
+            },
+            "outlookMailRedirectUri": {
+              "type": [
+                "string",
+                "number"
+              ],
+              "description": "Outlook Mail callback, distinct from the previous one. Empty, the core deduces it from the public URL: `<origin>/emailing/microsoft/callback`."
+            }
+          }
+        },
+        "google": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "clientId": {
+              "type": [
+                "string",
+                "number"
+              ]
+            },
+            "clientSecret": {
+              "type": [
+                "string",
+                "number"
+              ]
+            },
+            "redirectUri": {
+              "type": [
+                "string",
+                "number"
+              ],
+              "description": "Empty, deduced: `<origin>/integrations/google/callback`."
+            },
+            "webhookAudience": {
+              "type": [
+                "string",
+                "number"
+              ],
+              "description": "Required only by the Google webhooks."
+            }
+          }
+        }
+      },
+      "description": "Third-party connections. Each one must also be declared on the provider side, and the redirect URI must match it character for character. ⚠️ `microsoft.*` here means the INTEGRATIONS (Outlook, OneDrive, Teams). The MICROSOFT_* family without _INTEGRATION is used for user sign-in: two distinct sets of credentials, with similar names."
+    },
+    "storage": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "mode": {
+          "type": [
+            "string",
+            "number"
+          ]
+        },
+        "s3": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "endpoint": {
+              "type": [
+                "string",
+                "number"
+              ]
+            },
+            "region": {
+              "type": [
+                "string",
+                "number"
+              ]
+            },
+            "bucket": {
+              "type": [
+                "string",
+                "number"
+              ]
+            },
+            "accessKey": {
+              "type": [
+                "string",
+                "number"
+              ]
+            },
+            "accessKeySecret": {
+              "type": [
+                "string",
+                "number"
+              ]
+            }
+          }
+        }
+      },
+      "description": "Where uploaded files go. `local` writes to the backend volume; `S3` requires the five fields below, otherwise the core falls back to disk."
+    },
+    "mail": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "host": {
+          "type": [
+            "string",
+            "number"
+          ]
+        },
+        "port": {
+          "type": [
+            "string",
+            "number"
+          ]
+        },
+        "from": {
+          "type": [
+            "string",
+            "number"
+          ]
+        },
+        "user": {
+          "type": [
+            "string",
+            "number"
+          ]
+        },
+        "password": {
+          "type": [
+            "string",
+            "number"
+          ]
+        }
+      },
+      "description": "System mail: address verification and password reset. Without it, a user who loses their password stays locked out."
+    },
+    "superadmin": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "email": {
+          "type": [
+            "string",
+            "number"
+          ]
+        },
+        "password": {
+          "type": [
+            "string",
+            "number"
+          ]
+        }
+      },
+      "description": "Superadmin account created at first start, if it does not already exist. The two fields go together: one without the other creates nothing."
+    },
+    "ragWebhookSecret": {
+      "type": [
+        "string",
+        "number"
+      ],
+      "description": "Signature of incoming calls from the RAG service. The core ships a public default (`th2-webhook-default-secret`): set your own in production."
+    },
+    "frontend": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "resources": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "requests": {
+              "type": "object",
+              "additionalProperties": true,
+              "properties": {
+                "cpu": {
+                  "type": [
+                    "string",
+                    "number"
+                  ]
+                },
+                "memory": {
+                  "type": [
+                    "string",
+                    "number"
+                  ]
+                }
+              }
+            },
+            "limits": {
+              "type": "object",
+              "additionalProperties": true,
+              "properties": {
+                "cpu": {
+                  "type": [
+                    "string",
+                    "number"
+                  ]
+                },
+                "memory": {
+                  "type": [
+                    "string",
+                    "number"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "secret": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "create": {
+          "type": "boolean"
+        }
+      }
+    },
+    "ingress": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "className": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "description": "`nginx` or `traefik`, depending on the add-on installed on the cluster."
+        },
+        "host": {
+          "type": [
+            "string",
+            "number"
+          ]
+        },
+        "annotations": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "With cert-manager, the issuer is declared here: cert-manager.io/cluster-issuer: letsencrypt-prod"
+        },
+        "tlsEnabled": {
+          "type": "boolean",
+          "description": "Sets the `tls` section of the Ingress. Without it, the front end is served in clear text -- and address-verification links would go out as http://."
+        },
+        "tlsSecretName": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "description": "Empty: the name is deduced (`<chart name>-tls`), which cert-manager fills in by itself. Set it to reuse an existing secret."
+        }
+      }
+    },
+    "th2etl": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "apiKey": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "description": "`openssl rand -hex 32`, the same value on both sides: the backend presents it, th2etl checks it."
+        },
+        "seed": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "description": "Seeds the default pipelines into the database. A Job, not a service: it terminates. Re-run on every install and upgrade -- the operation is idempotent, it does not duplicate the pipelines already there."
+            },
+            "attempts": {
+              "type": "integer"
+            },
+            "delaySeconds": {
+              "type": "integer"
+            },
+            "backoffLimit": {
+              "type": "integer"
+            },
+            "resources": {
+              "type": "object",
+              "additionalProperties": true,
+              "properties": {
+                "requests": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "properties": {
+                    "cpu": {
+                      "type": [
+                        "string",
+                        "number"
+                      ]
+                    },
+                    "memory": {
+                      "type": [
+                        "string",
+                        "number"
+                      ]
+                    }
+                  }
+                },
+                "limits": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "properties": {
+                    "cpu": {
+                      "type": [
+                        "string",
+                        "number"
+                      ]
+                    },
+                    "memory": {
+                      "type": [
+                        "string",
+                        "number"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "resources": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "requests": {
+              "type": "object",
+              "additionalProperties": true,
+              "properties": {
+                "cpu": {
+                  "type": [
+                    "string",
+                    "number"
+                  ]
+                },
+                "memory": {
+                  "type": [
+                    "string",
+                    "number"
+                  ]
+                }
+              }
+            },
+            "limits": {
+              "type": "object",
+              "additionalProperties": true,
+              "properties": {
+                "cpu": {
+                  "type": [
+                    "string",
+                    "number"
+                  ]
+                },
+                "memory": {
+                  "type": [
+                    "string",
+                    "number"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "description": "Pipeline orchestrator (th2etl). The backend calls it only if it has BASE_URL *and* a key: without the key, the Orchestrator screen says \"not configured yet\" instead of failing."
+    },
+    "th2pulse": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "schema": {
+          "type": [
+            "string",
+            "number"
+          ]
+        },
+        "ingestToken": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "description": "BOTH tokens are mandatory when the service is enabled: it refuses to start without them. `openssl rand -hex 32` for each."
+        },
+        "queryToken": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "description": "Read server-side by the front end, never sent to the browser."
+        },
+        "dsn": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "description": "Set it to target an external Postgres; empty, the DSN is built from the chart's Postgres."
+        },
+        "resources": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "requests": {
+              "type": "object",
+              "additionalProperties": true,
+              "properties": {
+                "cpu": {
+                  "type": [
+                    "string",
+                    "number"
+                  ]
+                },
+                "memory": {
+                  "type": [
+                    "string",
+                    "number"
+                  ]
+                }
+              }
+            },
+            "limits": {
+              "type": "object",
+              "additionalProperties": true,
+              "properties": {
+                "cpu": {
+                  "type": [
+                    "string",
+                    "number"
+                  ]
+                },
+                "memory": {
+                  "type": [
+                    "string",
+                    "number"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "description": "Log and trace store (th2pulse): what the Logging screen reads. It shares apowerb's database, in a schema of its own."
+    },
+    "otelCollector": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "serviceName": {
+          "type": [
+            "string",
+            "number"
+          ]
+        },
+        "metricsExporter": {
+          "type": [
+            "string",
+            "number"
+          ]
+        },
+        "resources": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "requests": {
+              "type": "object",
+              "additionalProperties": true,
+              "properties": {
+                "cpu": {
+                  "type": [
+                    "string",
+                    "number"
+                  ]
+                },
+                "memory": {
+                  "type": [
+                    "string",
+                    "number"
+                  ]
+                }
+              }
+            },
+            "limits": {
+              "type": "object",
+              "additionalProperties": true,
+              "properties": {
+                "cpu": {
+                  "type": [
+                    "string",
+                    "number"
+                  ]
+                },
+                "memory": {
+                  "type": [
+                    "string",
+                    "number"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "description": "OpenTelemetry collector: the backend sends it traces and logs, and it pushes them into th2pulse. Without it, OTEL_EXPORTER_OTLP_ENDPOINT stays empty and the Logging screen reports \"not configured yet\"."
+    },
+    "persistence": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "size": {
+          "type": [
+            "string",
+            "number"
+          ]
+        },
+        "storageClass": {
+          "type": [
+            "string",
+            "number"
+          ]
+        },
+        "accessModes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "mountPath": {
+          "type": [
+            "string",
+            "number"
+          ]
+        }
+      },
+      "description": "Backend disk: imported BI files, uploads, artifacts. Without this volume, an imported CSV disappears at the pod's first restart -- and the dashboard that reads it dies with it. The agent pool, on the other hand, is regenerated from the database: that is not what is protected here. ⚠️ ReadWriteOnce can be mounted by only one node: the backend stays at one replica until the storage class supports…"
+    }
+  }
+}

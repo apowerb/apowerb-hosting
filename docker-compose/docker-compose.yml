@@ -52,6 +52,13 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       DB_SSLMODE: ${DB_SSLMODE:-disable}
       ENCRYPT_KEY: ${ENCRYPT_KEY}
+      # Where the backend writes to disk (uploads, artifacts_store,
+      # bi_store). It defaults to the working directory (/app), which is
+      # the ephemeral image layer -- with pull_policy: always that is wiped
+      # on every image update. Pin it to the mounted apowerb-data volume so
+      # those survive. Not parameterised on purpose: it must stay equal to
+      # the volume target below. agents_pool is rebuilt from the DB either way.
+      RUNTIME_ROOT: /app/data
       TH2_EXTENSIONS: ${TH2_EXTENSIONS:-}
       WORKING_MODE: ${WORKING_MODE:-development}
       # Shared model. Without both of these the provider is simply not offered,
