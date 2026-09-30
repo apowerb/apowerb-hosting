@@ -18,7 +18,7 @@ Each one is a single switch: `th2etl.enabled`, `th2pulse.enabled`,
 ## OCI locations
 
 - Docker Hub chart: https://hub.docker.com/r/apowerb/apowerb-chart
-- Docker Hub images: https://hub.docker.com/r/apowerb/apowerb (le backend, pas le chart)
+- Docker Hub images: https://hub.docker.com/r/apowerb/apowerb (the backend, not the chart)
 
 ## Install from source
 
@@ -44,19 +44,9 @@ empty strings. A `values-secrets.yaml` outside version control, passed with
 
 ## Install from a published release
 
-## Versions
-
-La série courante est **0.4.x** (David, 08/09/26) : les correctifs et les
-ajouts sortent en `0.4.1`, `0.4.2`… Ne pas repartir sur une mineure sans
-raison — `0.3.0` a été taguée entre deux merges et ne porte pas les
-correctifs qui l'ont suivie, ce qui a coûté un bump de rattrapage.
-
-Bumper `version:` dans `Chart.yaml` fait publier : `chart-releaser` crée la
-release au push sur `main`, et la publication OCI se lance à la main (voir
-plus bas). Une version inchangée ne publie rien, quel que soit le contenu.
-
-Le chart est publié sur **Docker Hub**, dans l'organisation d'où sortent déjà
-les images du produit — mais dans un dépôt à lui, `apowerb/apowerb-chart` :
+The chart is published on **Docker Hub**, in the organization that already
+ships the product images — but in a repository of its own,
+`apowerb/apowerb-chart`:
 
 ```bash
 helm upgrade --install apowerb oci://registry-1.docker.io/apowerb/apowerb-chart --version 0.4.22 \
@@ -64,12 +54,11 @@ helm upgrade --install apowerb oci://registry-1.docker.io/apowerb/apowerb-chart 
   --values values-secrets.yaml
 ```
 
-`values-secrets.yaml` porte les cinq valeurs ci-dessus ; sans lui,
-l'installation s'arrête sur `postgres.password est vide`.
+`values-secrets.yaml` holds the five values above; without it, the install
+stops on `postgres.password est vide`.
 
-Les versions publiées à partir de la 0.4.22 sont signées avec cosign, sans
-clé, par le workflow de publication. Pour vérifier qu'un chart vient bien de ce
-dépôt :
+Versions published from 0.4.22 on are signed with cosign, keyless, by the
+publishing workflow. To check that a chart comes from this repository:
 
 ```bash
 cosign verify registry-1.docker.io/apowerb/apowerb-chart:0.4.22 \
@@ -77,48 +66,60 @@ cosign verify registry-1.docker.io/apowerb/apowerb-chart:0.4.22 \
   --certificate-identity-regexp '^https://github.com/apowerb/apowerb-hosting/\.github/workflows/publish-dockerhub-helm\.yml@'
 ```
 
-> **Upgrade vers 0.4.21 depuis une install existante : vérifier où vit la
-> base avant `helm upgrade`.** Depuis la 0.4.21, Postgres écrit dans
-> `/var/lib/postgresql/data/pgdata` (sous-dossier du volume) et non plus à sa
-> racine : sur un volume ext4 (Cinder OVH, la plupart des disques des
-> clouds), le `lost+found` de la racine faisait échouer `initdb`. Une install
-> qui tournait déjà — donc sur un volume sans `lost+found` (k3s local-path,
-> kind, NFS) — a sa base à la racine. Après l'upgrade, Postgres trouverait
-> `pgdata/` vide et créerait une base neuve : les anciennes données restent
-> sur le volume, mais invisibles.
+> **Upgrading an existing install from 0.4.20 or earlier: check where the
+> database lives before `helm upgrade`.** Since 0.4.21, PostgreSQL writes to
+> `/var/lib/postgresql/data/pgdata` (a subdirectory of the volume) instead of
+> its root: on an ext4 volume (OVH Cinder, most cloud block disks) the root's
+> `lost+found` made `initdb` fail. An install that already ran — so on a
+> volume without `lost+found` (k3s local-path, kind, NFS) — has its database
+> at the root. After the upgrade PostgreSQL would find `pgdata/` empty and
+> create a fresh database: the old data stays on the volume, but out of sight.
 >
-> Contrôle :
+> Check:
 > `kubectl exec -n <namespace> <release>-postgres-0 -- ls /var/lib/postgresql/data`.
-> Si `PG_VERSION` apparaît à la racine, sauvegarder (`pg_dumpall`) avant
-> l'upgrade, puis restaurer dans la nouvelle base. Une install neuve n'est
-> pas concernée.
+> If `PG_VERSION` shows at the root, back up (`pg_dumpall`) before the
+> upgrade, then restore into the new database. A fresh install is not
+> affected.
 >
-> Le backend passe aussi en `strategy: Recreate` (volume `ReadWriteOnce`) :
-> chaque upgrade arrête l'ancien pod avant de démarrer le nouveau, d'où
-> quelques secondes d'indisponibilité.
+> The backend also uses `strategy: Recreate` (`ReadWriteOnce` volume): each
+> upgrade stops the old pod before starting the new one, so expect a few
+> seconds of downtime.
 
-> GHCR a été retiré le 08/09/26. Le push y réussissait, mais un paquet naît
-> **privé** dans une organisation GitHub : `helm pull oci://ghcr.io/apowerb/apowerb` <!-- docs-in-sync: ignore -->
-> répondait `403 Forbidden` en anonyme. Publier là où personne ne peut tirer
-> n'est pas publier.
+## Versions
 
-> **Le chart s'appelle `apowerb-chart` depuis la 0.4.1**, et c'est ce nom qui
-> devient le dépôt Docker Hub. Avant, chart et images partageaient
-> `apowerb/apowerb` : `apowerb/apowerb:0.2.0` pèse 10 ko — c'était le chart ;
-> `:0.2.12` pèse 250 Mo — c'est le backend. Deux séries de versions dans un
-> seul espace de noms, dont l'une aurait fini par écraser l'autre.
+The current series is **0.4.x** (David, 08/09/26): fixes and additions ship
+as `0.4.1`, `0.4.2`… Do not start a new minor without a reason — `0.3.0` was
+tagged between two merges and lacks the fixes that followed it, which cost a
+catch-up bump.
+
+Bumping `version:` in `Chart.yaml` is what publishes: `chart-releaser` creates
+the release on push to `main`, and the OCI publication is started by hand
+(`publish-dockerhub-helm.yml`). An unchanged version publishes nothing,
+whatever the content. The `artifacthub.io/changes` annotation in `Chart.yaml`
+lists the changes of that version only: rewrite it at each bump.
+
+> GHCR was dropped on 08/09/26. Pushing there succeeded, but a package is born
+> **private** in a GitHub organization: `helm pull oci://ghcr.io/apowerb/apowerb` <!-- docs-in-sync: ignore -->
+> answered `403 Forbidden` anonymously. Publishing where nobody can pull is
+> not publishing.
+
+> **The chart has been called `apowerb-chart` since 0.4.1**, and that name
+> becomes the Docker Hub repository. Before, chart and images shared
+> `apowerb/apowerb`: `apowerb/apowerb:0.2.0` weighs 10 kB — that was the
+> chart; `:0.2.12` weighs 250 MB — that is the backend. Two version series in
+> one namespace, one of which would eventually have overwritten the other.
 >
-> Le renommage ne touche **aucune ressource Kubernetes** : `apowerb.name` est
-> figé sur `apowerb` plutôt que dérivé de `.Chart.Name`, sinon chaque objet
-> serait devenu `apowerb-chart-backend` et un `helm upgrade` aurait tout
-> recréé à côté de l'existant. Mesuré : `helm template` avant et après le
-> renommage ne diffère que par les commentaires `# Source:` que Helm écrit
-> lui-même — zéro ligne de contenu. `nameOverride` reste disponible pour ce à
-> quoi il sert, faire cohabiter deux releases dans un namespace.
+> The rename touches **no Kubernetes resource**: `apowerb.name` is pinned to
+> `apowerb` rather than derived from `.Chart.Name`, otherwise every object
+> would have become `apowerb-chart-backend` and a `helm upgrade` would have
+> recreated everything next to the existing one. Measured: `helm template`
+> before and after the rename differs only by the `# Source:` comments Helm
+> writes itself — zero content lines. `nameOverride` is still there for what
+> it is for, running two releases in one namespace.
 >
-> Les versions publiées avant le renommage restent sous
-> `oci://registry-1.docker.io/apowerb/apowerb` (0.2.0 et 0.4.0) : elles n'ont <!-- docs-in-sync: ignore -->
-> pas été déplacées.
+> Versions published before the rename stay under
+> `oci://registry-1.docker.io/apowerb/apowerb` (0.2.0 and 0.4.0): they were <!-- docs-in-sync: ignore -->
+> not moved.
 
 ## A smaller stack
 
@@ -137,24 +138,23 @@ Eight objects instead of sixteen. The interface then says which features are
 not configured rather than failing on them — that is the point of
 `GET /api/config/setup` and of the **Admin → Configuration** screen.
 
-## HTTPS : le certificat ne ferme pas le port 80
+## HTTPS: the certificate does not close port 80
 
-`ingress.tlsEnabled` ajoute la section TLS ; il ne redirige pas. Mesuré le
-09/09/26 sur une installation réelle : `http://` répondait **200**, pas 308 —
-un visiteur qui tape l'adresse sans `https://` saisit ses identifiants en
-clair.
+`ingress.tlsEnabled` adds the TLS section; it does not redirect. Measured on
+09/09/26 on a real install: `http://` answered **200**, not 308 — a visitor
+who types the address without `https://` enters their credentials in clear.
 
-Avec Traefik, la redirection tient en un Middleware, livré dans
-`k8s/traefik/redirect-https.yaml`, et une annotation sur l'Ingress :
+With Traefik, the redirect is one Middleware, shipped in
+`k8s/traefik/redirect-https.yaml`, plus an annotation on the Ingress:
 
 ```bash
-kubectl apply -f k8s/traefik/redirect-https.yaml   # namespace de la release
+kubectl apply -f k8s/traefik/redirect-https.yaml   # in the release namespace
 helm upgrade ... \
   --set ingress.annotations."traefik\.ingress\.kubernetes\.io/router\.middlewares"=<namespace>-redirect-https@kubernetescrd
 ```
 
-Avec ingress-nginx, rien à faire : `ssl-redirect` est actif dès qu'un TLS est
-déclaré.
+With ingress-nginx, nothing to do: `ssl-redirect` is on as soon as TLS is
+declared.
 
 ## Storage
 
