@@ -1,10 +1,10 @@
 services:
   traefik:
-    # Épinglé au patch, comme les autres images de ce dépôt : `v3.7` suivrait
-    # les correctifs sans le dire, et un tag mobile est un tag figé qui prétend
-    # être courant. v3.1 datait de 2024 ; les options utilisées ci-dessous
-    # (entrypoints, résolveur ACME, provider docker) n'ont pas changé de forme
-    # dans la série 3.x, seule l'image bouge.
+    # Pinned to the patch, like the other images in this repository: `v3.7` would
+    # follow fixes without saying so, and a moving tag is a frozen tag that
+    # pretends to be current. v3.1 dated from 2024; the options used below
+    # (entrypoints, ACME resolver, docker provider) have not changed shape
+    # across the 3.x series, only the image moves.
     image: traefik:v3.7.13
     command:
       - --providers.docker=true

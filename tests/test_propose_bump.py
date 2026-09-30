@@ -1,10 +1,9 @@
-"""Le script de bump doit suivre CHAQUE chemin d'installation.
+"""The bump script must follow EVERY installation path.
 
-Sa premiere PR reussie (#61, 18/09/26) passait Hostman et le chart en 0.2.26
-et laissait le quickstart -- ce qu'installe un nouveau venu -- sur l'image
-d'avant. Ces tests rejouent le script sur une copie des vrais fichiers du
-depot, reseau remplace : une release plus recente est publiee, tout doit
-suivre.
+Its first successful PR (#61, 18/09/26) moved Hostman and the chart to 0.2.26
+and left the quickstart -- what a newcomer installs -- on the previous image.
+These tests replay the script on a copy of the repository's real files, with
+the network replaced: a newer release is published, everything must follow.
 """
 
 from __future__ import annotations
@@ -39,10 +38,10 @@ def _charger():
 
 @pytest.fixture
 def depot(tmp_path, monkeypatch):
-    """Une copie des fichiers epingles, et un script qui ne sort pas sur le reseau.
+    """A copy of the pinned files, and a script that does not go out on the network.
 
-    Seul le coeur a une release plus recente ; l'interface annonce une version
-    plus vieille que celle epinglee, donc elle ne doit pas bouger.
+    Only the core has a newer release; the interface announces a version
+    older than the pinned one, so it must not move.
     """
     for nom in FICHIERS:
         cible = tmp_path / nom
@@ -85,8 +84,8 @@ def test_chaque_chemin_d_installation_suit_le_coeur(depot):
 
 
 def test_l_interface_ne_suit_pas_le_coeur(depot):
-    """`apowerb/apowerb` est un prefixe de `apowerb/apowerb-ui` : le bump du
-    coeur ne doit jamais atteindre l'image du front."""
+    """`apowerb/apowerb` is a prefix of `apowerb/apowerb-ui`: the core's bump
+    must never reach the frontend image."""
     racine, module = depot
     front_avant = _lire(racine, "k8s/04-frontend.yaml")
 
@@ -97,10 +96,10 @@ def test_l_interface_ne_suit_pas_le_coeur(depot):
 
 
 def test_un_suiveur_en_retard_seul_suffit_a_proposer(depot):
-    """Le cas qui a produit #61, a l'envers : Hostman et le chart sont deja a
-    jour, seul le quickstart est en retard. Il doit y avoir une PR."""
+    """The case that produced #61, reversed: Hostman and the chart are already
+    up to date, only the quickstart is behind. There must be a PR."""
     racine, module = depot
-    module.main()                                   # tout passe en 9.9.9
+    module.main()                                   # everything moves to 9.9.9
     qs = racine / "docker-compose/docker-compose.yml"
     qs.write_text(qs.read_text().replace(f"APOWERB_BACKEND_TAG:-{NEUVE}}}", "APOWERB_BACKEND_TAG:-0.0.2}"))
 
@@ -113,7 +112,7 @@ def test_le_corps_de_pr_demande_la_pr_de_doc(depot):
     racine, module = depot
     module.main()
     corps = (racine / "bump-body.md").read_text()
-    assert "PR de doc compagnon" in corps
+    assert "Companion docs PR" in corps
     assert "deployment/helmchart.mdx" in corps
 
 

@@ -1,17 +1,17 @@
 name: Docs in sync
 
-# Ce dépôt décide ce qui est déployé ; `apowerb-docs` dit au monde comment
-# l'installer. Quand les deux divergent, c'est la doc qu'on lit.
+# This repository decides what is deployed; `apowerb-docs` tells the world how
+# to install it. When the two diverge, the docs are what people read.
 #
-# Le 08/09/2026, `docs.apowerb.com` a servi pendant une heure
+# On 08/09/2026, `docs.apowerb.com` served for an hour
 # `helm install apowerb oci://registry-1.docker.io/apowerb/apowerb --version 0.2.0`
-# alors que le chart s'appelait `apowerb-chart` et sortait en 0.4.1. Personne
-# n'a rien vu, pour une raison qui vaut d'être retenue : la commande périmée
-# FONCTIONNAIT. L'ancien chart est toujours tirable, et installait simplement
-# la pile d'avant th2etl, th2pulse et le volume persistant.
+# while the chart was called `apowerb-chart` and was at 0.4.1. Nobody
+# noticed, for a reason worth remembering: the stale command WORKED. The old
+# chart can still be pulled, and simply installed the stack as it was before
+# th2etl, th2pulse and the persistent volume.
 #
-# Le garde n'exige pas que la doc soit mergée d'abord -- une PR ouverte qui
-# corrige suffit, parce que préparer les deux ensemble est le geste attendu.
+# The guard does not require the docs to be merged first -- an open PR that
+# fixes them is enough, because preparing both together is the expected practice.
 
 on:
   pull_request:
@@ -23,14 +23,14 @@ permissions:
 
 jobs:
   check:
-    name: La doc dit-elle ce que ce dépôt déploie ?
+    name: Do the docs say what this repository deploys?
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      # Le jeton du workflow suffit : `apowerb-docs` est public, et sans lui
-      # le quota anonyme (60 appels par heure) s'épuiserait à plusieurs PR.
-      - name: Compare le chart à ce que la doc écrit
+      # The workflow token is enough: `apowerb-docs` is public, and without it
+      # the anonymous quota (60 calls per hour) would run out with several PRs.
+      - name: Compare the chart with what the docs say
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: python3 .github/scripts/check_docs_in_sync.py
