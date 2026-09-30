@@ -24,6 +24,10 @@ on:
 
 permissions:
   contents: read
+  # Signature cosign sans clé : GitHub remet au job un jeton OIDC, que Sigstore
+  # échange contre un certificat éphémère au nom de CE workflow. Aucune clé à
+  # stocker ni à faire tourner.
+  id-token: write
 
 jobs:
   publish-helm-oci:
@@ -46,6 +50,9 @@ jobs:
 
       - name: Setup ORAS
         uses: oras-project/setup-oras@v1
+
+      - name: Setup cosign
+        uses: sigstore/cosign-installer@v4.1.2
 
       - name: Derive release version
         id: release
@@ -103,6 +110,7 @@ jobs:
             --password-stdin
 
       - name: Push chart to Docker Hub
+        id: push
         env:
           VERSION: ${{ steps.release.outputs.version }}
         run: |
@@ -110,7 +118,31 @@ jobs:
           # le repertoire : un nom ecrit en dur casse au premier renommage.
           CHART_NAME="$(helm show chart ./helm/apowerb-chart | awk '/^name:/{print $2}')"
           CHART_TGZ="${CHART_NAME}-${VERSION}.tgz"
-          helm push "$CHART_TGZ" "oci://registry-1.docker.io/apowerb"
+          helm push "$CHART_TGZ" "oci://registry-1.docker.io/apowerb" 2>&1 | tee push.log
+          # On signe l'empreinte que le push vient de produire, pas le tag : un
+          # tag peut être republié entre les deux étapes, une empreinte non.
+          DIGEST="$(sed -n 's/^Digest: //p' push.log)"
+          if ! printf '%s' "$DIGEST" | grep -Eq '^sha256:[0-9a-f]{64}$'; then
+            echo "Empreinte introuvable dans la sortie de helm push : rien n'est signé."
+            exit 1
+          fi
+          echo "ref=registry-1.docker.io/apowerb/${CHART_NAME}@${DIGEST}" >> "$GITHUB_OUTPUT"
+
+      # Artifact Hub affiche « Signed » quand il trouve une signature cosign sur
+      # le chart OCI (tag `.sig` ou API referrers), lue à l'indexation d'une
+      # NOUVELLE version : une version déjà indexée n'est pas réexaminée.
+      # La signature est inscrite dans le registre public Rekor, avec l'identité
+      # de ce workflow. Vérification : voir helm/apowerb-chart/README.md.
+      - name: Sign chart with cosign (keyless)
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+          CHART_REF: ${{ steps.push.outputs.ref }}
+        run: |
+          echo "$DOCKERHUB_TOKEN" | cosign login registry-1.docker.io \
+            --username "$DOCKERHUB_USERNAME" \
+            --password-stdin
+          cosign sign --yes "$CHART_REF"
 
       - name: Push Artifact Hub repository metadata
         env:

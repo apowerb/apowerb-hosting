@@ -9,6 +9,8 @@ type: application
 annotations:
   artifacthub.io/changes: |
     - kind: added
+      description: charts are signed with cosign (keyless, GitHub OIDC) by the publishing workflow
+    - kind: added
       description: values.schema.json -- Helm checks the values at install (types, pullPolicy, Service type); unknown keys stay allowed
     - kind: fixed
       description: NOTES.txt no longer fails when postgres.password is made of digits only
