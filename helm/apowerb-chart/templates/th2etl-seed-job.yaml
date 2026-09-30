@@ -8,10 +8,10 @@ metadata:
     app.kubernetes.io/name: {{ include "apowerb.name" . }}
     app.kubernetes.io/component: th2etl-seed
   annotations:
-    # Un Job, pas un Deployment : la pose des pipelines par défaut se termine.
-    # En Deployment, Kubernetes relancerait le conteneur sorti en 0 à l'infini
-    # (CrashLoopBackOff sur un succès) -- c'est le piège que le compose évite
-    # avec `restart: "no"`.
+    # A Job, not a Deployment: seeding the default pipelines finishes. As a
+    # Deployment, Kubernetes would restart the container that exited with 0
+    # forever (CrashLoopBackOff on a success) -- the trap the compose file
+    # avoids with `restart: "no"`.
     "helm.sh/hook": post-install,post-upgrade
     "helm.sh/hook-weight": "5"
     "helm.sh/hook-delete-policy": before-hook-creation
@@ -28,8 +28,9 @@ spec:
         - name: seed
           image: "{{ .Values.image.th2etl.repository }}:{{ .Values.image.th2etl.tag }}"
           imagePullPolicy: {{ .Values.image.th2etl.pullPolicy }}
-          # Le seed écrit dans la base, il n'appelle pas l'API -- mais il
-          # attend que la base ait été migrée par th2etl, d'où la boucle.
+          # The seed writes to the database, it does not call the API -- but
+          # it waits for the database to have been migrated by th2etl, hence
+          # the loop.
           command: ["sh", "-c"]
           args:
             - >-

@@ -1,10 +1,11 @@
 {{- define "apowerb.name" -}}
 {{/*
-Le nom du PRODUIT, fige, et non `.Chart.Name` : le paquet se nomme
-`apowerb-chart` depuis qu'il ne partage plus le depot Docker Hub des images,
-et ce renommage ne doit toucher aucune ressource. Sans cette constante, chaque
-objet serait devenu `apowerb-chart-backend`, `apowerb-chart-secrets`... et un
-`helm upgrade` aurait tout recree a cote de l'existant.
+The PRODUCT name, fixed, and not `.Chart.Name`: the package has been called
+`apowerb-chart` since it stopped sharing the Docker Hub repository with the
+images, and that rename must not touch any resource. Without this constant,
+every object would have become `apowerb-chart-backend`, `apowerb-chart-secrets`...
+and a `helm upgrade` would have recreated everything alongside the existing
+objects.
 */}}
 {{- default "apowerb" .Values.nameOverride | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
@@ -46,9 +47,9 @@ objet serait devenu `apowerb-chart-backend`, `apowerb-chart-secrets`... et un
 {{- end -}}
 
 {{/*
-L'environnement de th2etl, partagé mot pour mot entre le service et le Job de
-seed. Les deux parlent à la même base avec la même clé : les dupliquer, c'est
-prendre le risque qu'un seed écrive ailleurs que là où l'orchestrateur lit.
+The th2etl environment, shared word for word between the service and the seed
+Job. Both talk to the same database with the same key: duplicating it risks a
+seed writing somewhere other than where the orchestrator reads.
 */}}
 {{- define "apowerb.th2etl.env" -}}
 - name: DATABASE_HOST
@@ -85,21 +86,22 @@ prendre le risque qu'un seed écrive ailleurs que là où l'orchestrateur lit.
 {{- end -}}
 
 {{/*
-Le nom du Secret. Il était écrit en dur (« apowerb-secrets ») dans neuf
-fichiers : avec un ``nameOverride``, tous les autres objets étaient renommés
-et deux releases dans le même namespace se disputaient le MÊME Secret -- la
-seconde écrasant les identifiants de la première. Par défaut la valeur ne
-change pas, donc une installation existante n'a rien à faire.
+The Secret name. It used to be hard-coded ("apowerb-secrets") in nine files:
+with a ``nameOverride``, all the other objects were renamed and two releases in
+the same namespace fought over the SAME Secret -- the second overwriting the
+first one's credentials. By default the value does not change, so an existing
+installation has nothing to do.
 */}}
 {{- define "apowerb.secretName" -}}
 {{- printf "%s-secrets" (include "apowerb.name" .) -}}
 {{- end -}}
 
 {{/*
-L'origine publique du front. Explicite d'abord ; sinon deduite de l'ingress,
-qui route deja tout vers le front. Rien du tout si ni l'un ni l'autre : le
-coeur garde ses defauts localhost, et l'ecran Configuration le dit -- ce qui
-vaut mieux qu'une valeur inventee qu'aucun fournisseur OAuth n'acceptera.
+The public origin of the front end. Explicit value first; otherwise deduced
+from the ingress, which already routes everything to the front end. Nothing at
+all if neither is set: the core keeps its localhost defaults, and the
+Configuration screen says so -- which beats an invented value that no OAuth
+provider will accept.
 */}}
 {{- define "apowerb.appPublicUrl" -}}
 {{- if .Values.publicUrls.appPublicUrl -}}
@@ -110,11 +112,12 @@ vaut mieux qu'une valeur inventee qu'aucun fournisseur OAuth n'acceptera.
 {{- end -}}
 
 {{/*
-L'origine de l'API vue de l'exterieur, celle que les webhooks composent.
-Elle suit celle du front par defaut : l'ingress envoie tout au front, qui
-relaie `/api`. Microsoft refuse un `notificationUrl` en http, donc un ingress
-sans TLS produira bien une URL, et Graph la rejettera -- explicitement, ce qui
-est encore la meilleure des deux facons d'apprendre qu'il manque le TLS.
+The API origin as seen from outside, the one the webhooks build on. It
+follows the front end's origin by default: the ingress sends everything to the
+front end, which relays `/api`. Microsoft rejects an http `notificationUrl`, so
+an ingress without TLS will still produce a URL, and Graph will reject it --
+explicitly, which is still the better of the two ways to find out TLS is
+missing.
 */}}
 {{- define "apowerb.publicBaseUrl" -}}
 {{- if .Values.publicUrls.publicBaseUrl -}}
@@ -125,12 +128,11 @@ est encore la meilleure des deux facons d'apprendre qu'il manque le TLS.
 {{- end -}}
 
 {{/*
-initContainer partage : attend que Postgres accepte les connexions avant de
-demarrer un service qui s'y connecte au boot. Sans lui, th2etl et th2pulse
-sortent en erreur sur "connection refused" et redemarrent 2-3 fois le temps
-que Postgres soit pret -- un CrashLoop transitoire mais bruyant. Reutilise
-l'image Postgres du chart (deja tiree) pour `pg_isready`, donc aucune image
-supplementaire.
+Shared initContainer: waits until Postgres accepts connections before starting
+a service that connects to it at boot. Without it, th2etl and th2pulse exit
+with "connection refused" and restart 2-3 times while Postgres comes up -- a
+transient but noisy CrashLoop. It reuses the chart's Postgres image (already
+pulled) for `pg_isready`, so no extra image is needed.
 */}}
 {{- define "apowerb.waitForPostgres" -}}
 - name: wait-for-postgres

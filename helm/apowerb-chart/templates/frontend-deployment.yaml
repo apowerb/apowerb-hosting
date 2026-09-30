@@ -30,9 +30,9 @@ spec:
             - name: NEXT_PUBLIC_API_URL
               value: {{ .Values.backend.env.publicApiUrl | quote }}
             {{- if .Values.th2pulse.enabled }}
-            # Lu par les route handlers, jamais par le navigateur : sans lui
-            # l'interface interroge sa propre boucle locale et l'écran Journaux
-            # annonce « magasin injoignable ».
+            # Read by the route handlers, never by the browser: without it
+            # the front end queries its own loopback and the Logging screen
+            # reports "store unreachable".
             - name: PULSE_API_URL
               value: "http://{{ include "apowerb.th2pulse.fullname" . }}:{{ .Values.service.th2pulse.port }}"
             - name: PULSE_QUERY_TOKEN

@@ -18,7 +18,7 @@
         "string",
         "number"
       ],
-      "description": "Préfixe de tous les objets ; vide, c'est le nom du chart (\"apowerb\")."
+      "description": "Prefix of all objects; empty means the chart name (\"apowerb\")."
     },
     "image": {
       "type": "object",
@@ -39,7 +39,7 @@
                 "string",
                 "number"
               ],
-              "description": "Paired with the frontend tag below -- move both or neither. 0.2.16 : l'API de signalement de bug et le depot de destination configurable. Le bouton « signaler » vit dans l'interface 0.1.23 et appelle cette API : deplacer l'interface seule donne un bouton sans route derriere, le coeur seul une route que rien n'appelle."
+              "description": "Paired with the frontend tag below -- move both or neither. 0.2.16: the bug-report API and the configurable destination repository. The \"report\" button lives in UI 0.1.23 and calls this API: moving the UI alone gives a button with no route behind it, the core alone a route nothing calls."
             },
             "pullPolicy": {
               "type": "string",
@@ -128,7 +128,7 @@
               ]
             }
           },
-          "description": "Orchestrateur des pipelines. 0.0.12 est la version dont l'entrée est `python -m th2etl --serve-api` ; les images `th2farid/*` d'avant la bascule de namespace ne sont PAS les mêmes, malgré des numéros identiques."
+          "description": "Pipeline orchestrator. 0.0.12 is the version whose entrypoint is `python -m th2etl --serve-api`; the `th2farid/*` images from before the namespace switch are NOT the same, despite identical version numbers."
         },
         "th2pulse": {
           "type": "object",
@@ -216,7 +216,7 @@
                 "NodePort",
                 "LoadBalancer"
               ],
-              "description": "ClusterIP par défaut : l'interface s'atteint par l'Ingress ci-dessous. C'était `LoadBalancer`, ce qui réclame un équilibreur au fournisseur -- une IP publique facturée -- même quand un ingress controller est déjà là pour ça, et laisse le service `Pending` sans fin sur un cluster qui n'en propose pas. Mettez `LoadBalancer` si vous n'utilisez pas d'Ingress ; `kubectl port-forward` suffit pour un…"
+              "description": "ClusterIP by default: the front end is reached through the Ingress below. It used to be `LoadBalancer`, which asks the provider for a load balancer -- a billed public IP -- even when an ingress controller is already there for that, and leaves the service `Pending` forever on a cluster that does not offer one. Set `LoadBalancer` if you do not use an…"
             },
             "port": {
               "type": "integer"
@@ -297,7 +297,7 @@
             "string",
             "number"
           ],
-          "description": "Vide à dessein : un mot de passe livré par défaut est un mot de passe publié, et celui-ci l'a été. `helm install` refuse de partir tant qu'il n'est pas posé -- voir _validate.tpl. --set postgres.password=\"$(openssl rand -hex 16)\""
+          "description": "Empty on purpose: a password shipped by default is a published password, and this one was. `helm install` refuses to proceed until it is set -- see _validate.tpl. --set postgres.password=\"$(openssl rand -hex 16)\""
         },
         "storage": {
           "type": [
@@ -354,7 +354,7 @@
           }
         }
       },
-      "description": "PostgreSQL vit DANS le cluster, délibérément (David, 08/09/26) : le chart doit s'installer à l'identique ailleurs que chez un hébergeur qui propose des bases managées. Une base managée reste possible -- il suffit alors de désactiver ce StatefulSet et de pointer le backend ailleurs -- mais ce n'est pas le défaut, et le chart ne dépend d'aucun fournisseur."
+      "description": "PostgreSQL lives INSIDE the cluster, deliberately (David, 08/09/26): the chart must install identically anywhere, not only at a host that offers managed databases. A managed database remains possible -- just disable this StatefulSet and point the backend elsewhere -- but it is not the default, and the chart depends on no provider."
     },
     "backend": {
       "type": "object",
@@ -405,14 +405,14 @@
                 "string",
                 "number"
               ],
-              "description": "Schema Postgres, si le votre n'est pas `public`."
+              "description": "Postgres schema, if yours is not `public`."
             },
             "logTz": {
               "type": [
                 "string",
                 "number"
               ],
-              "description": "Fuseau des horodatages ecrits dans les journaux (ex. Europe/Paris)."
+              "description": "Time zone of the timestamps written in the logs (e.g. Europe/Paris)."
             }
           }
         },
@@ -469,17 +469,17 @@
             "string",
             "number"
           ],
-          "description": "L'origine du FRONT, sans chemin ni slash final : https://apowerb.example."
+          "description": "The FRONT END origin, no path and no trailing slash: https://apowerb.example."
         },
         "publicBaseUrl": {
           "type": [
             "string",
             "number"
           ],
-          "description": "L'origine de l'API, que les webhooks Microsoft et Google composent. Vide, elle suit `appPublicUrl` : l'ingress route tout vers le front, qui relaie `/api`. Le code ajoute `/api/...` lui-meme -- une origine, pas un chemin."
+          "description": "The API origin, which the Microsoft and Google webhooks build on. Empty, it follows `appPublicUrl`: the ingress routes everything to the front end, which relays `/api`. The code appends `/api/...` itself -- an origin, not a path."
         }
       },
-      "description": "Ou cette installation repond, en public. Le coeur deduit de `appPublicUrl` tout ce qu'un navigateur doit atteindre : origines CORS, callbacks GitHub, Google et Outlook Mail. Une seule valeur pour neuf reglages -- a condition qu'elle ne soit PAS vide : une variable posee vide compte comme fournie et remplace le defaut au lieu de s'effacer devant lui. C'est pourquoi rien ici n'est emis tant que…"
+      "description": "Where this installation answers, publicly. The core deduces from `appPublicUrl` everything a browser must reach: CORS origins, GitHub, Google and Outlook Mail callbacks. One value for nine settings -- provided it is NOT empty: a variable set to empty counts as provided and overrides the default instead of yielding to it. That is why nothing is emitted here while the…"
     },
     "defaultLlm": {
       "type": "object",
@@ -502,10 +502,10 @@
             "string",
             "number"
           ],
-          "description": "Point d'entree compatible OpenAI, pour un fournisseur tiers ou local."
+          "description": "OpenAI-compatible endpoint, for a third-party or local provider."
         }
       },
-      "description": "Modele offert par defaut aux agents, sans que l'utilisateur pose sa cle. Sans lui, chacun doit apporter la sienne pour faire tourner un agent."
+      "description": "Model offered to agents by default, without the user supplying a key. Without it, everyone must bring their own to run an agent."
     },
     "integrations": {
       "type": "object",
@@ -532,21 +532,21 @@
                 "string",
                 "number"
               ],
-              "description": "`common` accepte tous les tenants ; mettez le votre pour le restreindre."
+              "description": "`common` accepts all tenants; set yours to restrict it."
             },
             "redirectUri": {
               "type": [
                 "string",
                 "number"
               ],
-              "description": "Jamais deduite, volontairement : le coeur laisse ce champ vide plutot que de pointer ailleurs, pour qu'un vide se lise « pas configure »."
+              "description": "Never deduced, on purpose: the core leaves this field empty rather than point elsewhere, so that an empty value reads as \"not configured\"."
             },
             "outlookMailRedirectUri": {
               "type": [
                 "string",
                 "number"
               ],
-              "description": "Callback d'Outlook Mail, distinct du precedent. Vide, le coeur le deduit de l'URL publique : `<origine>/emailing/microsoft/callback`."
+              "description": "Outlook Mail callback, distinct from the previous one. Empty, the core deduces it from the public URL: `<origin>/emailing/microsoft/callback`."
             }
           }
         },
@@ -571,19 +571,19 @@
                 "string",
                 "number"
               ],
-              "description": "Vide, deduit : `<origine>/integrations/google/callback`."
+              "description": "Empty, deduced: `<origin>/integrations/google/callback`."
             },
             "webhookAudience": {
               "type": [
                 "string",
                 "number"
               ],
-              "description": "Reclamee seulement par les webhooks Google."
+              "description": "Required only by the Google webhooks."
             }
           }
         }
       },
-      "description": "Connexions tierces. Chacune se declare aussi cote fournisseur, et l'URI de redirection doit y correspondre au caractere pres. ⚠️ `microsoft.*` ici, ce sont les INTEGRATIONS (Outlook, OneDrive, Teams). La famille MICROSOFT_* sans _INTEGRATION sert a la connexion des utilisateurs : deux jeux d'identifiants distincts, aux noms voisins."
+      "description": "Third-party connections. Each one must also be declared on the provider side, and the redirect URI must match it character for character. ⚠️ `microsoft.*` here means the INTEGRATIONS (Outlook, OneDrive, Teams). The MICROSOFT_* family without _INTEGRATION is used for user sign-in: two distinct sets of credentials, with similar names."
     },
     "storage": {
       "type": "object",
@@ -632,7 +632,7 @@
           }
         }
       },
-      "description": "Ou vont les fichiers deposes. `local` ecrit dans le volume du backend ; `S3` exige les cinq champs ci-dessous, sinon le coeur retombe sur le disque."
+      "description": "Where uploaded files go. `local` writes to the backend volume; `S3` requires the five fields below, otherwise the core falls back to disk."
     },
     "mail": {
       "type": "object",
@@ -669,7 +669,7 @@
           ]
         }
       },
-      "description": "Courrier systeme : verification d'adresse et reinitialisation de mot de passe. Sans lui, un utilisateur qui perd son mot de passe reste bloque."
+      "description": "System mail: address verification and password reset. Without it, a user who loses their password stays locked out."
     },
     "superadmin": {
       "type": "object",
@@ -688,14 +688,14 @@
           ]
         }
       },
-      "description": "Compte superadministrateur cree au premier demarrage, s'il n'existe pas deja. Les deux champs vont ensemble : l'un sans l'autre ne cree rien."
+      "description": "Superadmin account created at first start, if it does not already exist. The two fields go together: one without the other creates nothing."
     },
     "ragWebhookSecret": {
       "type": [
         "string",
         "number"
       ],
-      "description": "Signature des appels entrants du service RAG. Le coeur porte un defaut public (`th2-webhook-default-secret`) : posez le votre en production."
+      "description": "Signature of incoming calls from the RAG service. The core ships a public default (`th2-webhook-default-secret`): set your own in production."
     },
     "frontend": {
       "type": "object",
@@ -766,7 +766,7 @@
             "string",
             "number"
           ],
-          "description": "`nginx` ou `traefik` selon l'add-on installé sur le cluster."
+          "description": "`nginx` or `traefik`, depending on the add-on installed on the cluster."
         },
         "host": {
           "type": [
@@ -777,18 +777,18 @@
         "annotations": {
           "type": "object",
           "additionalProperties": true,
-          "description": "Avec cert-manager, l'émetteur se déclare ici : cert-manager.io/cluster-issuer: letsencrypt-prod"
+          "description": "With cert-manager, the issuer is declared here: cert-manager.io/cluster-issuer: letsencrypt-prod"
         },
         "tlsEnabled": {
           "type": "boolean",
-          "description": "Pose la section `tls` de l'Ingress. Sans elle, l'interface est servie en clair -- et les liens de vérification d'adresse partiraient en http://."
+          "description": "Sets the `tls` section of the Ingress. Without it, the front end is served in clear text -- and address-verification links would go out as http://."
         },
         "tlsSecretName": {
           "type": [
             "string",
             "number"
           ],
-          "description": "Vide : le nom est déduit (`<nom du chart>-tls`), ce que cert-manager remplit tout seul. À renseigner pour réutiliser un secret existant."
+          "description": "Empty: the name is deduced (`<chart name>-tls`), which cert-manager fills in by itself. Set it to reuse an existing secret."
         }
       }
     },
@@ -804,7 +804,7 @@
             "string",
             "number"
           ],
-          "description": "`openssl rand -hex 32`, la même valeur des deux côtés : le backend la présente, th2etl la vérifie."
+          "description": "`openssl rand -hex 32`, the same value on both sides: the backend presents it, th2etl checks it."
         },
         "seed": {
           "type": "object",
@@ -812,7 +812,7 @@
           "properties": {
             "enabled": {
               "type": "boolean",
-              "description": "Pose les pipelines par défaut dans la base. Un Job, pas un service : il se termine. Rejoué à chaque install et upgrade -- l'opération est idempotente, elle ne double pas les pipelines déjà là."
+              "description": "Seeds the default pipelines into the database. A Job, not a service: it terminates. Re-run on every install and upgrade -- the operation is idempotent, it does not duplicate the pipelines already there."
             },
             "attempts": {
               "type": "integer"
@@ -910,7 +910,7 @@
           }
         }
       },
-      "description": "Orchestrateur des pipelines (th2etl). Le backend ne l'appelle que s'il a BASE_URL *et* clé : sans la clé, l'écran Orchestrateur dit « pas encore configuré » au lieu d'échouer."
+      "description": "Pipeline orchestrator (th2etl). The backend calls it only if it has BASE_URL *and* a key: without the key, the Orchestrator screen says \"not configured yet\" instead of failing."
     },
     "th2pulse": {
       "type": "object",
@@ -930,21 +930,21 @@
             "string",
             "number"
           ],
-          "description": "Les DEUX jetons sont obligatoires quand le service est activé : il refuse de démarrer sans eux. `openssl rand -hex 32` chacun."
+          "description": "BOTH tokens are mandatory when the service is enabled: it refuses to start without them. `openssl rand -hex 32` for each."
         },
         "queryToken": {
           "type": [
             "string",
             "number"
           ],
-          "description": "Lu côté serveur par l'interface, jamais envoyé au navigateur."
+          "description": "Read server-side by the front end, never sent to the browser."
         },
         "dsn": {
           "type": [
             "string",
             "number"
           ],
-          "description": "Renseigner pour viser un Postgres externe ; vide, la DSN est construite depuis le Postgres du chart."
+          "description": "Set it to target an external Postgres; empty, the DSN is built from the chart's Postgres."
         },
         "resources": {
           "type": "object",
@@ -989,7 +989,7 @@
           }
         }
       },
-      "description": "Magasin de journaux et de traces (th2pulse) : ce que lit l'écran Journaux. Il partage la base d'apowerb dans un schéma à lui."
+      "description": "Log and trace store (th2pulse): what the Logging screen reads. It shares apowerb's database, in a schema of its own."
     },
     "otelCollector": {
       "type": "object",
@@ -1053,7 +1053,7 @@
           }
         }
       },
-      "description": "Collecteur OpenTelemetry : le backend lui envoie traces et journaux, il les pousse dans th2pulse. Sans lui, OTEL_EXPORTER_OTLP_ENDPOINT reste vide et l'écran Journaux s'annonce « pas encore configuré »."
+      "description": "OpenTelemetry collector: the backend sends it traces and logs, and it pushes them into th2pulse. Without it, OTEL_EXPORTER_OTLP_ENDPOINT stays empty and the Logging screen reports \"not configured yet\"."
     },
     "persistence": {
       "type": "object",
@@ -1087,7 +1087,7 @@
           ]
         }
       },
-      "description": "Disque du backend : fichiers BI importés, uploads, artefacts. Sans ce volume, un CSV importé disparaît au premier redémarrage du pod -- et le tableau de bord qui le lit meurt avec lui. Le pool d'agents, lui, est régénéré depuis la base : ce n'est pas ce qu'on protège ici. ⚠️ ReadWriteOnce n'est monté que par un nœud : le backend reste à une réplique tant que la classe de stockage ne fait pas…"
+      "description": "Backend disk: imported BI files, uploads, artifacts. Without this volume, an imported CSV disappears at the pod's first restart -- and the dashboard that reads it dies with it. The agent pool, on the other hand, is regenerated from the database: that is not what is protected here. ⚠️ ReadWriteOnce can be mounted by only one node: the backend stays at one replica until the storage class supports…"
     }
   }
 }

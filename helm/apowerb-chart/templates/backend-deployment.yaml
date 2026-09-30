@@ -8,13 +8,13 @@ metadata:
     app.kubernetes.io/component: backend
 spec:
   replicas: {{ .Values.replicaCount }}
-  # Le backend monte le PVC `/data` en ReadWriteOnce : un seul nœud peut
-  # l'attacher. Avec la stratégie RollingUpdate par défaut, l'upgrade crée le
-  # nouveau pod avant de tuer l'ancien ; s'il atterrit sur un autre nœud, il
-  # reste bloqué en « Multi-Attach error » jusqu'au détachement (plusieurs
-  # minutes), et deux backends peuvent viser la base pendant le chevauchement.
-  # Recreate arrête l'ancien avant de démarrer le nouveau : pas de conflit de
-  # volume, transition franche.
+  # The backend mounts the `/data` PVC as ReadWriteOnce: only one node can
+  # attach it. With the default RollingUpdate strategy, an upgrade creates the
+  # new pod before killing the old one; if it lands on another node, it stays
+  # stuck in "Multi-Attach error" until the volume detaches (several minutes),
+  # and two backends can hit the database during the overlap. Recreate stops
+  # the old pod before starting the new one: no volume conflict, a clean
+  # cut-over.
   strategy:
     type: Recreate
   selector:
@@ -74,20 +74,20 @@ spec:
             - name: WORKING_MODE
               value: {{ .Values.backend.env.workingMode | quote }}
             {{- if .Values.persistence.enabled }}
-            # Une seule racine pour tout ce que le backend écrit sur disque :
-            # `bi_store`, `uploads`, `artifacts_store` et `agents_pool` en
-            # descendent. Le nom de la variable est RUNTIME_ROOT -- mesuré
-            # contre le paquet, la docstring de `configs/paths.py` annonce
-            # encore TH2AGENT_RUNTIME_ROOT, qui ne sert à rien.
+            # A single root for everything the backend writes to disk:
+            # `bi_store`, `uploads`, `artifacts_store` and `agents_pool` are
+            # all under it. The variable is named RUNTIME_ROOT -- measured
+            # against the package; the docstring of `configs/paths.py` still
+            # says TH2AGENT_RUNTIME_ROOT, which does nothing.
             - name: RUNTIME_ROOT
               value: {{ .Values.persistence.mountPath | quote }}
             {{- end }}
             {{- if .Values.th2etl.enabled }}
-            # Le coeur choisit son client d'orchestration par ORCHESTRATOR,
-            # dont le defaut est "mage". Adresse et cle ne suffisent donc pas :
-            # sans cette ligne, le backend appelle un Mage qui n'existe pas.
-            # Mesure sur la demo le 08/09 -- l'ecran Orchestrateur restait vide
-            # avec un th2etl parfaitement sain a cote.
+            # The core picks its orchestration client through ORCHESTRATOR,
+            # whose default is "mage". Address and key are therefore not
+            # enough: without this line, the backend calls a Mage that does not
+            # exist. Measured on the demo on 08/09 -- the Orchestrator screen
+            # stayed empty with a perfectly healthy th2etl next to it.
             - name: ORCHESTRATOR
               value: "th2etl"
             - name: TH2ETL_BASE_URL
@@ -116,11 +116,11 @@ spec:
             {{- end }}
 
             {{/*
-            Tout ce qui suit est optionnel, et n'est emis QUE renseigne.
-            Une variable posee vide n'est pas une variable absente : elle
-            compte comme fournie et remplace le defaut du coeur au lieu de
-            s'effacer devant lui. C'est ce qui a valu un AADSTS90102 sur la
-            demo le 08/09, redirect_uri partant vide chez Microsoft.
+            Everything below is optional, and is emitted ONLY when set.
+            A variable set to empty is not an absent variable: it counts as
+            provided and overrides the core's default instead of yielding to
+            it. That is what caused an AADSTS90102 on the demo on 08/09, with
+            redirect_uri going out empty to Microsoft.
             */}}
             {{- with include "apowerb.appPublicUrl" . }}
             - name: APP_PUBLIC_URL
@@ -175,9 +175,10 @@ spec:
             {{- end }}
 
             {{- if .Values.storage.mode }}
-            # Le defaut du coeur est "S3" ; celui du compose racine est
-            # "local". Le chart suit le compose, sans quoi une installation
-            # sans identifiants S3 se croit en S3 jusqu'au premier depot.
+            # The core's default is "S3"; the root compose file's is "local".
+            # The chart follows the compose file, otherwise an installation
+            # without S3 credentials believes it is on S3 until the first
+            # upload.
             - name: STORAGE_MODE
               value: {{ .Values.storage.mode | quote }}
             {{- end }}
@@ -221,13 +222,13 @@ spec:
             {{- end }}
 
             {{/*
-            Les valeurs sensibles passent par le Secret, jamais par le
-            Deployment -- `kubectl get deploy -o yaml` est bien plus largement
-            lisible qu'un Secret. `optional: true` fait le reste : la cle
-            n'existe dans le Secret que si elle a une valeur, et sans elle la
-            variable n'est simplement pas posee. Un Secret fourni de
-            l'exterieur (`secret.create=false`) peut donc porter ces cles sans
-            qu'on ait a repeter les valeurs dans les values.
+            Sensitive values go through the Secret, never through the
+            Deployment -- `kubectl get deploy -o yaml` is readable far more
+            widely than a Secret. `optional: true` does the rest: the key
+            exists in the Secret only if it has a value, and without it the
+            variable is simply not set. A Secret supplied from outside
+            (`secret.create=false`) can therefore carry these keys without the
+            values having to be repeated in the values file.
             */}}
             {{- range $var, $key := dict
                   "DEFAULT_LLM_API_KEY" "DEFAULT_LLM_API_KEY"
@@ -257,29 +258,29 @@ spec:
             limits:
               cpu: {{ .Values.backend.resources.limits.cpu }}
               memory: {{ .Values.backend.resources.limits.memory }}
-          # startupProbe : laisse le temps au premier démarrage (migrations +
-          # matérialisation du pool d'agents) sans que la liveness ne tue le
-          # pod. Tant qu'elle n'a pas réussi, readiness et liveness sont en
-          # suspens. 30 × 5 s = jusqu'à 150 s de boot toléré.
+          # startupProbe: gives the first start time to finish (migrations +
+          # materialization of the agent pool) without the liveness probe
+          # killing the pod. Until it has succeeded, readiness and liveness
+          # are suspended. 30 × 5 s = up to 150 s of boot tolerated.
           startupProbe:
             httpGet:
               path: /health
               port: 8000
             periodSeconds: 5
             failureThreshold: 30
-          # readiness sur /health/ready : contrôle réellement la base et la
-          # clé de chiffrement (Fernet). /health seul renvoie 200 en statique
-          # et laisserait un pod « prêt » alors que la base est injoignable —
-          # le pod recevrait du trafic voué à échouer.
+          # readiness on /health/ready: actually checks the database and the
+          # encryption key (Fernet). /health alone returns a static 200 and
+          # would leave a pod "ready" while the database is unreachable --
+          # the pod would receive traffic doomed to fail.
           readinessProbe:
             httpGet:
               path: /health/ready
               port: 8000
             periodSeconds: 10
-          # liveness volontairement sur /health (pas /ready) : elle ne doit
-          # constater que la vivacité du process. La brancher sur la base
-          # ferait redémarrer le backend en boucle lors d'une panne Postgres,
-          # sans rien résoudre.
+          # liveness deliberately on /health (not /ready): it must only
+          # check that the process is alive. Wiring it to the database would
+          # restart the backend in a loop during a Postgres outage, without
+          # fixing anything.
           livenessProbe:
             httpGet:
               path: /health

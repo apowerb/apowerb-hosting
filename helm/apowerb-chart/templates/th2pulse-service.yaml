@@ -8,8 +8,8 @@ metadata:
     app.kubernetes.io/name: {{ include "apowerb.name" . }}
     app.kubernetes.io/component: th2pulse
 spec:
-  # Interne : l'interface l'interroge côté serveur, le navigateur jamais --
-  # c'est ce qui garde le jeton de lecture hors du bundle.
+  # Internal: the front end queries it server-side, the browser never does --
+  # this is what keeps the read token out of the bundle.
   type: ClusterIP
   selector:
     app.kubernetes.io/name: {{ include "apowerb.name" . }}

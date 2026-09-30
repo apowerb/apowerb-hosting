@@ -28,8 +28,8 @@ spec:
           ports:
             - containerPort: 4319
           env:
-            # Le magasin de journaux partage la base d'apowerb, dans un schéma
-            # à lui : rien à provisionner de plus, et rien à mélanger.
+            # The log store shares apowerb's database, in a schema of its
+            # own: nothing more to provision, and nothing to mix up.
             - name: TH2PULSE_DB_DSN
               valueFrom:
                 secretKeyRef:
@@ -37,8 +37,8 @@ spec:
                   key: TH2PULSE_DB_DSN
             - name: TH2PULSE_DB_SCHEMA
               value: {{ .Values.th2pulse.schema | quote }}
-            # Les deux jetons sont exigés au démarrage : sans eux le service
-            # refuse de se lever, il n'y a pas de mode « sans jeton ».
+            # Both tokens are required at startup: without them the service
+            # refuses to start, there is no "no token" mode.
             - name: TH2PULSE_INGEST_TOKEN
               valueFrom:
                 secretKeyRef:

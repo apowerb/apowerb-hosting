@@ -41,12 +41,11 @@ spec:
                 secretKeyRef:
                   name: {{ include "apowerb.secretName" . }}
                   key: DB_PASSWORD
-            # Le PVC est monté sur /var/lib/postgresql/data ; sur un volume
-            # ext4 (Cinder OVH et la plupart des CSI par blocs) sa racine
-            # contient un lost+found, et `initdb` refuse d'écrire dans un
-            # répertoire non vide. On vise donc un sous-répertoire, comme le
-            # hint d'initdb le recommande, pour que le premier démarrage
-            # réussisse partout.
+            # The PVC is mounted on /var/lib/postgresql/data; on an ext4
+            # volume (OVH Cinder and most block-storage CSI drivers) its root
+            # contains a lost+found, and `initdb` refuses to write into a
+            # non-empty directory. So we target a subdirectory, as the initdb
+            # hint recommends, so that the first start succeeds everywhere.
             - name: PGDATA
               value: /var/lib/postgresql/data/pgdata
           resources:
