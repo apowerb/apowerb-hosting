@@ -35,6 +35,37 @@ entries:
     - https://github.com/apowerb/apowerb-hosting/releases/download/apowerb-0.2.0/apowerb-0.2.0.tgz
     version: 0.2.0
   apowerb-chart:
+  - annotations:
+      artifacthub.io/changes: |
+        - kind: changed
+          description: install fails when backend.env.encryptKey is empty -- the backend refuses to start without it
+          links:
+            - name: apowerb-hosting#84
+              url: https://github.com/apowerb/apowerb-hosting/pull/84
+        - kind: changed
+          description: install fails when replicaCount > 1 with a ReadWriteOnce volume (Multi-Attach)
+        - kind: added
+          description: charts are signed with cosign (keyless, GitHub OIDC) by the publishing workflow
+        - kind: added
+          description: values.schema.json -- Helm checks the values at install (types, pullPolicy, Service type); unknown keys stay allowed
+        - kind: fixed
+          description: NOTES.txt no longer fails when postgres.password is made of digits only
+        - kind: changed
+          description: README install from OCI with --namespace and the five values, four of them mandatory
+          links:
+            - name: apowerb-hosting#81
+              url: https://github.com/apowerb/apowerb-hosting/pull/81
+    apiVersion: v2
+    appVersion: 0.2.43
+    created: "2026-09-30T10:26:23.624172635Z"
+    description: apowerb, its interface, PostgreSQL, the th2etl orchestrator, the
+      th2pulse log store and an OpenTelemetry collector
+    digest: 95ceef82ba55cf178973e553800a9b2d8216045dd9d73fb3c563fe16b4a237b5
+    name: apowerb-chart
+    type: application
+    urls:
+    - https://github.com/apowerb/apowerb-hosting/releases/download/apowerb-chart-0.4.22/apowerb-chart-0.4.22.tgz
+    version: 0.4.22
   - apiVersion: v2
     appVersion: 0.2.43
     created: "2026-09-25T10:15:31.223554059Z"
@@ -255,4 +286,4 @@ entries:
     urls:
     - https://github.com/apowerb/apowerb-hosting/releases/download/apowerb-chart-0.4.1/apowerb-chart-0.4.1.tgz
     version: 0.4.1
-generated: "2026-09-25T10:15:31.223906769Z"
+generated: "2026-09-30T10:26:23.624318527Z"
