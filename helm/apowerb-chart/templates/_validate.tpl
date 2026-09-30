@@ -25,4 +25,10 @@ sans que rien ne nomme la cause.
 {{- if and .Values.th2etl.enabled .Values.th2etl.seed.enabled (lt (int .Values.th2etl.seed.attempts) 1) }}
 {{- fail "th2etl.seed.attempts doit valoir au moins 1." -}}
 {{- end }}
+{{- if not .Values.backend.env.encryptKey }}
+{{- fail "backend.env.encryptKey est vide : le backend REFUSE de démarrer (les jetons d'intégration OAuth sont chiffrés au repos avec cette clé Fernet ; sans elle, boot en CrashLoopBackOff, pas un mode dégradé). Posez-la (--set backend.env.encryptKey=\"$(openssl rand -base64 32)\"). Pas de valeur par défaut à dessein : une clé livrée dans un dépôt public n'en est plus une." -}}
+{{- end }}
+{{- if and (gt (int .Values.replicaCount) 1) .Values.persistence.enabled (has "ReadWriteOnce" .Values.persistence.accessModes) }}
+{{- fail "replicaCount > 1 avec un volume ReadWriteOnce : le PVC ne se monte que sur un seul nœud, la 2e réplique reste bloquée en Multi-Attach. Gardez replicaCount=1, passez persistence.accessModes en ReadWriteMany (classe de stockage compatible), ou persistence.enabled=false." -}}
+{{- end }}
 {{- end -}}
