@@ -4,3 +4,16 @@ description: apowerb, its interface, PostgreSQL, the th2etl orchestrator, the th
 version: 0.4.21
 appVersion: "0.2.43"
 type: application
+# Lu par Artifact Hub (badge Changelog) : les changements de CETTE version.
+# À réécrire à chaque bump de `version:` -- la liste ne se cumule pas.
+annotations:
+  artifacthub.io/changes: |
+    - kind: added
+      description: values.schema.json -- Helm checks the values at install (types, pullPolicy, Service type); unknown keys stay allowed
+    - kind: fixed
+      description: NOTES.txt no longer fails when postgres.password is made of digits only
+    - kind: changed
+      description: README install from OCI with --namespace and the five values, three of them mandatory
+      links:
+        - name: apowerb-hosting#81
+          url: https://github.com/apowerb/apowerb-hosting/pull/81
