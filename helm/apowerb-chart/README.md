@@ -23,9 +23,10 @@ Each one is a single switch: `th2etl.enabled`, `th2pulse.enabled`,
 ## Install from source
 
 Five values have to be generated first. The chart **refuses to install**
-without three of them: `postgres.password`, which has no default on purpose,
-and the two `th2pulse` tokens — that service does not start without them, so
-failing at install is the honest moment to say it.
+without four of them: `postgres.password` and `backend.env.encryptKey`, which
+have no default on purpose, and the two `th2pulse` tokens — the backend and
+th2pulse do not start without them, so failing at install is the honest moment
+to say it.
 
 ```bash
 helm upgrade --install apowerb ./helm/apowerb-chart \
@@ -58,7 +59,7 @@ Le chart est publié sur **Docker Hub**, dans l'organisation d'où sortent déj�
 les images du produit — mais dans un dépôt à lui, `apowerb/apowerb-chart` :
 
 ```bash
-helm upgrade --install apowerb oci://registry-1.docker.io/apowerb/apowerb-chart --version 0.4.21 \
+helm upgrade --install apowerb oci://registry-1.docker.io/apowerb/apowerb-chart --version 0.4.22 \
   --namespace apowerb --create-namespace \
   --values values-secrets.yaml
 ```

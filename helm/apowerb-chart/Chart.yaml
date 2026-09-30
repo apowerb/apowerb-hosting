@@ -8,6 +8,13 @@ type: application
 # À réécrire à chaque bump de `version:` -- la liste ne se cumule pas.
 annotations:
   artifacthub.io/changes: |
+    - kind: changed
+      description: install fails when backend.env.encryptKey is empty -- the backend refuses to start without it
+      links:
+        - name: apowerb-hosting#84
+          url: https://github.com/apowerb/apowerb-hosting/pull/84
+    - kind: changed
+      description: install fails when replicaCount > 1 with a ReadWriteOnce volume (Multi-Attach)
     - kind: added
       description: charts are signed with cosign (keyless, GitHub OIDC) by the publishing workflow
     - kind: added
@@ -15,7 +22,7 @@ annotations:
     - kind: fixed
       description: NOTES.txt no longer fails when postgres.password is made of digits only
     - kind: changed
-      description: README install from OCI with --namespace and the five values, three of them mandatory
+      description: README install from OCI with --namespace and the five values, four of them mandatory
       links:
         - name: apowerb-hosting#81
           url: https://github.com/apowerb/apowerb-hosting/pull/81
