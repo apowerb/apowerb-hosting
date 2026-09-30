@@ -50,7 +50,7 @@ ships the product images — but in a repository of its own,
 `apowerb/apowerb-chart`:
 
 ```bash
-helm upgrade --install apowerb oci://registry-1.docker.io/apowerb/apowerb-chart --version 0.4.22 \
+helm upgrade --install apowerb oci://registry-1.docker.io/apowerb/apowerb-chart --version 0.4.23 \
   --namespace apowerb --create-namespace \
   --values values-secrets.yaml
 ```
@@ -62,7 +62,7 @@ Versions published from 0.4.22 on are signed with cosign, keyless, by the
 publishing workflow. To check that a chart comes from this repository:
 
 ```bash
-cosign verify registry-1.docker.io/apowerb/apowerb-chart:0.4.22 \
+cosign verify registry-1.docker.io/apowerb/apowerb-chart:0.4.23 \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com \
   --certificate-identity-regexp '^https://github.com/apowerb/apowerb-hosting/\.github/workflows/publish-dockerhub-helm\.yml@'
 ```
