@@ -57,8 +57,28 @@ Le chart est publié sur **Docker Hub**, dans l'organisation d'où sortent déj�
 les images du produit — mais dans un dépôt à lui, `apowerb/apowerb-chart` :
 
 ```bash
-helm install apowerb oci://registry-1.docker.io/apowerb/apowerb-chart --version 0.4.20
+helm install apowerb oci://registry-1.docker.io/apowerb/apowerb-chart --version 0.4.21
 ```
+
+> **Upgrade vers 0.4.21 depuis une install existante : vérifier où vit la
+> base avant `helm upgrade`.** Depuis la 0.4.21, Postgres écrit dans
+> `/var/lib/postgresql/data/pgdata` (sous-dossier du volume) et non plus à sa
+> racine : sur un volume ext4 (Cinder OVH, la plupart des disques des
+> clouds), le `lost+found` de la racine faisait échouer `initdb`. Une install
+> qui tournait déjà — donc sur un volume sans `lost+found` (k3s local-path,
+> kind, NFS) — a sa base à la racine. Après l'upgrade, Postgres trouverait
+> `pgdata/` vide et créerait une base neuve : les anciennes données restent
+> sur le volume, mais invisibles.
+>
+> Contrôle :
+> `kubectl exec -n <namespace> <release>-postgres-0 -- ls /var/lib/postgresql/data`.
+> Si `PG_VERSION` apparaît à la racine, sauvegarder (`pg_dumpall`) avant
+> l'upgrade, puis restaurer dans la nouvelle base. Une install neuve n'est
+> pas concernée.
+>
+> Le backend passe aussi en `strategy: Recreate` (volume `ReadWriteOnce`) :
+> chaque upgrade arrête l'ancien pod avant de démarrer le nouveau, d'où
+> quelques secondes d'indisponibilité.
 
 > GHCR a été retiré le 08/09/26. Le push y réussissait, mais un paquet naît
 > **privé** dans une organisation GitHub : `helm pull oci://ghcr.io/apowerb/apowerb` <!-- docs-in-sync: ignore -->

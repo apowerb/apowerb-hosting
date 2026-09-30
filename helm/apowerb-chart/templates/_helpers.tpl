@@ -123,3 +123,31 @@ est encore la meilleure des deux facons d'apprendre qu'il manque le TLS.
 {{- include "apowerb.appPublicUrl" . -}}
 {{- end -}}
 {{- end -}}
+
+{{/*
+initContainer partage : attend que Postgres accepte les connexions avant de
+demarrer un service qui s'y connecte au boot. Sans lui, th2etl et th2pulse
+sortent en erreur sur "connection refused" et redemarrent 2-3 fois le temps
+que Postgres soit pret -- un CrashLoop transitoire mais bruyant. Reutilise
+l'image Postgres du chart (deja tiree) pour `pg_isready`, donc aucune image
+supplementaire.
+*/}}
+{{- define "apowerb.waitForPostgres" -}}
+- name: wait-for-postgres
+  image: "{{ .Values.image.postgres.repository }}:{{ .Values.image.postgres.tag }}"
+  imagePullPolicy: {{ .Values.image.postgres.pullPolicy }}
+  command:
+    - sh
+    - -c
+    - |
+      until pg_isready -h {{ include "apowerb.postgres.fullname" . }} -p {{ .Values.service.postgres.port }}; do
+        echo "en attente de Postgres..."; sleep 2;
+      done
+  resources:
+    requests:
+      cpu: 10m
+      memory: 32Mi
+    limits:
+      cpu: 50m
+      memory: 64Mi
+{{- end -}}
