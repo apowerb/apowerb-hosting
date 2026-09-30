@@ -66,6 +66,16 @@ helm upgrade --install apowerb oci://registry-1.docker.io/apowerb/apowerb-chart 
 `values-secrets.yaml` porte les cinq valeurs ci-dessus ; sans lui,
 l'installation s'arrête sur `postgres.password est vide`.
 
+Les versions publiées à partir de la 0.4.22 sont signées avec cosign, sans
+clé, par le workflow de publication. Pour vérifier qu'un chart vient bien de ce
+dépôt :
+
+```bash
+cosign verify registry-1.docker.io/apowerb/apowerb-chart:0.4.22 \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+  --certificate-identity-regexp '^https://github.com/apowerb/apowerb-hosting/\.github/workflows/publish-dockerhub-helm\.yml@'
+```
+
 > **Upgrade vers 0.4.21 depuis une install existante : vérifier où vit la
 > base avant `helm upgrade`.** Depuis la 0.4.21, Postgres écrit dans
 > `/var/lib/postgresql/data/pgdata` (sous-dossier du volume) et non plus à sa
