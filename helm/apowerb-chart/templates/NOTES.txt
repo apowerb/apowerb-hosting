@@ -56,12 +56,6 @@ Ce qu'il reste à vérifier, dans cet ordre :
       configuré et l'écran le dira. C'est un état cohérent, pas une panne --
       posez la clé (openssl rand -hex 32) quand vous voudrez les pipelines.
 {{- end }}
-{{- if not .Values.backend.env.encryptKey }}
-
-  ⚠️  backend.env.encryptKey est vide : les identifiants d'intégration sont
-      chiffrés avec cette clé (openssl rand -base64 32). Sans elle, aucune
-      intégration ne peut être enregistrée.
-{{- end }}
 
 {{- if eq (toString .Values.postgres.password) "change-me" }}
 
