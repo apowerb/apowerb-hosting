@@ -32,6 +32,12 @@ image:
     repository: apowerb/th2pulse
     tag: 0.1.4
     pullPolicy: IfNotPresent
+  # Forecasting engine (Chronos-2 + statsforecast), published per release of
+  # apowerb/th2forecast. Only pulled when th2forecast.enabled=true.
+  th2forecast:
+    repository: apowerb/th2forecast-py
+    tag: 0.1.0
+    pullPolicy: IfNotPresent
   otelCollector:
     repository: otel/opentelemetry-collector-contrib
     tag: 0.159.0
@@ -59,6 +65,9 @@ service:
   th2pulse:
     type: ClusterIP
     port: 4319
+  th2forecast:
+    type: ClusterIP
+    port: 8000
 
 # PostgreSQL lives INSIDE the cluster, deliberately (David, 08/09/26): the
 # chart must install identically anywhere, not only at a host that offers
@@ -285,6 +294,45 @@ th2pulse:
       memory: 512Mi
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Forecasting engine (th2forecast): what POST /api/v1/forecast calls.
+# DISABLED by default, unlike th2etl and th2pulse above: it is an optional
+# feature and needs an API token shared with the backend. Image:
+# apowerb/th2forecast-py, pinned under image.th2forecast.
+# ─────────────────────────────────────────────────────────────────────────────
+th2forecast:
+  enabled: false
+  # `openssl rand -hex 32`. Not required to start the engine -- empty, it
+  # accepts unauthenticated requests, reachable only from the cluster's
+  # internal network -- but _validate.tpl makes it mandatory as soon as
+  # enabled=true: the backend and the engine must carry the same value, and a
+  # token missing on both sides reads too easily as an oversight.
+  apiToken: ""
+  # Backend-side overall timeout (th2forecast_client), in seconds.
+  timeoutS: 300
+  # Engine settings, all optional -- empty, the image defaults apply (2
+  # workers, weights loaded at startup, limits of 100000 rows / 200 series /
+  # 366 days, 1 statsforecast job, one thread per core).
+  engine:
+    workers: ""
+    preload: ""
+    maxRows: ""
+    maxSeries: ""
+    maxHorizon: ""
+    sfJobs: ""
+    torchThreads: ""
+  # Measured on 28/09/26, local image, one job at a time (TH2FORECAST_WORKERS
+  # default = 2 threads, same process): 316 MiB at rest once Chronos-2 is
+  # loaded, 404 MiB peak during an `auto` run on 20 monthly series x 24
+  # points. Request = rest x1.6; limit = peak x3.8, because two concurrent
+  # jobs (2 workers) were not measured and CPU torch remains the main cost.
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: "2"
+      memory: 1536Mi
+
 # OpenTelemetry collector: the backend sends it traces and logs, and it pushes
 # them into th2pulse. Without it, OTEL_EXPORTER_OTLP_ENDPOINT stays empty and
 # the Logging screen reports "not configured yet".

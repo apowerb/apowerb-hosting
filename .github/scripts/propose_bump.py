@@ -61,6 +61,10 @@ K8S_DIR = pathlib.Path("k8s")
 IMAGES = [
     ("APOWERB_BACKEND_TAG", "apowerb/apowerb", "apowerb/apowerb"),
     ("APOWERB_FRONTEND_TAG", "apowerb/apowerb-ui", "apowerb/apowerb-ui"),
+    # Forecasting engine: image published per release of apowerb/th2forecast
+    # (apowerb/th2forecast#14). Not in the Hostman compose; followed in the
+    # chart and the quickstart.
+    ("TH2FORECAST_TAG", "apowerb/th2forecast", "apowerb/th2forecast-py"),
 ]
 
 

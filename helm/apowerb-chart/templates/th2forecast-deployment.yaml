@@ -1,0 +1,56 @@
+{{- if .Values.th2forecast.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "apowerb.th2forecast.fullname" . }}
+  namespace: {{ include "apowerb.namespace" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "apowerb.name" . }}
+    app.kubernetes.io/component: th2forecast
+spec:
+  # Jobs live in the pod's memory (ThreadPoolExecutor, no shared queue): two
+  # replicas would not share their running jobs, so a follow-up request
+  # (GET /v1/jobs/{id}) landing on the other pod would answer "not found". An
+  # HPA is not an option while that holds.
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "apowerb.name" . }}
+      app.kubernetes.io/component: th2forecast
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "apowerb.name" . }}
+        app.kubernetes.io/component: th2forecast
+    spec:
+      containers:
+        - name: th2forecast
+          image: "{{ .Values.image.th2forecast.repository }}:{{ .Values.image.th2forecast.tag }}"
+          imagePullPolicy: {{ .Values.image.th2forecast.pullPolicy }}
+          ports:
+            - containerPort: 8000
+          env:
+            {{- include "apowerb.th2forecast.env" . | nindent 12 }}
+          resources:
+            {{- toYaml .Values.th2forecast.resources | nindent 12 }}
+          # Chronos-2 loads at startup (TH2FORECAST_PRELOAD default) before
+          # /health answers: measured 28/09/26, local image, 4.6 s from
+          # container start to the first /health 200. The ceiling below
+          # (180 s) leaves a wide margin for a slower node or a cold pull.
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            periodSeconds: 5
+            failureThreshold: 36
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            periodSeconds: 15
+{{- end }}

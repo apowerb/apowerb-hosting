@@ -31,4 +31,12 @@ says "store unreachable" with nothing naming the cause.
 {{- if and (gt (int .Values.replicaCount) 1) .Values.persistence.enabled (has "ReadWriteOnce" .Values.persistence.accessModes) }}
 {{- fail "replicaCount > 1 with a ReadWriteOnce volume: the PVC mounts on a single node, so the second replica stays stuck on Multi-Attach. Keep replicaCount=1, switch persistence.accessModes to ReadWriteMany (with a compatible storage class), or set persistence.enabled=false." -}}
 {{- end }}
+{{- if .Values.th2forecast.enabled }}
+{{- if not .Values.image.th2forecast.tag }}
+{{- fail "th2forecast.enabled=true with an empty image.th2forecast.tag: set the tag of a published apowerb/th2forecast-py release (or of an image you built yourself), or set th2forecast.enabled=false." -}}
+{{- end }}
+{{- if not .Values.th2forecast.apiToken }}
+{{- fail "th2forecast.enabled=true without th2forecast.apiToken: set it (openssl rand -hex 32) or set th2forecast.enabled=false. Without it the engine would accept any caller reaching the cluster network." -}}
+{{- end }}
+{{- end }}
 {{- end -}}

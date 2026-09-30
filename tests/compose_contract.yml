@@ -146,12 +146,20 @@ settings_not_declared:
       - GMAIL_PUBSUB_TOPIC
 
   - reason: >-
-      th2forecast, core 0.2.38 (apowerb#225). The forecast tool relays to an
-      external R API that this stack neither ships nor starts. With
-      TH2FORECAST_URL empty the client raises Th2forecastNotConfigured and
-      the forecast route answers 503. Declaring the three would put knobs in
-      the panel that point at nothing; exposing forecasting is a product
-      decision, taken when a th2forecast service joins this file.
+      th2forecast, core 0.2.38 (apowerb#225). The forecast tool relays to a
+      th2forecast engine (FastAPI, Chronos-2 + statsforecast) that THIS file
+      -- the Hostman App Platform deployment -- neither ships nor starts.
+      With TH2FORECAST_URL empty the client raises Th2forecastNotConfigured
+      and the forecast route answers 503.
+
+      The self-hosted stack (docker-compose/docker-compose.yml, profile
+      `forecast`) and the Helm chart (th2forecast.enabled) both offer the
+      service now, opt-in and off by default: no apowerb/th2forecast-py image
+      is published yet, so neither installation path turns it on without an
+      operator setting a real tag first. Declaring the three variables HERE
+      would put knobs in the App Platform panel that point at nothing --
+      exposing forecasting on that platform is a separate product decision,
+      taken when a th2forecast service joins THIS file specifically.
     names:
       - TH2FORECAST_URL
       - TH2FORECAST_API_TOKEN

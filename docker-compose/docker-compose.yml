@@ -108,6 +108,14 @@ services:
       # Must equal the th2etl service's API_KEY below. Without it th2etl
       # answers 401 and scheduling stops.
       TH2ETL_API_KEY: ${TH2ETL_API_KEY:-}
+      # Forecasting (profile `forecast`). Empty URL is a deliberate, working
+      # state: the core's th2forecast_client raises Th2forecastNotConfigured
+      # and POST /api/v1/forecast answers 503 rather than calling nowhere.
+      # The profile AND this line, same pattern as th2etl above -- Compose
+      # cannot make an environment depend on a profile.
+      TH2FORECAST_URL: ${TH2FORECAST_URL:-}
+      TH2FORECAST_API_TOKEN: ${TH2FORECAST_API_TOKEN:-}
+      TH2FORECAST_TIMEOUT_S: ${TH2FORECAST_TIMEOUT_S:-300}
     volumes:
       - apowerb-data:/app/data
     ports:
@@ -334,6 +342,53 @@ services:
       th2etl:
         condition: service_healthy
     restart: "no"
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # OPTIONAL — forecasting (Chronos-2 + statsforecast). Off by default.
+  #
+  #   COMPOSE_PROFILES=forecast
+  #   TH2FORECAST_URL=http://th2forecast:8000
+  #
+  # The core's th2forecast_client (apowerb#225, core >= 0.2.38) relays
+  # POST /api/v1/forecast to this service; with TH2FORECAST_URL empty it
+  # raises Th2forecastNotConfigured and the route answers 503, which is why
+  # the profile alone changes nothing without the URL line above.
+  #
+  # The engine image is published per release of apowerb/th2forecast (tags
+  # X.Y.Z, X.Y, latest). TH2FORECAST_TAG defaults to an explicit release, like
+  # the other images here, and bump-images moves it with the chart; set it to
+  # pin another release.
+  th2forecast:
+    profiles: [forecast]
+    image: ${TH2FORECAST_IMAGE:-apowerb/th2forecast-py}:${TH2FORECAST_TAG:-0.1.0}
+    pull_policy: always
+    environment:
+      TH2FORECAST_API_TOKEN: ${TH2FORECAST_API_TOKEN:-}
+      # No engine-tuning knobs here on purpose -- measured 28/09/26: the
+      # engine reads several of them with `int(os.environ.get(NAME, "1"))`,
+      # which only falls back on an ABSENT key. A Compose line written
+      # `NAME: ${NAME:-}` still sets NAME in the container, empty when unset,
+      # and the engine then crashes on `int('')` at import time -- caught
+      # running this exact stack, th2forecast restart-looping on
+      # TH2FORECAST_SF_JOBS. th2etl and th2pulse above expose no such knobs
+      # either. An operator who needs non-default tuning adds a compose
+      # override (see docker-compose/TESTING.md, "On a host that already
+      # runs something", same `!override` mechanism) rather than this file
+      # growing a footgun for every future TH2FORECAST_* the engine reads.
+    # No host port on purpose: only the backend talks to it, over the
+    # internal network -- the whole stack, which is why the token above is
+    # not decoration.
+    healthcheck:
+      # No curl in the image; python is what it runs on, like th2etl/th2pulse.
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      # Chronos-2 loads at startup when TH2FORECAST_PRELOAD is not "0" --
+      # measured 28/09/26, local image: 4.6s from container start to the
+      # first /health 200. Retries below keep wide margin over that.
+      retries: 30
+      start_period: 60s
+    restart: unless-stopped
 
 volumes:
   postgres-data:

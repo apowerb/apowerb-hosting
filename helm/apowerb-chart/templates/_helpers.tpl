@@ -38,6 +38,10 @@ objects.
 {{- printf "%s-th2pulse" (include "apowerb.name" .) -}}
 {{- end -}}
 
+{{- define "apowerb.th2forecast.fullname" -}}
+{{- printf "%s-th2forecast" (include "apowerb.name" .) -}}
+{{- end -}}
+
 {{- define "apowerb.otel.fullname" -}}
 {{- printf "%s-otel-collector" (include "apowerb.name" .) -}}
 {{- end -}}
@@ -83,6 +87,49 @@ seed writing somewhere other than where the orchestrator reads.
     secretKeyRef:
       name: {{ include "apowerb.secretName" . }}
       key: ENCRYPT_KEY
+{{- end -}}
+
+{{/*
+The th2forecast engine environment. TH2FORECAST_API_TOKEN only exists in the
+Secret when a token is set (see secret.yaml) -- `optional: true` lets the pod
+start, but an engine without a token accepts any caller on the cluster
+network, which _validate.tpl refuses as soon as enabled=true.
+*/}}
+{{- define "apowerb.th2forecast.env" -}}
+- name: TH2FORECAST_API_TOKEN
+  valueFrom:
+    secretKeyRef:
+      name: {{ include "apowerb.secretName" . }}
+      key: TH2FORECAST_API_TOKEN
+      optional: true
+{{- if .Values.th2forecast.engine.workers }}
+- name: TH2FORECAST_WORKERS
+  value: {{ .Values.th2forecast.engine.workers | quote }}
+{{- end }}
+{{- if .Values.th2forecast.engine.preload }}
+- name: TH2FORECAST_PRELOAD
+  value: {{ .Values.th2forecast.engine.preload | quote }}
+{{- end }}
+{{- if .Values.th2forecast.engine.maxRows }}
+- name: TH2FORECAST_MAX_ROWS
+  value: {{ .Values.th2forecast.engine.maxRows | quote }}
+{{- end }}
+{{- if .Values.th2forecast.engine.maxSeries }}
+- name: TH2FORECAST_MAX_SERIES
+  value: {{ .Values.th2forecast.engine.maxSeries | quote }}
+{{- end }}
+{{- if .Values.th2forecast.engine.maxHorizon }}
+- name: TH2FORECAST_MAX_HORIZON
+  value: {{ .Values.th2forecast.engine.maxHorizon | quote }}
+{{- end }}
+{{- if .Values.th2forecast.engine.sfJobs }}
+- name: TH2FORECAST_SF_JOBS
+  value: {{ .Values.th2forecast.engine.sfJobs | quote }}
+{{- end }}
+{{- if .Values.th2forecast.engine.torchThreads }}
+- name: TH2FORECAST_TORCH_THREADS
+  value: {{ .Values.th2forecast.engine.torchThreads | quote }}
+{{- end }}
 {{- end -}}
 
 {{/*
