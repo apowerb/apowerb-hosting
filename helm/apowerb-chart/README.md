@@ -22,9 +22,10 @@ Each one is a single switch: `th2etl.enabled`, `th2pulse.enabled`,
 
 ## Install from source
 
-Three secrets have to be generated first. The chart **refuses to install**
-without the two `th2pulse` tokens — that service does not start without them,
-so failing at install is the honest moment to say it.
+Five values have to be generated first. The chart **refuses to install**
+without three of them: `postgres.password`, which has no default on purpose,
+and the two `th2pulse` tokens — that service does not start without them, so
+failing at install is the honest moment to say it.
 
 ```bash
 helm upgrade --install apowerb ./helm/apowerb-chart \
@@ -57,7 +58,22 @@ Le chart est publié sur **Docker Hub**, dans l'organisation d'où sortent déj�
 les images du produit — mais dans un dépôt à lui, `apowerb/apowerb-chart` :
 
 ```bash
-helm install apowerb oci://registry-1.docker.io/apowerb/apowerb-chart --version 0.4.21
+helm upgrade --install apowerb oci://registry-1.docker.io/apowerb/apowerb-chart --version 0.4.21 \
+  --namespace apowerb --create-namespace \
+  --values values-secrets.yaml
+```
+
+`values-secrets.yaml` porte les cinq valeurs ci-dessus ; sans lui,
+l'installation s'arrête sur `postgres.password est vide`.
+
+Les versions publiées à partir de la 0.4.22 sont signées avec cosign, sans
+clé, par le workflow de publication. Pour vérifier qu'un chart vient bien de ce
+dépôt :
+
+```bash
+cosign verify registry-1.docker.io/apowerb/apowerb-chart:0.4.22 \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+  --certificate-identity-regexp '^https://github.com/apowerb/apowerb-hosting/\.github/workflows/publish-dockerhub-helm\.yml@'
 ```
 
 > **Upgrade vers 0.4.21 depuis une install existante : vérifier où vit la
@@ -112,10 +128,11 @@ helm upgrade --install apowerb ./helm/apowerb-chart \
   --set th2etl.enabled=false \
   --set th2pulse.enabled=false \
   --set otelCollector.enabled=false \
-  --set backend.env.encryptKey="$(openssl rand -base64 32)"
+  --set backend.env.encryptKey="$(openssl rand -base64 32)" \
+  --set postgres.password="$(openssl rand -hex 16)"
 ```
 
-Seven objects instead of sixteen. The interface then says which features are
+Eight objects instead of sixteen. The interface then says which features are
 not configured rather than failing on them — that is the point of
 `GET /api/config/setup` and of the **Admin → Configuration** screen.
 
