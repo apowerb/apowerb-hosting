@@ -8,7 +8,7 @@ metadata:
     app.kubernetes.io/name: {{ include "apowerb.name" . }}
     app.kubernetes.io/component: th2forecast
 spec:
-  # Jamais expose au dehors : seul le backend l'appelle, avec son jeton.
+  # Never exposed outside: only the backend calls it, with its token.
   type: ClusterIP
   selector:
     app.kubernetes.io/name: {{ include "apowerb.name" . }}

@@ -32,14 +32,11 @@ image:
     repository: apowerb/th2pulse
     tag: 0.1.4
     pullPolicy: IfNotPresent
-  # Forecasting engine (Chronos-2 + statsforecast). No image is published on
-  # Docker Hub yet: no semver tag cut in the engine repository, no
-  # apowerb/th2forecast-py push. The tag therefore stays EMPTY rather than
-  # inventing a number -- see th2forecast.enabled and _validate.tpl, which
-  # refuses the install when enabled without a tag.
+  # Forecasting engine (Chronos-2 + statsforecast), published per release of
+  # apowerb/th2forecast. Only pulled when th2forecast.enabled=true.
   th2forecast:
     repository: apowerb/th2forecast-py
-    tag: ""
+    tag: 0.1.0
     pullPolicy: IfNotPresent
   otelCollector:
     repository: otel/opentelemetry-collector-contrib

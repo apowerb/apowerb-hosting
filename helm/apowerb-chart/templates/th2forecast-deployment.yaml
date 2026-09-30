@@ -8,11 +8,10 @@ metadata:
     app.kubernetes.io/name: {{ include "apowerb.name" . }}
     app.kubernetes.io/component: th2forecast
 spec:
-  # Les jobs vivent dans la memoire du pod (ThreadPoolExecutor, pas de file
-  # partagee) : deux repliques ne partageraient pas leurs jobs en cours, donc
-  # une requete de suivi (GET /v1/jobs/{id}) qui retombe sur l'autre pod
-  # repondrait "introuvable". Le HPA n'est pas une option tant que ca reste
-  # vrai.
+  # Jobs live in the pod's memory (ThreadPoolExecutor, no shared queue): two
+  # replicas would not share their running jobs, so a follow-up request
+  # (GET /v1/jobs/{id}) landing on the other pod would answer "not found". An
+  # HPA is not an option while that holds.
   replicas: 1
   selector:
     matchLabels:
@@ -34,11 +33,10 @@ spec:
             {{- include "apowerb.th2forecast.env" . | nindent 12 }}
           resources:
             {{- toYaml .Values.th2forecast.resources | nindent 12 }}
-          # Chronos-2 se charge au demarrage (TH2FORECAST_PRELOAD par defaut)
-          # avant que /health reponde : mesure du 28/09/26, image locale,
-          # 4.6 s du demarrage du conteneur au premier /health 200. Le plafond
-          # ci-dessous (180 s) laisse une marge large pour un noeud plus lent
-          # ou une image tiree a froid.
+          # Chronos-2 loads at startup (TH2FORECAST_PRELOAD default) before
+          # /health answers: measured 28/09/26, local image, 4.6 s from
+          # container start to the first /health 200. The ceiling below
+          # (180 s) leaves a wide margin for a slower node or a cold pull.
           startupProbe:
             httpGet:
               path: /health

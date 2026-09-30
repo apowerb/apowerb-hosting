@@ -10,7 +10,7 @@ stack already ran, plus a volume for what the backend writes to disk.
 | `th2etl` + seed **Job** | yes | scheduled pipelines. Without an API key the backend reports orchestration as *not configured* and the screen says so |
 | `th2pulse` | yes | the log and trace store the Logging screen reads |
 | `otel-collector` | yes | ships the backend's traces and logs into `th2pulse` |
-| `th2forecast` | **no** | the forecasting engine (Chronos-2 + statsforecast) `POST /api/v1/forecast` relays to. No `apowerb/th2forecast-py` image is published yet, so `_validate.tpl` refuses the install if you set `th2forecast.enabled=true` without also setting `image.th2forecast.tag` to one you built or published yourself |
+| `th2forecast` | **no** | the forecasting engine (Chronos-2 + statsforecast) `POST /api/v1/forecast` relays to. Image `apowerb/th2forecast-py`, published per release of `apowerb/th2forecast` and pinned in `image.th2forecast.tag`; enabling it requires `th2forecast.apiToken` |
 | `PersistentVolumeClaim` | yes | BI uploads, agent uploads, artifacts (`RUNTIME_ROOT=/data`) |
 
 Each one is a single switch: `th2etl.enabled`, `th2pulse.enabled`,

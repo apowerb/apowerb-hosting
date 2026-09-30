@@ -156,6 +156,32 @@
             }
           }
         },
+        "th2forecast": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "repository": {
+              "type": [
+                "string",
+                "number"
+              ]
+            },
+            "tag": {
+              "type": [
+                "string",
+                "number"
+              ]
+            },
+            "pullPolicy": {
+              "type": "string",
+              "enum": [
+                "Always",
+                "IfNotPresent",
+                "Never"
+              ]
+            }
+          }
+        },
         "otelCollector": {
           "type": "object",
           "additionalProperties": true,
@@ -990,6 +1016,121 @@
         }
       },
       "description": "Log and trace store (th2pulse): what the Logging screen reads. It shares apowerb's database, in a schema of its own."
+    },
+    "th2forecast": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "apiToken": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "description": "Mandatory when enabled: shared by the backend and the engine. `openssl rand -hex 32`."
+        },
+        "timeoutS": {
+          "type": [
+            "integer",
+            "string"
+          ],
+          "description": "Backend-side overall timeout (th2forecast_client), in seconds."
+        },
+        "engine": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Engine settings, all optional: empty, the image defaults apply.",
+          "properties": {
+            "workers": {
+              "type": [
+                "string",
+                "number"
+              ]
+            },
+            "preload": {
+              "type": [
+                "string",
+                "number"
+              ]
+            },
+            "maxRows": {
+              "type": [
+                "string",
+                "number"
+              ]
+            },
+            "maxSeries": {
+              "type": [
+                "string",
+                "number"
+              ]
+            },
+            "maxHorizon": {
+              "type": [
+                "string",
+                "number"
+              ]
+            },
+            "sfJobs": {
+              "type": [
+                "string",
+                "number"
+              ]
+            },
+            "torchThreads": {
+              "type": [
+                "string",
+                "number"
+              ]
+            }
+          }
+        },
+        "resources": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "requests": {
+              "type": "object",
+              "additionalProperties": true,
+              "properties": {
+                "cpu": {
+                  "type": [
+                    "string",
+                    "number"
+                  ]
+                },
+                "memory": {
+                  "type": [
+                    "string",
+                    "number"
+                  ]
+                }
+              }
+            },
+            "limits": {
+              "type": "object",
+              "additionalProperties": true,
+              "properties": {
+                "cpu": {
+                  "type": [
+                    "string",
+                    "number"
+                  ]
+                },
+                "memory": {
+                  "type": [
+                    "string",
+                    "number"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "description": "Forecasting engine (th2forecast, Chronos-2 + statsforecast): what POST /api/v1/forecast calls. Disabled by default."
     },
     "otelCollector": {
       "type": "object",

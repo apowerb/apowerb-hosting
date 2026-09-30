@@ -126,3 +126,24 @@ def test_rien_a_proposer_ne_touche_a_rien(depot, monkeypatch):
 
     assert {nom: _lire(racine, nom) for nom in FICHIERS} == avant
     assert not (racine / "bump-body.md").exists()
+
+
+def test_le_moteur_de_prevision_suit_sa_release(depot, monkeypatch):
+    """th2forecast publishes its images per release (apowerb/th2forecast#14):
+    a newer release must reach the chart and the quickstart, without touching
+    the core or the interface."""
+    racine, module = depot
+    monkeypatch.setattr(
+        module, "derniere_release",
+        lambda repo, token: NEUVE if repo == "apowerb/th2forecast" else "0.0.1",
+    )
+    k8s_avant = {nom: _lire(racine, nom) for nom in FICHIERS if nom.startswith("k8s/")}
+
+    assert module.main() == 0
+
+    assert f"TH2FORECAST_TAG:-{NEUVE}}}" in _lire(racine, "docker-compose/docker-compose.yml")
+    values = _lire(racine, "helm/apowerb-chart/values.yaml")
+    assert module.tag_du_chart(values, "apowerb/th2forecast-py") == NEUVE
+    assert module.tag_du_chart(values, "apowerb/apowerb") != NEUVE
+    assert f"APOWERB_BACKEND_TAG:-{NEUVE}}}" not in _lire(racine, "docker-compose.yml")
+    assert {nom: _lire(racine, nom) for nom in k8s_avant} == k8s_avant

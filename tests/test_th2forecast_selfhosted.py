@@ -1,11 +1,10 @@
 """Contract for th2forecast as an opt-in service of the self-hosted stack
 and the Helm chart.
 
-th2forecast (Chronos-2 + statsforecast) has no published image yet
-(apowerb/th2forecast-py does not exist on Docker Hub, no semver tag cut in
-the engine repo). This test proves the service is wired OFF by default in
-both installation paths, and that turning it on cannot silently point at a
-version nobody published.
+th2forecast (Chronos-2 + statsforecast) publishes apowerb/th2forecast-py per
+release (apowerb/th2forecast#14, first release 0.1.0). This test proves the
+service is wired OFF by default in both installation paths, and that both
+paths pin the same explicit release -- never `latest`, never a commit SHA.
 
 Root docker-compose.yml (Hostman App Platform) is untouched on purpose --
 see tests/compose_contract.yml, the th2forecast exclusion entry.
@@ -48,18 +47,22 @@ def test_th2forecast_publishes_no_host_port():
     assert not service.get("ports"), "th2forecast must not publish a host port -- only the backend talks to it"
 
 
-def test_th2forecast_image_tag_is_not_an_invented_version():
+def _compose_tag_default() -> str:
     import re
 
-    service = _compose()["services"]["th2forecast"]
-    image = service["image"]
+    image = _compose()["services"]["th2forecast"]["image"]
     match = re.search(r"\$\{TH2FORECAST_TAG:-([^}]*)\}", image)
     assert match, f"TH2FORECAST_TAG default not found in {image!r}"
-    default_tag = match.group(1)
-    # No image on Docker Hub yet -- refuse a fabricated semver default.
-    assert not any(ch.isdigit() for ch in default_tag), (
-        f"th2forecast image default looks like an invented version tag: {default_tag!r}"
-    )
+    return match.group(1)
+
+
+def test_th2forecast_image_tag_is_an_explicit_release():
+    import re
+
+    # A release version (X.Y.Z), as published by the engine's release
+    # workflow. `latest` would hide which engine runs; a SHA tag is no longer
+    # published since per-release tagging.
+    assert re.fullmatch(r"\d+\.\d+\.\d+", _compose_tag_default())
 
 
 def test_th2forecast_api_token_uses_soft_fallback_not_hard_required():
@@ -101,11 +104,10 @@ def test_helm_th2forecast_disabled_by_default():
     assert values["th2forecast"]["enabled"] is False
 
 
-def test_helm_th2forecast_image_tag_default_is_empty():
-    values = _values()
-    # No published image: the chart must not invent a tag either. An empty
-    # default forces _validate.tpl to fail loudly if enabled without one.
-    assert values["image"]["th2forecast"]["tag"] == ""
+def test_helm_th2forecast_image_tag_matches_compose():
+    # One engine version per chart release: both installation paths pin the
+    # same tag, and bump-images moves them together.
+    assert str(_values()["image"]["th2forecast"]["tag"]) == _compose_tag_default()
 
 
 def test_helm_validate_fails_when_enabled_without_tag():

@@ -348,26 +348,19 @@ services:
   #
   #   COMPOSE_PROFILES=forecast
   #   TH2FORECAST_URL=http://th2forecast:8000
-  #   TH2FORECAST_TAG=<a published apowerb/th2forecast-py tag>
   #
   # The core's th2forecast_client (apowerb#225, core >= 0.2.38) relays
   # POST /api/v1/forecast to this service; with TH2FORECAST_URL empty it
   # raises Th2forecastNotConfigured and the route answers 503, which is why
   # the profile alone changes nothing without the URL line above.
   #
-  # apowerb/th2forecast-py does NOT exist on Docker Hub yet: no image has
-  # been published, no semver tag cut in the engine repository. Inventing a
-  # default tag here would point a freshly-enabled profile at a version that
-  # cannot be pulled. TH2FORECAST_TAG therefore defaults to the placeholder
-  # below -- `docker compose --profile forecast pull` fails on it with
-  # "manifest unknown", which is the intended signal to set a real tag once
-  # one is published, not a version guess dressed up as one. Kept `:-`, not
-  # `:?`: Compose interpolates the whole file before it looks at profiles, so
-  # a `:?` here would abort `docker compose config` for every installation,
-  # profile off included -- see TH2ETL_API_KEY's note above.
+  # The engine image is published per release of apowerb/th2forecast (tags
+  # X.Y.Z, X.Y, latest). TH2FORECAST_TAG defaults to an explicit release, like
+  # the other images here, and bump-images moves it with the chart; set it to
+  # pin another release.
   th2forecast:
     profiles: [forecast]
-    image: ${TH2FORECAST_IMAGE:-apowerb/th2forecast-py}:${TH2FORECAST_TAG:-unpublished}
+    image: ${TH2FORECAST_IMAGE:-apowerb/th2forecast-py}:${TH2FORECAST_TAG:-0.1.0}
     pull_policy: always
     environment:
       TH2FORECAST_API_TOKEN: ${TH2FORECAST_API_TOKEN:-}
