@@ -37,6 +37,32 @@ entries:
   apowerb-chart:
   - annotations:
       artifacthub.io/changes: |
+        - kind: added
+          description: optional th2forecast forecasting engine (th2forecast.enabled, disabled by default), pinned to release 0.1.0
+          links:
+            - name: apowerb-hosting#76
+              url: https://github.com/apowerb/apowerb-hosting/pull/76
+        - kind: changed
+          description: install-time error messages, post-install notes, values comments and schema descriptions are now in English
+          links:
+            - name: apowerb-hosting#87
+              url: https://github.com/apowerb/apowerb-hosting/pull/87
+            - name: apowerb-hosting#88
+              url: https://github.com/apowerb/apowerb-hosting/pull/88
+    apiVersion: v2
+    appVersion: 0.2.43
+    created: "2026-09-30T13:04:45.851115095Z"
+    description: apowerb, its interface, PostgreSQL, the th2etl orchestrator, the
+      th2pulse log store, an optional th2forecast forecasting engine and an OpenTelemetry
+      collector
+    digest: 880d70512947ac2a784d29736e856fbd4da6748f6af5ca8afa47987681b9ded1
+    name: apowerb-chart
+    type: application
+    urls:
+    - https://github.com/apowerb/apowerb-hosting/releases/download/apowerb-chart-0.4.23/apowerb-chart-0.4.23.tgz
+    version: 0.4.23
+  - annotations:
+      artifacthub.io/changes: |
         - kind: changed
           description: install fails when backend.env.encryptKey is empty -- the backend refuses to start without it
           links:
@@ -286,4 +312,4 @@ entries:
     urls:
     - https://github.com/apowerb/apowerb-hosting/releases/download/apowerb-chart-0.4.1/apowerb-chart-0.4.1.tgz
     version: 0.4.1
-generated: "2026-09-30T10:26:23.624318527Z"
+generated: "2026-09-30T13:04:45.851199592Z"
