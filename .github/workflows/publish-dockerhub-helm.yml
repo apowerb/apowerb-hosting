@@ -24,9 +24,9 @@ on:
 
 permissions:
   contents: read
-  # Signature cosign sans clé : GitHub remet au job un jeton OIDC, que Sigstore
-  # échange contre un certificat éphémère au nom de CE workflow. Aucune clé à
-  # stocker ni à faire tourner.
+  # Keyless cosign signing: GitHub hands the job an OIDC token, which Sigstore
+  # exchanges for a short-lived certificate issued to THIS workflow. No key to
+  # store or rotate.
   id-token: write
 
 jobs:
@@ -119,20 +119,20 @@ jobs:
           CHART_NAME="$(helm show chart ./helm/apowerb-chart | awk '/^name:/{print $2}')"
           CHART_TGZ="${CHART_NAME}-${VERSION}.tgz"
           helm push "$CHART_TGZ" "oci://registry-1.docker.io/apowerb" 2>&1 | tee push.log
-          # On signe l'empreinte que le push vient de produire, pas le tag : un
-          # tag peut être republié entre les deux étapes, une empreinte non.
+          # Sign the digest this push just produced, not the tag: a tag can be
+          # republished between the two steps, a digest cannot.
           DIGEST="$(sed -n 's/^Digest: //p' push.log)"
           if ! printf '%s' "$DIGEST" | grep -Eq '^sha256:[0-9a-f]{64}$'; then
-            echo "Empreinte introuvable dans la sortie de helm push : rien n'est signé."
+            echo "No digest in the helm push output: nothing is signed."
             exit 1
           fi
           echo "ref=registry-1.docker.io/apowerb/${CHART_NAME}@${DIGEST}" >> "$GITHUB_OUTPUT"
 
-      # Artifact Hub affiche « Signed » quand il trouve une signature cosign sur
-      # le chart OCI (tag `.sig` ou API referrers), lue à l'indexation d'une
-      # NOUVELLE version : une version déjà indexée n'est pas réexaminée.
-      # La signature est inscrite dans le registre public Rekor, avec l'identité
-      # de ce workflow. Vérification : voir helm/apowerb-chart/README.md.
+      # Artifact Hub shows "Signed" when it finds a cosign signature on the OCI
+      # chart (`.sig` tag or referrers API), read when a NEW version is
+      # indexed: a version already indexed is not re-examined.
+      # The signature is recorded in the public Rekor log, with this
+      # workflow's identity. Verification: see helm/apowerb-chart/README.md.
       - name: Sign chart with cosign (keyless)
         env:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
