@@ -63,7 +63,7 @@ Ce qu'il reste à vérifier, dans cet ordre :
       intégration ne peut être enregistrée.
 {{- end }}
 
-{{- if eq .Values.postgres.password "change-me" }}
+{{- if eq (toString .Values.postgres.password) "change-me" }}
 
   ⚠️  postgres.password vaut `change-me`. Le chart ne le livre plus, mais
       cette valeur traîne dans les anciens guides : elle est connue de tous,
