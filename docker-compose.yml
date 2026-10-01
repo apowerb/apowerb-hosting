@@ -120,7 +120,7 @@ services:
     # time. And the `/legal` page leaves the core: it served the publisher's
     # full legal notice -- company registration, head office,
     # jurisdiction -- from the domain of whoever installs.
-    image: ${APOWERB_FRONTEND_IMAGE:-apowerb/apowerb-ui}:${APOWERB_FRONTEND_TAG:-0.1.33}
+    image: ${APOWERB_FRONTEND_IMAGE:-apowerb/apowerb-ui}:${APOWERB_FRONTEND_TAG:-0.1.34}
     pull_policy: always
     environment:
       # Server-side only, read at runtime by the route handlers.
@@ -191,7 +191,7 @@ services:
     # returns the code the interface can read instead of a bare sentence.
     # Verified INSIDE the published image and not from the version number:
     # caps 1000000/20000000/24 and `_core_token_cap` present.
-    image: ${APOWERB_BACKEND_IMAGE:-apowerb/apowerb}:${APOWERB_BACKEND_TAG:-0.2.43}
+    image: ${APOWERB_BACKEND_IMAGE:-apowerb/apowerb}:${APOWERB_BACKEND_TAG:-0.2.53}
     pull_policy: always
     environment:
       # ── Managed cluster (Hostman > Databases), not a service of this stack ──
