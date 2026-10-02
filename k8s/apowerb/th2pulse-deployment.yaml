@@ -1,0 +1,89 @@
+# GENERATED from helm/apowerb-chart by .github/scripts/render_k8s_manifests.py
+# -- do not edit: change the chart, then re-run the script.
+---
+# Source: apowerb-chart/templates/th2pulse-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: apowerb-th2pulse
+  namespace: apowerb
+  labels:
+    app.kubernetes.io/name: apowerb
+    app.kubernetes.io/component: th2pulse
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: apowerb
+      app.kubernetes.io/component: th2pulse
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: apowerb
+        app.kubernetes.io/component: th2pulse
+    spec:
+      initContainers:
+        - name: wait-for-postgres
+          image: "postgres:16-alpine"
+          imagePullPolicy: IfNotPresent
+          command:
+            - sh
+            - -c
+            - |
+              until pg_isready -h apowerb-postgres -p 5432; do
+                echo "en attente de Postgres..."; sleep 2;
+              done
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 50m
+              memory: 64Mi
+      containers:
+        - name: th2pulse
+          image: "apowerb/th2pulse:0.1.4"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 4319
+          env:
+            # The log store shares apowerb's database, in a schema of its
+            # own: nothing more to provision, and nothing to mix up.
+            - name: TH2PULSE_DB_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: apowerb-secrets
+                  key: TH2PULSE_DB_DSN
+            - name: TH2PULSE_DB_SCHEMA
+              value: "th2pulse"
+            # Both tokens are required at startup: without them the service
+            # refuses to start, there is no "no token" mode.
+            - name: TH2PULSE_INGEST_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: apowerb-secrets
+                  key: TH2PULSE_INGEST_TOKEN
+            - name: TH2PULSE_QUERY_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: apowerb-secrets
+                  key: TH2PULSE_QUERY_TOKEN
+          resources:
+            limits:
+              cpu: 500m
+              memory: 512Mi
+            requests:
+              cpu: 100m
+              memory: 256Mi
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 4319
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 4319
+            initialDelaySeconds: 30
+            periodSeconds: 15

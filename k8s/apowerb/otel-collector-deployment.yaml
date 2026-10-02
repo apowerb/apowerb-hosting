@@ -1,0 +1,60 @@
+# GENERATED from helm/apowerb-chart by .github/scripts/render_k8s_manifests.py
+# -- do not edit: change the chart, then re-run the script.
+---
+# Source: apowerb-chart/templates/otel-collector-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: apowerb-otel-collector
+  namespace: apowerb
+  labels:
+    app.kubernetes.io/name: apowerb
+    app.kubernetes.io/component: otel-collector
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: apowerb
+      app.kubernetes.io/component: otel-collector
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: apowerb
+        app.kubernetes.io/component: otel-collector
+      annotations:
+        # A changed configuration must restart the collector: without this
+        # checksum, `helm upgrade` rewrites the ConfigMap and the pod keeps
+        # running with the old one -- a configuration on disk does not prove
+        # it was loaded.
+        checksum/config: 74954a73480d0354bfc1328fd0f6be89eb5309f251d39b8768cb224a59746d7e
+    spec:
+      containers:
+        - name: otel-collector
+          image: "otel/opentelemetry-collector-contrib:0.159.0"
+          imagePullPolicy: IfNotPresent
+          args: ["--config=/conf/config.yaml"]
+          ports:
+            - name: otlp-http
+              containerPort: 4318
+            - name: otlp-grpc
+              containerPort: 4317
+          env:
+            - name: TH2PULSE_INGEST_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: apowerb-secrets
+                  key: TH2PULSE_INGEST_TOKEN
+          volumeMounts:
+            - name: config
+              mountPath: /conf
+          resources:
+            limits:
+              cpu: 300m
+              memory: 256Mi
+            requests:
+              cpu: 50m
+              memory: 128Mi
+      volumes:
+        - name: config
+          configMap:
+            name: apowerb-otel-collector

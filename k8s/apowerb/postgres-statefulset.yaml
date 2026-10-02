@@ -1,34 +1,32 @@
-apiVersion: v1
-kind: Service
-metadata:
-  name: apowerb-postgres
-  namespace: apowerb
-spec:
-  selector:
-    app: apowerb-postgres
-  ports:
-    - name: postgres
-      port: 5432
-      targetPort: 5432
+# GENERATED from helm/apowerb-chart by .github/scripts/render_k8s_manifests.py
+# -- do not edit: change the chart, then re-run the script.
 ---
+# Source: apowerb-chart/templates/postgres-statefulset.yaml
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: apowerb-postgres
   namespace: apowerb
+  labels:
+    app.kubernetes.io/name: apowerb
+    app.kubernetes.io/component: postgres
 spec:
   serviceName: apowerb-postgres
+  replicas: 1
   selector:
     matchLabels:
-      app: apowerb-postgres
+      app.kubernetes.io/name: apowerb
+      app.kubernetes.io/component: postgres
   template:
     metadata:
       labels:
-        app: apowerb-postgres
+        app.kubernetes.io/name: apowerb
+        app.kubernetes.io/component: postgres
     spec:
       containers:
         - name: postgres
-          image: postgres:16-alpine
+          image: "postgres:16-alpine"
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 5432
           env:
@@ -47,6 +45,13 @@ spec:
                 secretKeyRef:
                   name: apowerb-secrets
                   key: DB_PASSWORD
+            # The PVC is mounted on /var/lib/postgresql/data; on an ext4
+            # volume (OVH Cinder and most block-storage CSI drivers) its root
+            # contains a lost+found, and `initdb` refuses to write into a
+            # non-empty directory. So we target a subdirectory, as the initdb
+            # hint recommends, so that the first start succeeds everywhere.
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
           resources:
             requests:
               cpu: 100m
@@ -57,6 +62,14 @@ spec:
           volumeMounts:
             - name: postgres-data
               mountPath: /var/lib/postgresql/data
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"
+            initialDelaySeconds: 10
+            periodSeconds: 10
   volumeClaimTemplates:
     - metadata:
         name: postgres-data

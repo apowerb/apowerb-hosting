@@ -44,6 +44,14 @@ jobs:
           echo "ouverte=$n" >> "$GITHUB_OUTPUT"
           [ "$n" = "0" ] || echo "A bump PR is already open: nothing to do."
 
+      # The plain manifests in k8s/ are rendered from the chart: a bump that
+      # moves the chart must move them too, or the k8s-manifests check fails.
+      - name: Install Helm
+        if: steps.deja.outputs.ouverte == '0'
+        uses: azure/setup-helm@v4
+        with:
+          version: v4.0.1
+
       - name: Compare the defaults with the published releases
         if: steps.deja.outputs.ouverte == '0'
         id: comparer
@@ -51,6 +59,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           python .github/scripts/propose_bump.py | tee sortie.txt
+          python .github/scripts/render_k8s_manifests.py
           # BOTH files, otherwise a chart that is behind on its own would
           # trigger no PR -- that is what left it two versions behind the
           # interface until 10/09/26.

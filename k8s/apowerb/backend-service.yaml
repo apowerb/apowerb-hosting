@@ -1,0 +1,21 @@
+# GENERATED from helm/apowerb-chart by .github/scripts/render_k8s_manifests.py
+# -- do not edit: change the chart, then re-run the script.
+---
+# Source: apowerb-chart/templates/backend-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: apowerb-backend
+  namespace: apowerb
+  labels:
+    app.kubernetes.io/name: apowerb
+    app.kubernetes.io/component: backend
+spec:
+  selector:
+    app.kubernetes.io/name: apowerb
+    app.kubernetes.io/component: backend
+  ports:
+    - name: http
+      port: 8000
+      targetPort: 8000
+      protocol: TCP

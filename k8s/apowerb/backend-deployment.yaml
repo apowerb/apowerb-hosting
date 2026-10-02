@@ -1,0 +1,218 @@
+# GENERATED from helm/apowerb-chart by .github/scripts/render_k8s_manifests.py
+# -- do not edit: change the chart, then re-run the script.
+---
+# Source: apowerb-chart/templates/backend-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: apowerb-backend
+  namespace: apowerb
+  labels:
+    app.kubernetes.io/name: apowerb
+    app.kubernetes.io/component: backend
+spec:
+  replicas: 1
+  # The backend mounts the `/data` PVC as ReadWriteOnce: only one node can
+  # attach it. With the default RollingUpdate strategy, an upgrade creates the
+  # new pod before killing the old one; if it lands on another node, it stays
+  # stuck in "Multi-Attach error" until the volume detaches (several minutes),
+  # and two backends can hit the database during the overlap. Recreate stops
+  # the old pod before starting the new one: no volume conflict, a clean
+  # cut-over.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: apowerb
+      app.kubernetes.io/component: backend
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: apowerb
+        app.kubernetes.io/component: backend
+    spec:
+      initContainers:
+        - name: wait-for-postgres
+          image: "postgres:16-alpine"
+          imagePullPolicy: IfNotPresent
+          command:
+            - sh
+            - -c
+            - |
+              until pg_isready -h apowerb-postgres -p 5432; do
+                echo "en attente de Postgres..."; sleep 2;
+              done
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 50m
+              memory: 64Mi
+      containers:
+        - name: backend
+          image: "apowerb/apowerb:0.2.43"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+          env:
+            - name: DB_HOST
+              value: apowerb-postgres
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: apowerb-secrets
+                  key: DB_NAME
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: apowerb-secrets
+                  key: DB_USER
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: apowerb-secrets
+                  key: DB_PASSWORD
+            - name: DB_SSLMODE
+              value: "disable"
+            - name: ENCRYPT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: apowerb-secrets
+                  key: ENCRYPT_KEY
+            - name: TEST_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: apowerb-secrets
+                  key: TEST_TOKEN
+            - name: WORKING_MODE
+              value: "development"
+            # A single root for everything the backend writes to disk:
+            # `bi_store`, `uploads`, `artifacts_store` and `agents_pool` are
+            # all under it. The variable is named RUNTIME_ROOT -- measured
+            # against the package; the docstring of `configs/paths.py` still
+            # says TH2AGENT_RUNTIME_ROOT, which does nothing.
+            - name: RUNTIME_ROOT
+              value: "/data"
+            # The core picks its orchestration client through ORCHESTRATOR,
+            # whose default is "mage". Address and key are therefore not
+            # enough: without this line, the backend calls a Mage that does not
+            # exist. Measured on the demo on 08/09 -- the Orchestrator screen
+            # stayed empty with a perfectly healthy th2etl next to it.
+            - name: ORCHESTRATOR
+              value: "th2etl"
+            - name: TH2ETL_BASE_URL
+              value: "http://apowerb-th2etl:8000"
+            - name: TH2ETL_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: apowerb-secrets
+                  key: TH2ETL_API_KEY
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "http://apowerb-otel-collector:4318"
+            - name: OTEL_SERVICE_NAME
+              value: "apowerb"
+            - name: OTEL_METRICS_EXPORTER
+              value: "none"
+
+            
+            # The core's default is "S3"; the root compose file's is "local".
+            # The chart follows the compose file, otherwise an installation
+            # without S3 credentials believes it is on S3 until the first
+            # upload.
+            - name: STORAGE_MODE
+              value: "local"
+
+            
+            - name: DEFAULT_LLM_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: apowerb-secrets
+                  key: DEFAULT_LLM_API_KEY
+                  optional: true
+            - name: DEFAULT_SUPERADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: apowerb-secrets
+                  key: DEFAULT_SUPERADMIN_PASSWORD
+                  optional: true
+            - name: GOOGLE_INTEGRATION_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: apowerb-secrets
+                  key: GOOGLE_INTEGRATION_CLIENT_SECRET
+                  optional: true
+            - name: MICROSOFT_INTEGRATION_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: apowerb-secrets
+                  key: MICROSOFT_INTEGRATION_CLIENT_SECRET
+                  optional: true
+            - name: RAG_WEBHOOK_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: apowerb-secrets
+                  key: RAG_WEBHOOK_SECRET
+                  optional: true
+            - name: S3_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: apowerb-secrets
+                  key: S3_ACCESS_KEY
+                  optional: true
+            - name: S3_ACCESS_KEY_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: apowerb-secrets
+                  key: S3_ACCESS_KEY_SECRET
+                  optional: true
+            - name: SMTP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: apowerb-secrets
+                  key: SMTP_PASSWORD
+                  optional: true
+          volumeMounts:
+            - name: data
+              mountPath: "/data"
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          # startupProbe: gives the first start time to finish (migrations +
+          # materialization of the agent pool) without the liveness probe
+          # killing the pod. Until it has succeeded, readiness and liveness
+          # are suspended. 30 × 5 s = up to 150 s of boot tolerated.
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            periodSeconds: 5
+            failureThreshold: 30
+          # readiness on /health/ready: actually checks the database and the
+          # encryption key (Fernet). /health alone returns a static 200 and
+          # would leave a pod "ready" while the database is unreachable --
+          # the pod would receive traffic doomed to fail.
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: 8000
+            periodSeconds: 10
+          # liveness deliberately on /health (not /ready): it must only
+          # check that the process is alive. Wiring it to the database would
+          # restart the backend in a loop during a Postgres outage, without
+          # fixing anything.
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            periodSeconds: 15
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: apowerb-data

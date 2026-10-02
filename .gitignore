@@ -1,3 +1,5 @@
 .env
 __pycache__/
 .pytest_cache/
+# Written by scripts/generate-k8s-secret.sh: real credentials.
+k8s/secret.yaml
