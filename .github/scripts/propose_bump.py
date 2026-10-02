@@ -357,8 +357,8 @@ def main() -> int:
         contenu += (
             "\n> **Companion docs PR to open.** `apowerb/apowerb-docs` cites the "
             f"chart version in its `helm` commands: `--version {avant}` must "
-            f"become `--version {apres}` (`deployment/helmchart.mdx`, "
-            "`deployment/kubernetes.mdx`). The **Do the docs say what this "
+            f"become `--version {apres}` (`deployment/helmchart.mdx`). The "
+            "**Do the docs say what this "
             "repository deploys?** check fails until an open docs PR fixes it, "
             "and `BUMP_TOKEN` has no access to that repository. Merge after "
             "the chart's OCI publication, not before.\n"

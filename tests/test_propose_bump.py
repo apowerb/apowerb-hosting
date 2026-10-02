@@ -114,6 +114,8 @@ def test_le_corps_de_pr_demande_la_pr_de_doc(depot):
     corps = (racine / "bump-body.md").read_text()
     assert "Companion docs PR" in corps
     assert "deployment/helmchart.mdx" in corps
+    # Since apowerb-docs#51, only the Helm page pins the chart version.
+    assert "deployment/kubernetes.mdx" not in corps
 
 
 def test_rien_a_proposer_ne_touche_a_rien(depot, monkeypatch):
