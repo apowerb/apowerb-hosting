@@ -90,10 +90,13 @@ To verify the result end to end, follow [docker-compose/TESTING.md](docker-compo
 
 ### 2. Kubernetes
 
-Apply the static manifests from the `k8s/` folder.
+Plain manifests, applied with `kubectl` alone — rendered from the chart, so
+both paths install the same stack. Step by step in [k8s/README.md](k8s/README.md).
 
 ```bash
-kubectl apply -f k8s/
+scripts/generate-k8s-secret.sh
+kubectl apply -f k8s/apowerb/00-namespace.yaml -f k8s/secret.yaml
+kubectl apply -f k8s/apowerb/
 ```
 
 ### 3. Helm
@@ -107,7 +110,7 @@ helm upgrade --install apowerb ./helm/apowerb-chart \
   --values ./helm/apowerb-chart/values.yaml
 ```
 
-To enable ingress, set `ingress.enabled: true` in `helm/apowerb-chart/values.yaml` or use the example in [k8s/05-ingress.yaml](k8s/05-ingress.yaml).
+To enable ingress, set `ingress.enabled: true` in `helm/apowerb-chart/values.yaml` or, without Helm, use [k8s/apowerb-public/](k8s/apowerb-public/).
 
 ### 4. Single VM / HTTPS with Traefik
 

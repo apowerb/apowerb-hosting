@@ -1,0 +1,48 @@
+# GENERATED from helm/apowerb-chart by .github/scripts/render_k8s_manifests.py
+# -- do not edit: change the chart, then re-run the script.
+---
+# Source: apowerb-chart/templates/otel-collector-configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: apowerb-otel-collector
+  namespace: apowerb
+  labels:
+    app.kubernetes.io/name: apowerb
+    app.kubernetes.io/component: otel-collector
+data:
+  # The compose file passes this configuration through an environment variable
+  # (`--config=env:OTEL_CFG`). In Kubernetes it lives in a ConfigMap and the
+  # collector reads it as a file: same content, but `kubectl edit` shows it,
+  # and the ingest token does not have to appear in it -- it stays in the
+  # Secret, injected at runtime through `${env:...}`.
+  config.yaml: |
+    receivers:
+      otlp:
+        protocols:
+          http:
+            endpoint: 0.0.0.0:4318
+          grpc:
+            endpoint: 0.0.0.0:4317
+    processors:
+      memory_limiter:
+        check_interval: 5s
+        limit_percentage: 75
+        spike_limit_percentage: 20
+      batch:
+    exporters:
+      otlphttp/pulse:
+        endpoint: http://apowerb-th2pulse:4319
+        encoding: json
+        headers:
+          X-Th2Pulse-Token: ${env:TH2PULSE_INGEST_TOKEN}
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [memory_limiter, batch]
+          exporters: [otlphttp/pulse]
+        logs:
+          receivers: [otlp]
+          processors: [memory_limiter, batch]
+          exporters: [otlphttp/pulse]

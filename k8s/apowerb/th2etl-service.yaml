@@ -1,0 +1,23 @@
+# GENERATED from helm/apowerb-chart by .github/scripts/render_k8s_manifests.py
+# -- do not edit: change the chart, then re-run the script.
+---
+# Source: apowerb-chart/templates/th2etl-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: apowerb-th2etl
+  namespace: apowerb
+  labels:
+    app.kubernetes.io/name: apowerb
+    app.kubernetes.io/component: th2etl
+spec:
+  # Never exposed outside: only the backend calls it, with its API key.
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: apowerb
+    app.kubernetes.io/component: th2etl
+  ports:
+    - name: http
+      port: 8000
+      targetPort: 8000
+      protocol: TCP

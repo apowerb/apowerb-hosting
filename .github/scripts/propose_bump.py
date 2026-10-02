@@ -22,7 +22,9 @@ Each installation path reads ITS own line, and all of them are watched:
     people believe both are watched;
   * `docker-compose/docker-compose.yml` -- the self-hosted quickstart;
   * `.env.example` -- what people copy to get started;
-  * `k8s/*.yaml` -- the raw manifests;
+  * `k8s/apowerb*/` -- the plain manifests, NOT edited here: they are
+    rendered from the chart (render_k8s_manifests.py), which the bump workflow
+    re-runs after this script;
   * the `helm install` command in the chart's README, which cites its version.
 The last four escaped this script until 18/09/26: the first PR it managed to
 open (#61) moved Hostman and the chart to 0.2.26 and left the quickstart --
@@ -55,7 +57,6 @@ CHART_YAML = pathlib.Path("helm/apowerb-chart/Chart.yaml")
 CHART_README = pathlib.Path("helm/apowerb-chart/README.md")
 QUICKSTART = pathlib.Path("docker-compose/docker-compose.yml")
 ENV_EXAMPLE = pathlib.Path(".env.example")
-K8S_DIR = pathlib.Path("k8s")
 
 # (compose variable, GitHub repo, Docker Hub repo)
 IMAGES = [
@@ -110,13 +111,6 @@ def defaut_actuel(texte: str, variable: str) -> str | None:
 def valeur_env(texte: str, variable: str) -> str | None:
     """The value of ``VARIABLE=...`` in a .env file, whole line."""
     m = re.search(r"^" + variable + r"=(\S+)[ \t]*$", texte, re.M)
-    return m.group(1) if m else None
-
-
-def tag_k8s(texte: str, depot: str) -> str | None:
-    """The tag of ``image: <repo>:<tag>``. The ``:`` after the repo is what
-    distinguishes `apowerb/apowerb:` from `apowerb/apowerb-ui:`."""
-    m = re.search(r"image:[ \t]*" + re.escape(depot) + r":(\S+)", texte)
     return m.group(1) if m else None
 
 
@@ -276,13 +270,6 @@ def main() -> int:
         ),
         ".env.example",
     )
-    for manifeste in sorted(K8S_DIR.glob("*.yaml")) if K8S_DIR.is_dir() else []:
-        suivre(
-            manifeste,
-            lambda t, v, d: tag_k8s(t, d),
-            lambda t, v, d, a, n: t.replace(f"{d}:{a}", f"{d}:{n}"),
-            f"k8s/{manifeste.name}",
-        )
 
     if not change:
         print("Nothing to propose.")
@@ -357,8 +344,8 @@ def main() -> int:
         contenu += (
             "\n> **Companion docs PR to open.** `apowerb/apowerb-docs` cites the "
             f"chart version in its `helm` commands: `--version {avant}` must "
-            f"become `--version {apres}` (`deployment/helmchart.mdx`, "
-            "`deployment/kubernetes.mdx`). The **Do the docs say what this "
+            f"become `--version {apres}` (`deployment/helmchart.mdx`). The "
+            "**Do the docs say what this "
             "repository deploys?** check fails until an open docs PR fixes it, "
             "and `BUMP_TOKEN` has no access to that repository. Merge after "
             "the chart's OCI publication, not before.\n"
