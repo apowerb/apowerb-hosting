@@ -1,0 +1,18 @@
+# GENERATED from helm/apowerb-chart by .github/scripts/render_k8s_manifests.py
+# -- do not edit: change the chart, then re-run the script.
+---
+# Source: apowerb-chart/templates/data-pvc.yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: apowerb-data
+  namespace: apowerb
+  labels:
+    app.kubernetes.io/name: apowerb
+    app.kubernetes.io/component: backend-data
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi

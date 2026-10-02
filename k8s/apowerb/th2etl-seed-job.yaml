@@ -1,0 +1,79 @@
+# GENERATED from helm/apowerb-chart by .github/scripts/render_k8s_manifests.py
+# -- do not edit: change the chart, then re-run the script.
+---
+# Source: apowerb-chart/templates/th2etl-seed-job.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: apowerb-th2etl-seed
+  namespace: apowerb
+  labels:
+    app.kubernetes.io/name: apowerb
+    app.kubernetes.io/component: th2etl-seed
+  # A Job, not a Deployment: seeding the default pipelines finishes. As a
+  # Deployment, Kubernetes would restart the container that exited with 0
+  # forever (CrashLoopBackOff on a success) -- the trap the compose file
+  # avoids with `restart: "no"`.
+spec:
+  backoffLimit: 1
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: apowerb
+        app.kubernetes.io/component: th2etl-seed
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: seed
+          image: "apowerb/th2etl:0.0.12"
+          imagePullPolicy: IfNotPresent
+          # The seed writes to the database, it does not call the API -- but
+          # it waits for the database to have been migrated by th2etl, hence
+          # the loop.
+          command: ["sh", "-c"]
+          args:
+            - >-
+              for i in $(seq 1 30); do
+              python -m th2etl.seeds.default_pipelines && exit 0;
+              echo "seed: attempt $i failed, th2etl not ready yet";
+              sleep 10;
+              done; exit 1
+          env:
+            - name: DATABASE_HOST
+              value: apowerb-postgres
+            - name: DATABASE_PORT
+              value: "5432"
+            - name: DATABASE_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: apowerb-secrets
+                  key: DB_NAME
+            - name: DATABASE_USER
+              valueFrom:
+                secretKeyRef:
+                  name: apowerb-secrets
+                  key: DB_USER
+            - name: DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: apowerb-secrets
+                  key: DB_PASSWORD
+            - name: API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: apowerb-secrets
+                  key: TH2ETL_API_KEY
+            - name: ADK_BASE_URL
+              value: "http://apowerb-backend:8000"
+            - name: ENCRYPT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: apowerb-secrets
+                  key: ENCRYPT_KEY
+          resources:
+            limits:
+              cpu: 300m
+              memory: 256Mi
+            requests:
+              cpu: 50m
+              memory: 128Mi

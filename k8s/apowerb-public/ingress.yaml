@@ -1,0 +1,32 @@
+# GENERATED from helm/apowerb-chart by .github/scripts/render_k8s_manifests.py
+# -- do not edit: change the chart, then re-run the script.
+---
+# Source: apowerb-chart/templates/ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: apowerb
+  namespace: apowerb
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-staging
+spec:
+  ingressClassName: traefik
+  # `tlsEnabled` and `tlsSecretName` used to live in values.yaml without this
+  # template reading them: enabling them did nothing, and the front end was
+  # still served in clear text. The secret name is deduced when not given --
+  # cert-manager creates it from the `cluster-issuer` annotation.
+  tls:
+    - hosts:
+        - "apowerb.example.com"
+      secretName: "apowerb-tls"
+  rules:
+    - host: apowerb.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: apowerb-frontend
+                port:
+                  number: 3000

@@ -1,0 +1,22 @@
+# GENERATED from helm/apowerb-chart by .github/scripts/render_k8s_manifests.py
+# -- do not edit: change the chart, then re-run the script.
+---
+# Source: apowerb-chart/templates/frontend-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: apowerb-frontend
+  namespace: apowerb
+  labels:
+    app.kubernetes.io/name: apowerb
+    app.kubernetes.io/component: frontend
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: apowerb
+    app.kubernetes.io/component: frontend
+  ports:
+    - name: http
+      port: 3000
+      targetPort: 3000
+      protocol: TCP

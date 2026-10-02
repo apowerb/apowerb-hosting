@@ -20,8 +20,6 @@ FICHIERS = [
     "docker-compose.yml",
     "docker-compose/docker-compose.yml",
     ".env.example",
-    "k8s/03-backend.yaml",
-    "k8s/04-frontend.yaml",
     "helm/apowerb-chart/values.yaml",
     "helm/apowerb-chart/Chart.yaml",
     "helm/apowerb-chart/README.md",
@@ -73,7 +71,6 @@ def test_chaque_chemin_d_installation_suit_le_coeur(depot):
     assert f"APOWERB_BACKEND_TAG:-{NEUVE}}}" in _lire(racine, "docker-compose.yml")
     assert f"APOWERB_BACKEND_TAG:-{NEUVE}}}" in _lire(racine, "docker-compose/docker-compose.yml")
     assert f"APOWERB_BACKEND_TAG={NEUVE}" in _lire(racine, ".env.example")
-    assert f"image: apowerb/apowerb:{NEUVE}" in _lire(racine, "k8s/03-backend.yaml")
     assert f"tag: {NEUVE}" in _lire(racine, "helm/apowerb-chart/values.yaml")
     chart = _lire(racine, "helm/apowerb-chart/Chart.yaml")
     assert f'appVersion: "{NEUVE}"' in chart
@@ -87,12 +84,12 @@ def test_l_interface_ne_suit_pas_le_coeur(depot):
     """`apowerb/apowerb` is a prefix of `apowerb/apowerb-ui`: the core's bump
     must never reach the frontend image."""
     racine, module = depot
-    front_avant = _lire(racine, "k8s/04-frontend.yaml")
 
     module.main()
 
-    assert _lire(racine, "k8s/04-frontend.yaml") == front_avant
-    assert NEUVE not in _lire(racine, "k8s/04-frontend.yaml")
+    values = _lire(racine, "helm/apowerb-chart/values.yaml")
+    assert module.tag_du_chart(values, "apowerb/apowerb") == NEUVE
+    assert module.tag_du_chart(values, "apowerb/apowerb-ui") != NEUVE
 
 
 def test_un_suiveur_en_retard_seul_suffit_a_proposer(depot):
@@ -138,7 +135,6 @@ def test_le_moteur_de_prevision_suit_sa_release(depot, monkeypatch):
         module, "derniere_release",
         lambda repo, token: NEUVE if repo == "apowerb/th2forecast" else "0.0.1",
     )
-    k8s_avant = {nom: _lire(racine, nom) for nom in FICHIERS if nom.startswith("k8s/")}
 
     assert module.main() == 0
 
@@ -147,4 +143,3 @@ def test_le_moteur_de_prevision_suit_sa_release(depot, monkeypatch):
     assert module.tag_du_chart(values, "apowerb/th2forecast-py") == NEUVE
     assert module.tag_du_chart(values, "apowerb/apowerb") != NEUVE
     assert f"APOWERB_BACKEND_TAG:-{NEUVE}}}" not in _lire(racine, "docker-compose.yml")
-    assert {nom: _lire(racine, nom) for nom in k8s_avant} == k8s_avant

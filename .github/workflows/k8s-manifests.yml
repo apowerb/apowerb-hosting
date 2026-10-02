@@ -1,0 +1,41 @@
+name: Plain Kubernetes manifests
+
+# `k8s/apowerb/` and `k8s/apowerb-public/` are rendered from the chart for
+# installs with `kubectl` alone. Hand-kept copies drift silently: the old
+# `k8s/00-05` files did, and `kubectl apply -f k8s/` installed a stack without
+# th2etl, th2pulse, the collector or the data volume while looking complete.
+# This guard fails as soon as the chart and the manifests disagree.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Do the manifests match the chart?
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Pinned: another Helm version may format the render differently, and
+      # the check compares text.
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v4.0.1
+
+      - name: Compare k8s/ with a fresh render
+        run: python3 .github/scripts/render_k8s_manifests.py --check
+
+      - name: Validate the manifests and a generated Secret
+        run: |
+          curl -sSL https://github.com/yannh/kubeconform/releases/download/v0.8.0/kubeconform-linux-amd64.tar.gz \
+            | tar -xz -C /usr/local/bin kubeconform
+          tmp="$(mktemp -d)"
+          bash scripts/generate-k8s-secret.sh "$tmp/secret.yaml"
+          kubeconform -strict -summary -kubernetes-version 1.30.0 \
+            k8s/apowerb k8s/apowerb-public "$tmp/secret.yaml"
