@@ -122,6 +122,9 @@ spec:
                   optional: true
             - name: TH2FORECAST_TIMEOUT_S
               value: {{ .Values.th2forecast.timeoutS | quote }}
+            # Read by core versions that know both engines; older ones ignore it.
+            - name: TH2FORECAST_ENGINE
+              value: {{ include "apowerb.th2forecast.implementation" . | quote }}
             {{- end }}
             {{- if .Values.backend.env.dbSchema }}
             - name: DB_SCHEMA

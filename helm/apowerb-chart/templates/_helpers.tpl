@@ -95,6 +95,20 @@ Secret when a token is set (see secret.yaml) -- `optional: true` lets the pod
 start, but an engine without a token accepts any caller on the cluster
 network, which _validate.tpl refuses as soon as enabled=true.
 */}}
+{{/*
+Engine behind image.th2forecast: th2forecast.implementation, or deduced from
+the repository name (apowerb/th2forecast-py is the Python engine).
+*/}}
+{{- define "apowerb.th2forecast.implementation" -}}
+{{- if .Values.th2forecast.implementation -}}
+{{- .Values.th2forecast.implementation -}}
+{{- else if hasSuffix "-py" (toString .Values.image.th2forecast.repository) -}}
+python
+{{- else -}}
+r
+{{- end -}}
+{{- end }}
+
 {{- define "apowerb.th2forecast.env" -}}
 - name: TH2FORECAST_API_TOKEN
   valueFrom:

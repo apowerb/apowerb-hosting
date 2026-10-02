@@ -116,6 +116,11 @@ services:
       TH2FORECAST_URL: ${TH2FORECAST_URL:-}
       TH2FORECAST_API_TOKEN: ${TH2FORECAST_API_TOKEN:-}
       TH2FORECAST_TIMEOUT_S: ${TH2FORECAST_TIMEOUT_S:-300}
+      # Engine behind TH2FORECAST_URL: "r" (default image below) or "python"
+      # -- set it to python together with TH2FORECAST_IMAGE=apowerb/th2forecast-py.
+      # With "r" the core refuses the features the R engine lacks (events,
+      # scenarios, hierarchy, ...) instead of letting it ignore them.
+      TH2FORECAST_ENGINE: ${TH2FORECAST_ENGINE:-r}
     volumes:
       - apowerb-data:/app/data
     ports:
@@ -344,7 +349,7 @@ services:
     restart: "no"
 
   # ───────────────────────────────────────────────────────────────────────────
-  # OPTIONAL — forecasting (Chronos-2 + statsforecast). Off by default.
+  # OPTIONAL — forecasting (the R engine by default). Off by default.
   #
   #   COMPOSE_PROFILES=forecast
   #   TH2FORECAST_URL=http://th2forecast:8000
@@ -355,12 +360,14 @@ services:
   # the profile alone changes nothing without the URL line above.
   #
   # The engine image is published per release of apowerb/th2forecast (tags
-  # X.Y.Z, X.Y, latest). TH2FORECAST_TAG defaults to an explicit release, like
+  # X.Y.Z, X.Y, latest): apowerb/th2forecast, the R engine (linux/amd64
+  # only), or apowerb/th2forecast-py, the Python engine (Chronos-2, events,
+  # scenarios, hierarchies) -- with the latter, set TH2FORECAST_ENGINE=python. TH2FORECAST_TAG defaults to an explicit release, like
   # the other images here, and bump-images moves it with the chart; set it to
   # pin another release.
   th2forecast:
     profiles: [forecast]
-    image: ${TH2FORECAST_IMAGE:-apowerb/th2forecast-py}:${TH2FORECAST_TAG:-0.1.0}
+    image: ${TH2FORECAST_IMAGE:-apowerb/th2forecast}:${TH2FORECAST_TAG:-0.1.0}
     pull_policy: always
     environment:
       TH2FORECAST_API_TOKEN: ${TH2FORECAST_API_TOKEN:-}
@@ -379,8 +386,8 @@ services:
     # internal network -- the whole stack, which is why the token above is
     # not decoration.
     healthcheck:
-      # No curl in the image; python is what it runs on, like th2etl/th2pulse.
-      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
+      # The R image has curl and no python; the Python image the reverse.
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8000/health >/dev/null 2>&1 || python -c \"import urllib.request as u; u.urlopen('http://127.0.0.1:8000/health', timeout=3)\""]
       interval: 10s
       timeout: 5s
       # Chronos-2 loads at startup when TH2FORECAST_PRELOAD is not "0" --

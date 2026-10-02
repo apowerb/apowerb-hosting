@@ -32,10 +32,13 @@ image:
     repository: apowerb/th2pulse
     tag: 0.1.4
     pullPolicy: IfNotPresent
-  # Forecasting engine (Chronos-2 + statsforecast), published per release of
-  # apowerb/th2forecast. Only pulled when th2forecast.enabled=true.
+  # Forecasting engine, published per release of apowerb/th2forecast. Only
+  # pulled when th2forecast.enabled=true. Default: the R engine
+  # (apowerb/th2forecast, linux/amd64 only). The Python engine
+  # (apowerb/th2forecast-py: Chronos-2, events, scenarios, hierarchies) stays
+  # available under the same tags -- see th2forecast.implementation.
   th2forecast:
-    repository: apowerb/th2forecast-py
+    repository: apowerb/th2forecast
     tag: 0.1.0
     pullPolicy: IfNotPresent
   otelCollector:
@@ -296,8 +299,8 @@ th2pulse:
 # ─────────────────────────────────────────────────────────────────────────────
 # Forecasting engine (th2forecast): what POST /api/v1/forecast calls.
 # DISABLED by default, unlike th2etl and th2pulse above: it is an optional
-# feature and needs an API token shared with the backend. Image:
-# apowerb/th2forecast-py, pinned under image.th2forecast.
+# feature and needs an API token shared with the backend. Image: the R
+# engine apowerb/th2forecast, pinned under image.th2forecast.
 # ─────────────────────────────────────────────────────────────────────────────
 th2forecast:
   enabled: false
@@ -309,7 +312,16 @@ th2forecast:
   apiToken: ""
   # Backend-side overall timeout (th2forecast_client), in seconds.
   timeoutS: 300
-  # Engine settings, all optional -- empty, the image defaults apply (2
+  # Which engine the image runs: "r" or "python", passed to the backend as
+  # TH2FORECAST_ENGINE. The backend refuses requests for features the R
+  # engine lacks (events, scenarios, hierarchy, reconciliation, croston/tsb/
+  # imapa) instead of letting it ignore them. Empty: deduced from
+  # image.th2forecast.repository (a name ending in "-py" is the Python
+  # engine). Set it explicitly for an image you built or renamed.
+  implementation: ""
+  # Engine settings, all optional -- empty, the image defaults apply. Both
+  # engines read workers and the three limits; preload, sfJobs and
+  # torchThreads are read by the Python engine only. Python defaults (2
   # workers, weights loaded at startup, limits of 100000 rows / 200 series /
   # 366 days, 1 statsforecast job, one thread per core).
   engine:
@@ -320,7 +332,8 @@ th2forecast:
     maxHorizon: ""
     sfJobs: ""
     torchThreads: ""
-  # Measured on 28/09/26, local image, one job at a time (TH2FORECAST_WORKERS
+  # Measured on the PYTHON engine (the R engine was not measured), 28/09/26,
+  # local image, one job at a time (TH2FORECAST_WORKERS
   # default = 2 threads, same process): 316 MiB at rest once Chronos-2 is
   # loaded, 404 MiB peak during an `auto` run on 20 monthly series x 24
   # points. Request = rest x1.6; limit = peak x3.8, because two concurrent

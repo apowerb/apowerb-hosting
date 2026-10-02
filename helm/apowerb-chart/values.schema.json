@@ -1038,6 +1038,15 @@
           ],
           "description": "Backend-side overall timeout (th2forecast_client), in seconds."
         },
+        "implementation": {
+          "type": "string",
+          "enum": [
+            "",
+            "r",
+            "python"
+          ],
+          "description": "Engine the image runs, passed to the backend as TH2FORECAST_ENGINE. Empty: deduced from image.th2forecast.repository (\"-py\" suffix = Python)."
+        },
         "engine": {
           "type": "object",
           "additionalProperties": true,

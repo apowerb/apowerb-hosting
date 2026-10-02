@@ -33,9 +33,10 @@ spec:
             {{- include "apowerb.th2forecast.env" . | nindent 12 }}
           resources:
             {{- toYaml .Values.th2forecast.resources | nindent 12 }}
-          # Chronos-2 loads at startup (TH2FORECAST_PRELOAD default) before
-          # /health answers: measured 28/09/26, local image, 4.6 s from
-          # container start to the first /health 200. The ceiling below
+          # The Python engine loads Chronos-2 at startup (TH2FORECAST_PRELOAD
+          # default) before /health answers: measured 28/09/26, local image,
+          # 4.6 s from container start to the first /health 200; the R engine
+          # starts its mirai daemons first. The ceiling below
           # (180 s) leaves a wide margin for a slower node or a cold pull.
           startupProbe:
             httpGet:
