@@ -1,10 +1,12 @@
 """Contract for th2forecast as an opt-in service of the self-hosted stack
 and the Helm chart.
 
-th2forecast (Chronos-2 + statsforecast) publishes apowerb/th2forecast-py per
-release (apowerb/th2forecast#14, first release 0.1.0). This test proves the
-service is wired OFF by default in both installation paths, and that both
-paths pin the same explicit release -- never `latest`, never a commit SHA.
+th2forecast publishes two engine images per release (apowerb/th2forecast#14,
+first release 0.1.0): apowerb/th2forecast, the R engine and the default, and
+apowerb/th2forecast-py, the Python engine. This test proves the service is
+wired OFF by default in both installation paths, that both paths pin the same
+explicit release -- never `latest`, never a commit SHA -- of the same image,
+and that the backend is told which engine runs (TH2FORECAST_ENGINE).
 
 Root docker-compose.yml (Hostman App Platform) is untouched on purpose --
 see tests/compose_contract.yml, the th2forecast exclusion entry.
@@ -125,3 +127,40 @@ def test_helm_th2forecast_deployment_template_exists():
     dep = REPO_ROOT / "helm" / "apowerb-chart" / "templates" / "th2forecast-deployment.yaml"
     svc = REPO_ROOT / "helm" / "apowerb-chart" / "templates" / "th2forecast-service.yaml"
     assert dep.exists() and svc.exists()
+
+
+# --------------------------------------------------------------------------- #
+# Engine: R by default, and the backend told which one runs
+# --------------------------------------------------------------------------- #
+
+def _compose_image_default() -> str:
+    import re
+
+    image = _compose()["services"]["th2forecast"]["image"]
+    match = re.search(r"\$\{TH2FORECAST_IMAGE:-([^}]*)\}", image)
+    assert match, f"TH2FORECAST_IMAGE default not found in {image!r}"
+    return match.group(1)
+
+
+def test_both_paths_default_to_the_r_engine():
+    assert _compose_image_default() == "apowerb/th2forecast"
+    assert _values()["image"]["th2forecast"]["repository"] == "apowerb/th2forecast"
+
+
+def test_compose_backend_is_told_the_engine():
+    # The core refuses Python-only features when TH2FORECAST_ENGINE=r; a
+    # default that disagreed with the default image would refuse them on the
+    # Python engine, or let the R engine ignore them.
+    assert _compose()["services"]["apowerb"]["environment"]["TH2FORECAST_ENGINE"] == "${TH2FORECAST_ENGINE:-r}"
+
+
+def test_compose_healthcheck_works_in_both_images():
+    # The R image ships curl and no python, the Python image the reverse.
+    test = " ".join(_compose()["services"]["th2forecast"]["healthcheck"]["test"])
+    assert "curl" in test and "python" in test
+
+
+def test_helm_backend_is_told_the_engine():
+    template = (REPO_ROOT / "helm" / "apowerb-chart" / "templates" / "backend-deployment.yaml").read_text(encoding="utf-8")
+    assert "TH2FORECAST_ENGINE" in template
+    assert _values()["th2forecast"]["implementation"] == ""

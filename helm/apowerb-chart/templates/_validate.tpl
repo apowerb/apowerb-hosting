@@ -33,7 +33,7 @@ says "store unreachable" with nothing naming the cause.
 {{- end }}
 {{- if .Values.th2forecast.enabled }}
 {{- if not .Values.image.th2forecast.tag }}
-{{- fail "th2forecast.enabled=true with an empty image.th2forecast.tag: set the tag of a published apowerb/th2forecast-py release (or of an image you built yourself), or set th2forecast.enabled=false." -}}
+{{- fail "th2forecast.enabled=true with an empty image.th2forecast.tag: set the tag of a published apowerb/th2forecast (or apowerb/th2forecast-py) release (or of an image you built yourself), or set th2forecast.enabled=false." -}}
 {{- end }}
 {{- if not .Values.th2forecast.apiToken }}
 {{- fail "th2forecast.enabled=true without th2forecast.apiToken: set it (openssl rand -hex 32) or set th2forecast.enabled=false. Without it the engine would accept any caller reaching the cluster network." -}}

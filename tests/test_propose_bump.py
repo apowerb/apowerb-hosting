@@ -142,7 +142,7 @@ def test_le_moteur_de_prevision_suit_sa_release(depot, monkeypatch):
 
     assert f"TH2FORECAST_TAG:-{NEUVE}}}" in _lire(racine, "docker-compose/docker-compose.yml")
     values = _lire(racine, "helm/apowerb-chart/values.yaml")
-    assert module.tag_du_chart(values, "apowerb/th2forecast-py") == NEUVE
+    assert module.tag_du_chart(values, "apowerb/th2forecast") == NEUVE
     assert module.tag_du_chart(values, "apowerb/apowerb") != NEUVE
     assert f"APOWERB_BACKEND_TAG:-{NEUVE}}}" not in _lire(racine, "docker-compose.yml")
     assert {nom: _lire(racine, nom) for nom in k8s_avant} == k8s_avant
