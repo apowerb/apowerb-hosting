@@ -43,7 +43,10 @@ OCI_RE = re.compile(r"oci://registry-1\.docker\.io/([A-Za-z0-9._-]+/[A-Za-z0-9._
 # anonymously there. An address that serves nobody is worse than no address.
 GHCR_RE = re.compile(r"oci://ghcr\.io/[A-Za-z0-9._-]+/[A-Za-z0-9._-]+")
 VERSION_RE = re.compile(r"--version\s+([0-9][0-9A-Za-z.+-]*)")
-HELM_PATH_RE = re.compile(r"helm/([A-Za-z0-9._-]+)")
+# Not after `packages/`: `artifacthub.io/packages/helm/<repo>/<chart>` is the
+# chart's Artifact Hub page, where `helm/` is a package kind and `apowerb` the
+# repository name -- not a path in this repository.
+HELM_PATH_RE = re.compile(r"(?<!packages/)helm/([A-Za-z0-9._-]+)")
 
 # A doc is allowed to cite what is no longer true -- that is even how an
 # outage is explained. The line carrying this marker, or the line just before,
