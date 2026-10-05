@@ -39,7 +39,7 @@ image:
   # available under the same tags -- see th2forecast.implementation.
   th2forecast:
     repository: apowerb/th2forecast
-    tag: 0.1.0
+    tag: 0.1.2
     pullPolicy: IfNotPresent
   otelCollector:
     repository: otel/opentelemetry-collector-contrib
