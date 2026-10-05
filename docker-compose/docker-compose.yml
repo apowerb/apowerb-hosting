@@ -367,7 +367,7 @@ services:
   # pin another release.
   th2forecast:
     profiles: [forecast]
-    image: ${TH2FORECAST_IMAGE:-apowerb/th2forecast}:${TH2FORECAST_TAG:-0.1.0}
+    image: ${TH2FORECAST_IMAGE:-apowerb/th2forecast}:${TH2FORECAST_TAG:-0.1.2}
     pull_policy: always
     environment:
       TH2FORECAST_API_TOKEN: ${TH2FORECAST_API_TOKEN:-}
