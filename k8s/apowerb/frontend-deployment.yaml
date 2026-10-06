@@ -24,7 +24,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: "apowerb/apowerb-ui:0.1.33"
+          image: "apowerb/apowerb-ui:0.1.35"
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000

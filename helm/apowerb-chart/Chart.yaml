@@ -1,8 +1,8 @@
 apiVersion: v2
 name: apowerb-chart
 description: apowerb, its interface, PostgreSQL, the th2etl orchestrator, the th2pulse log store, an optional th2forecast forecasting engine and an OpenTelemetry collector
-version: 0.4.23
-appVersion: "0.2.43"
+version: 0.4.24
+appVersion: "0.2.57"
 type: application
 # Read by Artifact Hub (Changelog): the changes of THIS version only.
 # Rewrite it at each `version:` bump -- the list does not accumulate.

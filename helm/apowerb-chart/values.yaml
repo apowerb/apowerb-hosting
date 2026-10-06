@@ -11,11 +11,11 @@ image:
     # The "report" button lives in UI 0.1.23 and calls this API: moving the UI
     # alone gives a button with no route behind it, the core alone a route
     # nothing calls.
-    tag: 0.2.43
+    tag: 0.2.57
     pullPolicy: IfNotPresent
   frontend:
     repository: apowerb/apowerb-ui
-    tag: 0.1.33
+    tag: 0.1.35
     pullPolicy: IfNotPresent
   postgres:
     repository: postgres
@@ -39,7 +39,7 @@ image:
   # available under the same tags -- see th2forecast.implementation.
   th2forecast:
     repository: apowerb/th2forecast
-    tag: 0.1.2
+    tag: 0.1.4
     pullPolicy: IfNotPresent
   otelCollector:
     repository: otel/opentelemetry-collector-contrib
