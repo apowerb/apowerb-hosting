@@ -160,10 +160,40 @@ settings_not_declared:
       would put knobs in the App Platform panel that point at nothing --
       exposing forecasting on that platform is a separate product decision,
       taken when a th2forecast service joins THIS file specifically.
+
+      Three more names arrived with the bump from core 0.2.43 to 0.2.57,
+      for the same reason. Measured at
+      the tag: TH2FORECAST_ENGINE is read only by th2forecast_client.py (which
+      engine the client talks to), and FORECAST_INTERPRET_ENABLED /
+      FORECAST_INTERPRET_TIMEOUT_S only by core/forecast_context.py (turning a
+      plain-language forecast context into dated events). Both act on a
+      forecast call, which this file cannot make.
     names:
       - TH2FORECAST_URL
       - TH2FORECAST_API_TOKEN
       - TH2FORECAST_TIMEOUT_S
+      - TH2FORECAST_ENGINE
+      - FORECAST_INTERPRET_ENABLED
+      - FORECAST_INTERPRET_TIMEOUT_S
+
+  - reason: >-
+      Python Script tool, read by the core at 0.2.57. It runs arbitrary Python,
+      and the core says who may turn it on: self-hosted single-tenant installs
+      only, with the worker in a locked-down sandbox -- the in-process limits
+      below only bound the blast radius, and get_settings() logs a warning
+      whenever the flag is on. This file is a managed platform deployment
+      with no such sandbox, so the switch has no business in its panel; the
+      seven limits only take effect behind it and go with it. Off by default
+      in the core, so leaving all eight out keeps the tool hidden and refusing.
+    names:
+      - ENABLE_PYTHON_SCRIPT_TOOL
+      - PYTHON_SCRIPT_MAX_TIMEOUT
+      - PYTHON_SCRIPT_MEMORY_MB
+      - PYTHON_SCRIPT_FSIZE_MB
+      - PYTHON_SCRIPT_MAX_PROCESSES
+      - PYTHON_SCRIPT_RUN_UID
+      - PYTHON_SCRIPT_MAX_OUTPUT_KB
+      - PYTHON_SCRIPT_ALLOW_NETWORK
 
 # The other direction: variables this file declares that are NOT Settings
 # fields. Something still has to read them, or the platform collects a value
