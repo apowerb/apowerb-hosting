@@ -191,7 +191,7 @@ services:
     # returns the code the interface can read instead of a bare sentence.
     # Verified INSIDE the published image and not from the version number:
     # caps 1000000/20000000/24 and `_core_token_cap` present.
-    image: ${APOWERB_BACKEND_IMAGE:-apowerb/apowerb}:${APOWERB_BACKEND_TAG:-0.2.57}
+    image: ${APOWERB_BACKEND_IMAGE:-apowerb/apowerb}:${APOWERB_BACKEND_TAG:-0.2.58}
     pull_policy: always
     environment:
       # ── Managed cluster (Hostman > Databases), not a service of this stack ──
