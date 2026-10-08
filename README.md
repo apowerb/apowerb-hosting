@@ -34,8 +34,10 @@ and it is designed to run from published images or from a Kubernetes/Helm chart.
 
 - Backend image: [apowerb/apowerb on Docker Hub](https://hub.docker.com/r/apowerb/apowerb)
 - Frontend image: [apowerb/apowerb-ui on Docker Hub](https://hub.docker.com/r/apowerb/apowerb-ui)
-- Backend package: [apowerb/apowerb on GitHub Container Registry](https://github.com/orgs/apowerb/packages)
-- Frontend package: [apowerb/apowerb-ui on GitHub Container Registry](https://github.com/orgs/apowerb/packages)
+
+The GitHub Container Registry packages are not a pull source: measured on
+2026-10-08, `ghcr.io` refuses an anonymous token for both (`403`). Pull from
+Docker Hub.
 
 ### Helm chart OCI registries
 
