@@ -29,7 +29,17 @@ services:
       - traefik.http.routers.apowerb-ui.entrypoints=websecure
       - traefik.http.routers.apowerb-ui.tls.certresolver=leresolver
       - traefik.http.services.apowerb-ui.loadbalancer.server.port=3000
-    ports: []
+    # `!reset`, not `[]`: Compose merges `ports` across files, so an empty
+    # list removes nothing. Measured 08/10/2026 -- with `ports: []` the
+    # interface stayed published on 0.0.0.0:3000 and the API on 0.0.0.0:8000,
+    # plain HTTP beside the HTTPS this overlay exists for.
+    # tests/test_traefik_overlay.py checks the merged result.
+    ports: !reset []
+
+  apowerb:
+    # The browser never calls the API directly: the interface proxies `/api`
+    # over the internal network. Traefik is the only way in.
+    ports: !reset []
 
 volumes:
   traefik-letsencrypt:
