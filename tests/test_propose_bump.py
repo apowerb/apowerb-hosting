@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import importlib.util
 import pathlib
+import re
 import shutil
 
 import pytest
@@ -105,14 +106,21 @@ def test_un_suiveur_en_retard_seul_suffit_a_proposer(depot):
     assert f"APOWERB_BACKEND_TAG:-{NEUVE}}}" in qs.read_text()
 
 
-def test_le_corps_de_pr_demande_la_pr_de_doc(depot):
+def test_le_corps_de_pr_rappelle_la_publication_oci(depot):
+    """Since apowerb-docs#58 the docs cite no chart version: `helm install`
+    without `--version` takes the newest chart published on Docker Hub. A
+    bump therefore needs no docs PR -- but until the chart is pushed to the
+    registry, readers keep getting the previous one. That push is the step
+    to remind."""
     racine, module = depot
     module.main()
     corps = (racine / "bump-body.md").read_text()
-    assert "Companion docs PR" in corps
-    assert "deployment/helmchart.mdx" in corps
-    # Since apowerb-docs#51, only the Helm page pins the chart version.
-    assert "deployment/kubernetes.mdx" not in corps
+    assert "Companion docs PR" not in corps
+    assert "publish-dockerhub-helm.yml" in corps
+    assert re.search(r"-f tag=apowerb-chart-\d+\.\d+\.\d+`", corps)
+    # Every placeholder rendered: an f-prefix forgotten on one line of the
+    # message printed `{avant}` verbatim on 08/10/2026.
+    assert "{avant}" not in corps and "{apres}" not in corps
 
 
 def test_rien_a_proposer_ne_touche_a_rien(depot, monkeypatch):

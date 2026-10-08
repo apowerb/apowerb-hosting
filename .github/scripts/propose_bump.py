@@ -342,13 +342,15 @@ def main() -> int:
     if version_chart_changee:
         avant, apres = version_chart_changee
         contenu += (
-            "\n> **Companion docs PR to open.** `apowerb/apowerb-docs` cites the "
-            f"chart version in its `helm` commands: `--version {avant}` must "
-            f"become `--version {apres}` (`deployment/helmchart.mdx`). The "
-            "**Do the docs say what this "
-            "repository deploys?** check fails until an open docs PR fixes it, "
-            "and `BUMP_TOKEN` has no access to that repository. Merge after "
-            "the chart's OCI publication, not before.\n"
+            "\n> **After merging: publish the chart.** The docs cite no chart "
+            "version -- `helm install` without `--version` takes the newest "
+            f"chart on Docker Hub -- so {avant} -> {apres} needs no docs PR. "
+            "Until the chart is pushed to the registry, though, readers keep "
+            f"getting {avant}: the release this merge creates does not trigger "
+            "the push. Run `gh workflow run publish-dockerhub-helm.yml "
+            f"--ref main -f tag=apowerb-chart-{apres}`, then check that "
+            "`helm show chart oci://registry-1.docker.io/apowerb/apowerb-chart` "
+            f"reads `version: {apres}`.\n"
         )
     if dry:
         print("\n--- PR body that would be written ---")
