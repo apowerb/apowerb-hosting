@@ -50,6 +50,32 @@ entries:
             - name: apowerb-hosting#88
               url: https://github.com/apowerb/apowerb-hosting/pull/88
     apiVersion: v2
+    appVersion: 0.2.88
+    created: "2026-10-19T13:09:01.022833353Z"
+    description: apowerb, its interface, PostgreSQL, the th2etl orchestrator, the
+      th2pulse log store, an optional th2forecast forecasting engine and an OpenTelemetry
+      collector
+    digest: 7f97845546e67565723802e8af155e28391986311fcb6ff7b9b87570c72161dc
+    name: apowerb-chart
+    type: application
+    urls:
+    - https://github.com/apowerb/apowerb-hosting/releases/download/apowerb-chart-0.4.26/apowerb-chart-0.4.26.tgz
+    version: 0.4.26
+  - annotations:
+      artifacthub.io/changes: |
+        - kind: added
+          description: optional th2forecast forecasting engine (th2forecast.enabled, disabled by default), pinned to release 0.1.0
+          links:
+            - name: apowerb-hosting#76
+              url: https://github.com/apowerb/apowerb-hosting/pull/76
+        - kind: changed
+          description: install-time error messages, post-install notes, values comments and schema descriptions are now in English
+          links:
+            - name: apowerb-hosting#87
+              url: https://github.com/apowerb/apowerb-hosting/pull/87
+            - name: apowerb-hosting#88
+              url: https://github.com/apowerb/apowerb-hosting/pull/88
+    apiVersion: v2
     appVersion: 0.2.87
     created: "2026-10-19T11:44:26.860296523Z"
     description: apowerb, its interface, PostgreSQL, the th2etl orchestrator, the
@@ -364,4 +390,4 @@ entries:
     urls:
     - https://github.com/apowerb/apowerb-hosting/releases/download/apowerb-chart-0.4.1/apowerb-chart-0.4.1.tgz
     version: 0.4.1
-generated: "2026-10-19T11:44:26.860380721Z"
+generated: "2026-10-19T13:09:01.023065537Z"
