@@ -50,7 +50,7 @@ ships the product images — but in a repository of its own,
 `apowerb/apowerb-chart`:
 
 ```bash
-helm upgrade --install apowerb oci://registry-1.docker.io/apowerb/apowerb-chart --version 0.4.24 \
+helm upgrade --install apowerb oci://registry-1.docker.io/apowerb/apowerb-chart --version 0.4.25 \
   --namespace apowerb --create-namespace \
   --values values-secrets.yaml
 ```
