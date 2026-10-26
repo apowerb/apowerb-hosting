@@ -474,7 +474,7 @@ services:
   # pdf_extract, pdf_agent and pipelines agents, process_pdf -- the two the
   # backend expects from an orchestrator.
   th2etl:
-    image: ${TH2ETL_IMAGE:-apowerb/th2etl}:${TH2ETL_TAG:-0.0.12}
+    image: ${TH2ETL_IMAGE:-apowerb/th2etl}:${TH2ETL_TAG:-0.0.15}
     environment:
       DATABASE_HOST: ${DB_HOST}
       DATABASE_PORT: ${DB_PORT:-5432}
@@ -515,7 +515,7 @@ services:
   # by itself: up to 30 attempts, 10 s apart, then gives up with the seed's
   # own error. Order-only `depends_on` keeps th2etl starting first.
   th2etl-seed:
-    image: ${TH2ETL_IMAGE:-apowerb/th2etl}:${TH2ETL_TAG:-0.0.12}
+    image: ${TH2ETL_IMAGE:-apowerb/th2etl}:${TH2ETL_TAG:-0.0.15}
     command: ["sh", "-c", "for i in $$(seq 1 30); do python -m th2etl.seeds.default_pipelines && exit 0; echo \"seed: attempt $$i failed, th2etl not ready yet\"; sleep 10; done; exit 1"]
     environment:
       DATABASE_HOST: ${DB_HOST}
@@ -543,7 +543,7 @@ services:
   #     The connection is unencrypted like the application's own (see above),
   #     so the cluster's PRIVATE address matters here too.
   th2pulse:
-    image: ${TH2PULSE_IMAGE:-apowerb/th2pulse}:${TH2PULSE_TAG:-0.1.4}
+    image: ${TH2PULSE_IMAGE:-apowerb/th2pulse}:${TH2PULSE_TAG:-0.1.7}
     pull_policy: always
     environment:
       # th2pulse takes a single URL, not separate fields, so a password with a

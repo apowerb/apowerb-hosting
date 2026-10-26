@@ -42,7 +42,7 @@ spec:
               memory: 64Mi
       containers:
         - name: th2pulse
-          image: "apowerb/th2pulse:0.1.4"
+          image: "apowerb/th2pulse:0.1.7"
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 4319

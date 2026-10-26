@@ -25,7 +25,7 @@ spec:
       restartPolicy: Never
       containers:
         - name: seed
-          image: "apowerb/th2etl:0.0.12"
+          image: "apowerb/th2etl:0.0.15"
           imagePullPolicy: IfNotPresent
           # The seed writes to the database, it does not call the API -- but
           # it waits for the database to have been migrated by th2etl, hence

@@ -220,7 +220,7 @@ services:
     # everything before 0.1.3 exits on start outright -- the published 0.1.2
     # was built without the `ingest` extra and dies on "No module named
     # fastapi".
-    image: ${TH2PULSE_IMAGE:-apowerb/th2pulse}:${TH2PULSE_TAG:-0.1.4}
+    image: ${TH2PULSE_IMAGE:-apowerb/th2pulse}:${TH2PULSE_TAG:-0.1.7}
     pull_policy: always
     environment:
       # Its own schema in the stack's Postgres rather than a second database:
@@ -282,7 +282,7 @@ services:
     # throwaway Postgres: answers 200 on /openapi.json, and the seed module
     # provisions blocs agents_runner, pdf_extract, pdf_agent and pipelines
     # agents, process_pdf.
-    image: ${TH2ETL_IMAGE:-apowerb/th2etl}:${TH2ETL_TAG:-0.0.12}
+    image: ${TH2ETL_IMAGE:-apowerb/th2etl}:${TH2ETL_TAG:-0.0.15}
     pull_policy: always
     environment:
       DATABASE_HOST: postgres
@@ -329,7 +329,7 @@ services:
   # concurrently with itself, which this one is explicitly not safe for.
   th2etl-seed:
     profiles: [etl]
-    image: ${TH2ETL_IMAGE:-apowerb/th2etl}:${TH2ETL_TAG:-0.0.12}
+    image: ${TH2ETL_IMAGE:-apowerb/th2etl}:${TH2ETL_TAG:-0.0.15}
     pull_policy: always
     command: ["python", "-m", "th2etl.seeds.default_pipelines"]
     environment:
@@ -367,7 +367,7 @@ services:
   # pin another release.
   th2forecast:
     profiles: [forecast]
-    image: ${TH2FORECAST_IMAGE:-apowerb/th2forecast}:${TH2FORECAST_TAG:-0.1.9}
+    image: ${TH2FORECAST_IMAGE:-apowerb/th2forecast}:${TH2FORECAST_TAG:-0.1.10}
     pull_policy: always
     environment:
       TH2FORECAST_API_TOKEN: ${TH2FORECAST_API_TOKEN:-}
