@@ -44,7 +44,7 @@ spec:
               memory: 64Mi
       containers:
         - name: th2etl
-          image: "apowerb/th2etl:0.0.12"
+          image: "apowerb/th2etl:0.0.15"
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8000

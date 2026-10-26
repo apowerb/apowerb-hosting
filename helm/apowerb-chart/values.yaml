@@ -26,11 +26,11 @@ image:
   # namespace switch are NOT the same, despite identical version numbers.
   th2etl:
     repository: apowerb/th2etl
-    tag: 0.0.12
+    tag: 0.0.15
     pullPolicy: IfNotPresent
   th2pulse:
     repository: apowerb/th2pulse
-    tag: 0.1.4
+    tag: 0.1.7
     pullPolicy: IfNotPresent
   # Forecasting engine, published per release of apowerb/th2forecast. Only
   # pulled when th2forecast.enabled=true. Default: the R engine
@@ -39,7 +39,7 @@ image:
   # available under the same tags -- see th2forecast.implementation.
   th2forecast:
     repository: apowerb/th2forecast
-    tag: 0.1.9
+    tag: 0.1.10
     pullPolicy: IfNotPresent
   otelCollector:
     repository: otel/opentelemetry-collector-contrib
