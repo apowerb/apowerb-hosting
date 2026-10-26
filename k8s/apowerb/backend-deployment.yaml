@@ -51,7 +51,7 @@ spec:
               memory: 64Mi
       containers:
         - name: backend
-          image: "apowerb/apowerb:0.2.96"
+          image: "apowerb/apowerb:0.2.97"
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8000
